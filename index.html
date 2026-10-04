@@ -1049,7 +1049,7 @@
             <a href="#aboutTitle" class="drawer-link-item">✨ مرحبا بكم في عالمي</a>
             <a href="#books" class="drawer-link-item">📚 الأعمال الأدبية</a>
             <a href="#audio" class="drawer-link-item">🎙️ الملفات الصوتية</a>
-            <a href="#videos" class="drawer-link-item">📺 مكتبة الفيديوهات</a>
+            <a href="#videos" class="drawer-link-item">📺 الفيديوهات</a>
             <a href="#services" class="drawer-link-item">🛠️ الخدمات</a>
             <a href="#courses" class="drawer-link-item">🎓 الدورات والورش</a>
             <a href="#store" class="drawer-link-item">🛍️ المنتجات الرقمية</a>
@@ -1073,7 +1073,7 @@
             <nav class="nav-links">
                 <a href="#books">الأعمال الأدبية</a>
                 <a href="#audio">الصوتيات</a>
-                <a href="#videos">مكتبة الفيديوهات</a>
+                <a href="#videos">الفيديوهات</a>
                 <a href="#services">الخدمات الأدبية</a>
                 <a href="#courses">الدورات والورش</a>
                 <a href="#store">المنتجات الرقمية</a>
@@ -1879,6 +1879,33 @@
             }
         };
 
+        // إنشاء رابط تنزيل مباشر لملفات Cloudinary باستخدام fl_attachment.
+        // هذا يجبر Cloudinary على إرسال الملف كـ Download بدل فتحه داخل المتصفح.
+        function cloudinaryDownloadUrl(url) {
+            if (!url || typeof url !== 'string') return url;
+            const cleanUrl = url.trim();
+            if (!cleanUrl.includes('res.cloudinary.com') || !cleanUrl.includes('/upload/')) {
+                return cleanUrl;
+            }
+
+            // لا نضيف التحويل مرتين إذا كان الرابط مجهزاً بالفعل للتنزيل.
+            if (cleanUrl.includes('/upload/fl_attachment/')) return cleanUrl;
+
+            return cleanUrl.replace('/upload/', '/upload/fl_attachment/');
+        }
+
+        function triggerDirectDownload(url, filename = '') {
+            const downloadUrl = cloudinaryDownloadUrl(url);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.setAttribute('download', filename || 'download');
+            a.setAttribute('rel', 'noopener');
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
         window.downloadAudioFile = (audioId, url, title, price) => {
             const isFree = checkIsFree(price, 'audio');
 
@@ -1907,7 +1934,8 @@
                     .catch(err => console.error("Error updating downloads count:", err));
             }
 
-            window.open(url, '_blank');
+            // تنزيل مباشر من Cloudinary بدون فتح صفحة جديدة.
+            triggerDirectDownload(url, `${title || 'audio'}`);
         };
 
         window.downloadBook = (bookId, fileUrl, price, category) => {
@@ -1929,7 +1957,8 @@
                     .catch(err => console.error("Error updating downloads count:", err));
             }
 
-            window.open(fileUrl, '_blank');
+            // تنزيل مباشر من Cloudinary بدون فتح الملف في تبويب جديد.
+            triggerDirectDownload(fileUrl, `book-${bookId}`);
         };
 
         document.addEventListener('keydown', (e) => {
@@ -2810,7 +2839,7 @@ onAuthStateChanged(auth, async (user) => {
                 }
 
                 const videoActionBtns = item.videoUrl ? `
-                    <a class="btn-secondary course-action-btn" href="${item.videoUrl}" target="_blank" rel="noopener noreferrer" download>📥 تحميل</a>
+                    <a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(item.videoUrl)}" rel="noopener noreferrer" download>📥 تحميل</a>
                     <button class="btn-primary course-action-btn" type="button" onclick='shareVideo(${JSON.stringify(item.title)}, ${JSON.stringify(item.id)})'>🔗 مشاركة</button>
                 ` : '';
 
@@ -2945,11 +2974,17 @@ onAuthStateChanged(auth, async (user) => {
                             <button class="btn-danger course-action-btn" onclick="deleteCourse('${item.id}')">حذف 🗑️</button>
                         </div>` : '';
 
+                const isYouTubeVideo = item.videoUrl && (item.videoUrl.includes('youtube.com') || item.videoUrl.includes('youtu.be'));
                 const videoBtn = item.videoUrl ? `
                     <div class="video-container" style="margin:12px 0;">
-                        <iframe src="${getYouTubeEmbedUrl(item.videoUrl)}" allowfullscreen loading="lazy" style="width:100%; min-height:220px; border:0; border-radius:12px;"></iframe>
+                        ${isYouTubeVideo
+                            ? `<iframe src="${getYouTubeEmbedUrl(item.videoUrl)}" allowfullscreen loading="lazy" style="width:100%; min-height:220px; border:0; border-radius:12px;"></iframe>`
+                            : `<video controls preload="metadata" playsinline style="width:100%; min-height:220px; border:0; border-radius:12px; display:block;"><source src="${item.videoUrl}">متصفحك لا يدعم تشغيل هذا الفيديو.</video>`}
                     </div>` : '';
-                const fileBtn = item.fileUrl ? `<a class="btn-secondary course-action-btn" href="${item.fileUrl}" target="_blank" rel="noopener noreferrer" download>📥 تحميل الملف</a>` : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
+                const videoDownloadBtn = item.videoUrl && !isYouTubeVideo
+                    ? `<a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(item.videoUrl)}" rel="noopener noreferrer" download>📥 تحميل الفيديو</a>`
+                    : '';
+                const fileBtn = item.fileUrl ? `<a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(item.fileUrl)}" rel="noopener noreferrer" download>📥 تحميل الملف</a>` : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
 
                 const html = `
                     <div class="custom-card">
@@ -2960,6 +2995,7 @@ onAuthStateChanged(auth, async (user) => {
                         </div>
                         ${videoBtn}
                         <div class="course-actions-row">
+                            ${videoDownloadBtn}
                             ${fileBtn}
                             <button class="btn-primary course-action-btn" type="button" onclick='shareCourse(${JSON.stringify(item.title)}, ${JSON.stringify(item.id)})'>🔗 مشاركة</button>
                             ${adminBtns}
