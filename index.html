@@ -1739,7 +1739,7 @@
         let anonymousAuthReady = null;
         function ensureVisitorAuth() {
             if (auth.currentUser) return Promise.resolve(auth.currentUser);
-            if (!anonymousAuthReady) anonymousAuthReady = signInAnonymously(auth).then(result => result.user).catch(error => { anonymousAuthReady = null; throw error; });
+            if (!anonymousAuthReady) anonymousAuthReady = signInAnonymously(auth).then(result => result.user).catch(error => { anonymousAuthReady = null; console.error('عدادات الموقع: فشل تسجيل الدخول المجهول إلى Firebase. فعّل Anonymous في Firebase Authentication.', error); throw error; });
             return anonymousAuthReady;
         }
         async function recordMetric(metric, id = '') {
@@ -2141,10 +2141,11 @@ onAuthStateChanged(auth, async (user) => {
             if (isAdmin) return;
 
             const today = analyticsDate();
-            const lastVisit = localStorage.getItem('site_last_visit');
+            let lastVisit = null;
+            try { lastVisit = localStorage.getItem('site_last_visit'); } catch (_) {}
 
             if (lastVisit !== today) {
-                localStorage.setItem('site_last_visit', today);
+                try { localStorage.setItem('site_last_visit', today); } catch (_) {}
                 recordMetric('siteVisit').catch(err => console.warn('تعذر تسجيل الزيارة:', err));
                 trackAnalyticsEvent('visits');
             }
