@@ -2146,7 +2146,8 @@ onAuthStateChanged(auth, async (user) => {
         });
 
         const toggleAdminLogin = () => {
-            if (!auth.currentUser) {
+            // المستخدم المجهول (Anonymous) ليس حساب أدمن؛ يجب السماح له بفتح نافذة تسجيل الدخول.
+            if (!auth.currentUser || auth.currentUser.isAnonymous) {
                 document.getElementById('adminLoginModal').style.display = 'flex';
                 return;
             }
