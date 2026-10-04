@@ -1172,6 +1172,8 @@
                     <div class="analytics-card"><span>👁️ الزيارات</span><strong id="analyticsVisits">0</strong></div>
                     <div class="analytics-card"><span>📖 القراءات</span><strong id="analyticsReads">0</strong></div>
                     <div class="analytics-card"><span>🔗 المشاركات</span><strong id="analyticsShares">0</strong></div>
+                    <div class="analytics-card"><span>📥 التحميلات</span><strong id="analyticsDownloads">0</strong></div>
+                    <div class="analytics-card"><span>🎧 الاستماعات</span><strong id="analyticsListens">0</strong></div>
                     <div class="analytics-card"><span>⭐ التقييمات</span><strong id="analyticsRatings">0</strong></div>
                     <div class="analytics-card"><span>💬 الآراء</span><strong id="analyticsReviews">0</strong></div>
                     <div class="analytics-card"><span>📚 الأعمال</span><strong id="analyticsBooks">0</strong></div>
@@ -1717,8 +1719,7 @@
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
         import { getDatabase, ref, onValue, set, push, update, remove, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, getIdTokenResult, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-functions.js";
-
+        
         const firebaseConfig = {
           apiKey: "AIzaSyDGG6NxTUZl5lLqD7qPq_nE0h6c_jVbaNA",
           authDomain: "saeid-elshwadfy.firebaseapp.com",
@@ -1735,8 +1736,6 @@
         const analytics = getAnalytics(app);
         const db = getDatabase(app);
         const auth = getAuth(app);
-        const functions = getFunctions(app, 'us-central1');
-        const recordMetricCallable = httpsCallable(functions, 'recordMetric');
         let anonymousAuthReady = null;
         function ensureVisitorAuth() {
             if (auth.currentUser) return Promise.resolve(auth.currentUser);
@@ -1744,11 +1743,65 @@
             return anonymousAuthReady;
         }
         async function recordMetric(metric, id = '') {
+            if (isAdmin) return -1;
             await ensureVisitorAuth();
-            const result = await recordMetricCallable({ metric, id: String(id || '') });
-            return Number(result.data?.value || 0);
+            const key = String(id || '');
+
+            const increment = async (path) => {
+                const result = await runTransaction(ref(db, path), current => (Number(current) || 0) + 1);
+                return Number(result.snapshot.val() || 0);
+            };
+
+            if (metric === 'siteVisit') {
+                return increment('siteStats/visits');
+            }
+
+            if (metric === 'bookRead' && key && !key.startsWith('def')) {
+                return increment(`books/${key}/reads`);
+            }
+
+            if (metric === 'bookDownload' && key && !key.startsWith('def')) {
+                return increment(`books/${key}/downloads`);
+            }
+
+            if (metric === 'audioListen' && key && !key.startsWith('def')) {
+                return increment(`audioItems/${key}/listens`);
+            }
+
+            if (metric === 'audioDownload' && key && !key.startsWith('def')) {
+                return increment(`audioItems/${key}/downloads`);
+            }
+
+            if (metric === 'dailyEvent') {
+                const parts = key.split('|');
+                const date = parts[0];
+                const event = String(parts[1] || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+                if (!date || !event) return 0;
+                return increment(`siteStats/daily/${date}/${event}`);
+            }
+
+            if (metric === 'bookEvent') {
+                const parts = key.split('|');
+                const bookId = String(parts[0] || '');
+                const event = String(parts[1] || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+                if (!bookId || bookId.startsWith('def') || !event) return 0;
+                return increment(`books/${bookId}/${event}`);
+            }
+
+            // التقييمات تحتاج مسارين معاً، لذلك نحفظ العدد والمجموع مباشرة.
+            if (metric === 'bookRating') {
+                const parts = key.split('|');
+                const bookId = String(parts[0] || '');
+                const rating = Number(parts[1]);
+                if (!bookId || bookId.startsWith('def') || !Number.isFinite(rating) || rating < 1 || rating > 5) return 0;
+                await runTransaction(ref(db, `books/${bookId}/ratingSum`), current => (Number(current) || 0) + rating);
+                const result = await runTransaction(ref(db, `books/${bookId}/ratingCount`), current => (Number(current) || 0) + 1);
+                return Number(result.snapshot.val() || 0);
+            }
+
+            return 0;
         }
-        // تهيئة هوية زائر مجهول لتسجيل الإحصاءات عبر Cloud Functions فقط.
+        // تهيئة هوية زائر مجهول لتسجيل الإحصاءات مباشرة في Realtime Database.
         ensureVisitorAuth().catch(error => console.warn('تعذر تهيئة جلسة الزائر:', error));
 
         // ترميز آمن لكل البيانات القادمة من قاعدة البيانات أو نماذج الزوار قبل إدراجها في HTML.
@@ -1915,6 +1968,7 @@
             if (String(audioId).startsWith('def')) return;
             try {
                 const newValue = await recordMetric('audioListen', audioId);
+                trackListenAnalytics();
                 if (newValue >= 0) {
                     const el = document.getElementById(`audioCount_${audioId}`);
                     if (el) el.textContent = newValue.toLocaleString('ar-EG');
@@ -1953,6 +2007,7 @@
             if (!String(audioId).startsWith('def') && !isAdmin) {
                 recordMetric('audioDownload', audioId)
                     .then(value => {
+                        trackDownloadAnalytics();
                         const el = document.getElementById(`audioDownloadCount_${audioId}`);
                         if (el) el.textContent = value.toLocaleString('ar-EG');
                     })
@@ -1983,7 +2038,8 @@
             openedWindow.opener = null;
             if (!String(bookId).startsWith('def') && !isAdmin) {
                 recordMetric('bookDownload', bookId)
-                    .then(value => { const el = document.getElementById(`bookDownloadCount_${bookId}`); if (el) el.textContent = value.toLocaleString('ar-EG'); })
+                    .then(value => {
+                        trackDownloadAnalytics(); const el = document.getElementById(`bookDownloadCount_${bookId}`); if (el) el.textContent = value.toLocaleString('ar-EG'); })
                     .catch(err => console.error('تعذر تسجيل تحميل العمل الأدبي:', err));
             }
         };
@@ -2063,6 +2119,22 @@ onAuthStateChanged(auth, async (user) => {
             recordMetric('dailyEvent', `${date}|${safeEvent}|${amount}`).catch(() => {});
         }
 
+        function trackBookRead(bookId) {
+            if (isAdmin || !bookId || String(bookId).startsWith('def')) return Promise.resolve(-1);
+            return recordMetric('bookRead', bookId).then(value => {
+                trackAnalyticsEvent('reads');
+                return value;
+            });
+        }
+
+        function trackDownloadAnalytics() {
+            trackAnalyticsEvent('downloads');
+        }
+
+        function trackListenAnalytics() {
+            trackAnalyticsEvent('listens');
+        }
+
         function trackSiteVisits() {
             if (isAdmin) return;
 
@@ -2090,17 +2162,30 @@ onAuthStateChanged(auth, async (user) => {
             const ratings = allBooks.reduce((sum, b) => sum + Number(b.ratingCount || 0), 0);
             const ratingSum = allBooks.reduce((sum, b) => sum + Number(b.ratingSum || 0), 0);
             const reviewsCountEl = document.getElementById('analyticsReviews');
-            const sharesPromise = onValue(ref(db, 'siteStats/bookEvents'), snapshot => {
+            // إجمالي المشاركات يُقرأ من الإحصائية اليومية لأنها تجمع مشاركات الكتب
+            // والفيديوهات والدورات/الورش تحت نفس الحدث.
+            onValue(ref(db, 'siteStats/daily'), snapshot => {
+                const daily = snapshot.val() || {};
+                const totalShares = Object.values(daily).reduce((sum, day) => sum + Number(day?.shares || 0), 0);
+                const totalDownloads = Object.values(daily).reduce((sum, day) => sum + Number(day?.downloads || 0), 0);
+                const totalListens = Object.values(daily).reduce((sum, day) => sum + Number(day?.listens || 0), 0);
+                const sharesEl = document.getElementById('analyticsShares');
+                const downloadsEl = document.getElementById('analyticsDownloads');
+                const listensEl = document.getElementById('analyticsListens');
+                if (sharesEl) sharesEl.innerText = totalShares.toLocaleString('ar-EG');
+                if (downloadsEl) downloadsEl.innerText = totalDownloads.toLocaleString('ar-EG');
+                if (listensEl) listensEl.innerText = totalListens.toLocaleString('ar-EG');
+            }, { onlyOnce: true });
+
+            // القائمة التفصيلية تظل للكتب التي لديها إحصائية مستقلة، دون التأثير على إجمالي كل المشاركات.
+            onValue(ref(db, 'siteStats/bookEvents'), snapshot => {
                 const events = snapshot.val() || {};
-                let totalShares = 0;
                 const shares = [];
                 Object.entries(events).forEach(([bookId, data]) => {
                     const count = Number(data?.shares || 0);
-                    totalShares += count;
                     const book = allBooks.find(b => b.id === bookId);
                     if (count > 0) shares.push({ title: book?.title || bookId, count });
                 });
-                document.getElementById('analyticsShares').innerText = totalShares.toLocaleString('ar-EG');
                 renderAnalyticsList('analyticsTopShares', shares.sort((a,b) => b.count-a.count).slice(0,8), 'مشاركة');
             }, { onlyOnce: true });
 
@@ -2127,7 +2212,7 @@ onAuthStateChanged(auth, async (user) => {
                 for (let i=6;i>=0;i--) {
                     const d = new Date(now); d.setDate(now.getDate()-i);
                     const key = d.toISOString().slice(0,10);
-                    days.push({key, visits:Number(daily[key]?.visits||0), shares:Number(daily[key]?.shares||0), ratings:Number(daily[key]?.ratings||0), reviews:Number(daily[key]?.reviews||0)});
+                    days.push({key, visits:Number(daily[key]?.visits||0), shares:Number(daily[key]?.shares||0), downloads:Number(daily[key]?.downloads||0), listens:Number(daily[key]?.listens||0), reads:Number(daily[key]?.reads||0), ratings:Number(daily[key]?.ratings||0), reviews:Number(daily[key]?.reviews||0)});
                 }
                 renderDailyAnalytics(days);
             }, { onlyOnce: true });
@@ -2872,7 +2957,7 @@ onAuthStateChanged(auth, async (user) => {
                 }
 
                 const videoActionBtns = item.videoUrl ? `
-                    <a class="btn-secondary course-action-btn" href="${cloudinaryAttachmentUrl(item.videoUrl)}" target="_blank" rel="noopener noreferrer" download>📥 تحميل</a>
+                    <a class="btn-secondary course-action-btn" href="${cloudinaryAttachmentUrl(item.videoUrl)}" target="_blank" rel="noopener noreferrer" download onclick="trackDownloadAnalytics()">📥 تحميل</a>
                     <button class="btn-primary course-action-btn" type="button" onclick='shareVideo(${JSON.stringify(item.title)}, ${JSON.stringify(item.id)})'>🔗 مشاركة</button>
                 ` : '';
 
@@ -2911,6 +2996,7 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
+                    trackAnalyticsEvent('shares');
                     return;
                 } catch (err) {}
             }
@@ -2918,12 +3004,14 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
+                    trackAnalyticsEvent('shares');
                     alert('تم نسخ رابط مشاركة الفيديو. يمكنك مشاركته الآن. 📋');
                     return;
                 }
             } catch (err) {}
 
-            prompt(`انسخ رابط مشاركة فيديو «${title}» وأرسله:`, shareUrl);
+            const copied = prompt(`انسخ رابط مشاركة فيديو «${title}» وأرسله:`, shareUrl);
+            if (copied !== null) trackAnalyticsEvent('shares');
         };
 
         document.getElementById('addVideoForm')?.addEventListener('submit', async (e) => {
@@ -3024,7 +3112,7 @@ onAuthStateChanged(auth, async (user) => {
                             </div>`;
                     }
                 }
-                const fileBtn = item.fileUrl ? `<a class="btn-secondary course-action-btn" href="${cloudinaryAttachmentUrl(item.fileUrl)}" target="_blank" rel="noopener noreferrer" download>📥 تحميل الملف</a>` : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
+                const fileBtn = item.fileUrl ? `<a class="btn-secondary course-action-btn" href="${cloudinaryAttachmentUrl(item.fileUrl)}" target="_blank" rel="noopener noreferrer" download onclick="trackDownloadAnalytics()">📥 تحميل الملف</a>` : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
 
                 const html = `
                     <div class="custom-card">
@@ -3063,6 +3151,7 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
+                    trackAnalyticsEvent('shares');
                     return;
                 } catch (err) {}
             }
@@ -3070,12 +3159,14 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
+                    trackAnalyticsEvent('shares');
                     alert('تم نسخ رابط مشاركة الدورة/الورشة. يمكنك مشاركته الآن. 📋');
                     return;
                 }
             } catch (err) {}
 
-            prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
+            const copied = prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
+            if (copied !== null) trackAnalyticsEvent('shares');
         };
 
         document.getElementById('addCourseForm')?.addEventListener('submit', async (e) => {
@@ -3342,7 +3433,7 @@ onAuthStateChanged(auth, async (user) => {
                     : `<button class="btn-action btn-googleplay btn-disabled" disabled>📱 جوجل بلاي</button>`;
 
                 const readBtnHtml = customReadUrl 
-                    ? `<a href="${escapeHTML(customReadUrl)}" target="_blank" rel="noopener noreferrer" class="btn-action btn-read">📖 اقرأ مباشر</a>`
+                    ? `<a href="${escapeHTML(customReadUrl)}" target="_blank" rel="noopener noreferrer" class="btn-action btn-read" onclick='trackBookRead(${escapeHTML(JSON.stringify(String(book.id)))})'>📖 اقرأ مباشر</a>`
                     : (book.freePages?.length > 0 
                         ? `<button class="btn-action btn-read" onclick='openReader(${escapeHTML(JSON.stringify(String(book.id)))})'>📖 اقرأ مباشر</button>`
                         : `<button class="btn-action btn-read btn-disabled" disabled>📖 اقرأ مباشر</button>`);
@@ -3485,9 +3576,15 @@ onAuthStateChanged(auth, async (user) => {
 
             if (book.id && !book.id.startsWith('def') && !isAdmin && !readBooksSessionSet.has(book.id)) {
                 readBooksSessionSet.add(book.id);
-                recordMetric('bookRead', book.id)
-                    .then(() => trackBookAnalytics(book.id, 'reads'))
-                    .catch(err => console.error("خطأ في تحديث العداد:", err));
+                trackBookRead(book.id)
+                    .then(value => {
+                        if (value >= 0) {
+                            document.querySelectorAll(`#bookCard_${CSS.escape(String(book.id))} .book-badge-reads`).forEach(el => {
+                                el.textContent = `👁️ ${value.toLocaleString('ar-EG')}`;
+                            });
+                        }
+                    })
+                    .catch(err => console.error("خطأ في تحديث عداد القراءة:", err));
             }
 
             document.getElementById('readerTitle').innerText = book.title;
@@ -3565,7 +3662,8 @@ onAuthStateChanged(auth, async (user) => {
                 // ننتقل إلى الطريقة اليدوية بالأسفل.
             }
 
-            prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
+            const copied = prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
+            if (copied !== null) markShare();
         };
 
         window.rateBook = (bookId) => {
