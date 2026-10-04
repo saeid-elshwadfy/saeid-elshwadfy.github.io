@@ -1049,7 +1049,7 @@
             <a href="#aboutTitle" class="drawer-link-item">✨ مرحبا بكم في عالمي</a>
             <a href="#books" class="drawer-link-item">📚 الأعمال الأدبية</a>
             <a href="#audio" class="drawer-link-item">🎙️ الملفات الصوتية</a>
-            <a href="#videos" class="drawer-link-item">📺 مكتبة الفيديوهات</a>
+            <a href="#videos" class="drawer-link-item">📺 الفيديوهات</a>
             <a href="#services" class="drawer-link-item">🛠️ الخدمات</a>
             <a href="#courses" class="drawer-link-item">🎓 الدورات والورش</a>
             <a href="#store" class="drawer-link-item">🛍️ المنتجات الرقمية</a>
@@ -1073,7 +1073,7 @@
             <nav class="nav-links">
                 <a href="#books">الأعمال الأدبية</a>
                 <a href="#audio">الصوتيات</a>
-                <a href="#videos">مكتبة الفيديوهات</a>
+                <a href="#videos">الفيديوهات</a>
                 <a href="#services">الخدمات الأدبية</a>
                 <a href="#courses">الدورات والورش</a>
                 <a href="#store">المنتجات الرقمية</a>
@@ -1697,13 +1697,17 @@
             if (event.target === termsModal) termsModal.style.display = 'none';
         });
 
-        // تفويض الأحداث للتشغيل السريع وتجنب الثقل
-        document.addEventListener('play', function(e) {
-            if (e.target && e.target.tagName === 'AUDIO') {
-                const audioId = e.target.getAttribute('data-id');
-                if (audioId && window.trackAudioListen) {
-                    window.trackAudioListen(audioId);
-                }
+        // لا نسجل الاستماع بمجرد الضغط على تشغيل؛ يجب سماع جزء فعلي من الملف.
+        document.addEventListener('timeupdate', function(e) {
+            const player = e.target;
+            if (!player || player.tagName !== 'AUDIO' || player.dataset.listenCounted === '1') return;
+            const audioId = player.getAttribute('data-id');
+            const duration = Number(player.duration);
+            const threshold = Number.isFinite(duration) && duration > 0
+                ? Math.min(15, Math.max(3, duration * 0.25)) : 15;
+            if (audioId && player.currentTime >= threshold && window.trackAudioListen) {
+                player.dataset.listenCounted = '1';
+                window.trackAudioListen(audioId);
             }
         }, true);
     </script>
@@ -1731,6 +1735,23 @@
         const db = getDatabase(app);
         const auth = getAuth(app);
 
+        // ترميز آمن لكل البيانات القادمة من قاعدة البيانات أو نماذج الزوار قبل إدراجها في HTML.
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[ch]);
+        }
+
+        // السماح بروابط HTTP/HTTPS فقط عند فتح ملفات أو روابط خارجية.
+        function safeHttpUrl(value) {
+            const raw = String(value || '').trim();
+            if (!raw || raw === '#') return '';
+            try {
+                const parsed = new URL(raw, window.location.href);
+                return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
+            } catch (_) { return ''; }
+        }
+
         // دالة تحسين الصور تلقائياً لسرعة التحميل
         function optimizeCloudinaryUrl(url, width = 400) {
             if (url && url.includes('cloudinary.com') && !url.includes('q_auto')) {
@@ -1740,6 +1761,11 @@
         }
 
         async function uploadToCloudinary(file) {
+            if (!file || !file.size) throw new Error('يرجى اختيار ملف صالح.');
+            const allowedMime = /^(image\/(jpeg|png|webp|gif)|audio\/(mpeg|mp3|wav|ogg|mp4|aac|x-m4a)|video\/(mp4|webm|quicktime)|application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document))$/i;
+            if (!allowedMime.test(file.type || '')) throw new Error('نوع الملف غير مسموح به. استخدم صورة أو ملف صوت أو فيديو أو PDF أو Word.');
+            const maxBytes = 100 * 1024 * 1024;
+            if (file.size > maxBytes) throw new Error('حجم الملف أكبر من الحد المسموح (100 ميجابايت).');
             const CLOUD_NAME = "uha8a6rd";
             const UPLOAD_PRESET = "saeid-elshwadfy";
 
@@ -1765,7 +1791,9 @@
             }
 
             const data = await response.json();
-            return data.secure_url;
+            const uploadedUrl = safeHttpUrl(data.secure_url);
+            if (!uploadedUrl) throw new Error('استجابة الرفع لا تحتوي على رابط آمن صالح.');
+            return uploadedUrl;
         }
 
         function getYouTubeEmbedUrl(url) {
@@ -1846,19 +1874,25 @@
         document.querySelectorAll('.drawer-link-item').forEach(link => link.addEventListener('click', closeDrawer));
 
         const listenedAudioSet = new Set();
-        window.trackAudioListen = (audioId) => {
-            if (!audioId || listenedAudioSet.has(audioId) || isAdmin) return;
+        window.trackAudioListen = async (audioId) => {
+            if (!audioId || isAdmin) return;
+            const sessionKey = `audio_listened_${audioId}`;
+            let alreadyCounted = listenedAudioSet.has(audioId);
+            try { alreadyCounted = alreadyCounted || sessionStorage.getItem(sessionKey) === '1'; } catch (_) {}
+            if (alreadyCounted) return;
             listenedAudioSet.add(audioId);
-
-            const el = document.getElementById(`audioCount_${audioId}`);
-            if (el) {
-                const cur = parseInt(el.innerText) || 0;
-                el.innerText = (cur + 1).toLocaleString('ar-EG');
-            }
-
-            if (!audioId.startsWith('def')) {
-                runTransaction(ref(db, `audioItems/${audioId}/listens`), currentListens => (currentListens ?? 0) + 1)
-                    .catch(err => console.error("Error updating listens count:", err));
+            try { sessionStorage.setItem(sessionKey, '1'); } catch (_) {}
+            if (String(audioId).startsWith('def')) return;
+            try {
+                const result = await runTransaction(ref(db, `audioItems/${audioId}/listens`), current => (Number(current) || 0) + 1);
+                if (result.committed) {
+                    const el = document.getElementById(`audioCount_${audioId}`);
+                    if (el) el.textContent = Number(result.snapshot.val() || 0).toLocaleString('ar-EG');
+                }
+            } catch (err) {
+                listenedAudioSet.delete(audioId);
+                try { sessionStorage.removeItem(sessionKey); } catch (_) {}
+                console.error('تعذر تسجيل الاستماع:', err);
             }
         };
 
@@ -1874,23 +1908,26 @@
                 return;
             }
 
-            if (!url || url === '#' || url.trim() === '') {
-                alert("عذراً، رابط الملف غير متوفر حالياً.");
+            const safeUrl = safeHttpUrl(url);
+            if (!safeUrl || safeUrl === '#') {
+                alert("عذراً، رابط الملف غير متوفر أو غير آمن حالياً.");
                 return;
             }
 
-            const el = document.getElementById(`audioDownloadCount_${audioId}`);
-            if (el) {
-                const cur = parseInt(el.innerText) || 0;
-                el.innerText = (cur + 1).toLocaleString('ar-EG');
+            const openedWindow = window.open(safeUrl, '_blank');
+            if (!openedWindow) {
+                alert('يرجى السماح بالنوافذ المنبثقة لهذا الموقع حتى يفتح رابط التحميل.');
+                return;
             }
-
-            if (!audioId.startsWith('def') && !isAdmin) {
-                runTransaction(ref(db, `audioItems/${audioId}/downloads`), currentDownloads => (currentDownloads ?? 0) + 1)
-                    .catch(err => console.error("Error updating downloads count:", err));
+            openedWindow.opener = null;
+            if (!String(audioId).startsWith('def') && !isAdmin) {
+                runTransaction(ref(db, `audioItems/${audioId}/downloads`), current => (Number(current) || 0) + 1)
+                    .then(result => {
+                        const el = document.getElementById(`audioDownloadCount_${audioId}`);
+                        if (result.committed && el) el.textContent = Number(result.snapshot.val() || 0).toLocaleString('ar-EG');
+                    })
+                    .catch(err => console.error('تعذر تسجيل تحميل الملف الصوتي:', err));
             }
-
-            window.open(url, '_blank');
         };
 
         window.downloadBook = (bookId, fileUrl, price, category) => {
@@ -1902,17 +1939,23 @@
                 return;
             }
 
-            if (!fileUrl || fileUrl === '#') {
-                alert("عذراً، رابط الملف غير متوفر حالياً.");
+            const safeUrl = safeHttpUrl(fileUrl);
+            if (!safeUrl || safeUrl === '#') {
+                alert("عذراً، رابط الملف غير متوفر أو غير آمن حالياً.");
                 return;
             }
 
-            if (!bookId.startsWith('def') && !isAdmin) {
-                runTransaction(ref(db, `books/${bookId}/downloads`), currentDownloads => (currentDownloads ?? 0) + 1)
-                    .catch(err => console.error("Error updating downloads count:", err));
+            const openedWindow = window.open(safeUrl, '_blank');
+            if (!openedWindow) {
+                alert('يرجى السماح بالنوافذ المنبثقة لهذا الموقع حتى يفتح رابط التحميل.');
+                return;
             }
-
-            window.open(fileUrl, '_blank');
+            openedWindow.opener = null;
+            if (!String(bookId).startsWith('def') && !isAdmin) {
+                runTransaction(ref(db, `books/${bookId}/downloads`), current => (Number(current) || 0) + 1)
+                    .then(result => { const el = document.getElementById(`bookDownloadCount_${bookId}`); if (result.committed && el) el.textContent = Number(result.snapshot.val() || 0).toLocaleString('ar-EG'); })
+                    .catch(err => console.error('تعذر تسجيل تحميل العمل الأدبي:', err));
+            }
         };
 
         document.addEventListener('keydown', (e) => {
@@ -1961,11 +2004,17 @@ onAuthStateChanged(auth, async (user) => {
             // طلبات النشر حساسة؛ لا نقرأها من قاعدة البيانات إلا للأدمن.
             if (isAdmin) {
                 loadPublishRequests();
+            } else if (publishRequestsUnsubscribe) {
+                publishRequestsUnsubscribe();
+                publishRequestsUnsubscribe = null;
+                publishRequestsListenerAttached = false;
+                const requestsContainer = document.getElementById('publishRequestsContainer');
+                if (requestsContainer) requestsContainer.textContent = 'سجّل دخول الأدمن لعرض طلبات النشر.';
             }
         });
 
         function analyticsDate() {
-            return new Date().toISOString().slice(0, 10);
+            return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
         }
 
         function trackAnalyticsEvent(eventName, amount = 1) {
@@ -2227,6 +2276,10 @@ onAuthStateChanged(auth, async (user) => {
                 alert("هذه العملية متاحة للأدمن فقط.");
                 return;
             }
+            if (String(newPass).length < 8) {
+                alert('كلمة السر الجديدة يجب ألا تقل عن 8 أحرف.');
+                return;
+            }
 
             btn.innerText = "جاري التحديث... ⏳";
             btn.disabled = true;
@@ -2304,10 +2357,11 @@ onAuthStateChanged(auth, async (user) => {
         });
 
         let publishRequestsListenerAttached = false;
+        let publishRequestsUnsubscribe = null;
         function loadPublishRequests() {
             if (publishRequestsListenerAttached || !isAdmin) return;
             publishRequestsListenerAttached = true;
-            onValue(ref(db, 'publishRequests'), (snapshot) => {
+            publishRequestsUnsubscribe = onValue(ref(db, 'publishRequests'), (snapshot) => {
             const data = snapshot.val();
             const container = document.getElementById('publishRequestsContainer');
             allRequests = [];
@@ -2325,15 +2379,15 @@ onAuthStateChanged(auth, async (user) => {
                 allRequests.forEach(req => {
                     html += `
                         <tr>
-                            <td><strong>${req.authorName}</strong></td>
-                            <td><a href="https://wa.me/${req.authorPhone}" target="_blank" style="color:#25d366; text-decoration:none;">💬 ${req.authorPhone}</a></td>
-                            <td>${req.title}</td>
-                            <td>${req.category}</td>
-                            <td>${req.desc}</td>
+                            <td><strong>${escapeHTML(req.authorName)}</strong></td>
+                            <td><a href="https://wa.me/${String(req.authorPhone || '').replace(/[^0-9]/g, '')}" target="_blank" rel="noopener noreferrer" style="color:#25d366; text-decoration:none;">💬 ${escapeHTML(req.authorPhone)}</a></td>
+                            <td>${escapeHTML(req.title)}</td>
+                            <td>${escapeHTML(req.category)}</td>
+                            <td>${escapeHTML(req.desc)}</td>
                             <td>
                                 <div style="display:flex; gap:5px;">
-                                    <button class="btn-primary" style="padding:4px 8px; font-size:0.8rem;" onclick="approveRequest('${req.id}')">قبول ونشر ✅</button>
-                                    <button class="btn-danger" style="padding:4px 8px; font-size:0.8rem;" onclick="rejectRequest('${req.id}')">رفض ❌</button>
+                                    <button class="btn-primary" style="padding:4px 8px; font-size:0.8rem;" onclick="approveRequest('${escapeHTML(req.id)}')">قبول ونشر ✅</button>
+                                    <button class="btn-danger" style="padding:4px 8px; font-size:0.8rem;" onclick="rejectRequest('${escapeHTML(req.id)}')">رفض ❌</button>
                                 </div>
                             </td>
                         </tr>
@@ -2648,21 +2702,21 @@ onAuthStateChanged(auth, async (user) => {
                 // تحسين preload="metadata" لسرعة الاستجابة ومنع التأخير
                 const audioPlayerHtml = (item.audioUrl && item.audioUrl.trim() !== '#' && item.audioUrl.trim() !== '') ? `
                     <div class="audio-player-container">
-                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${item.id}" src="${item.audioUrl}">
+                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${escapeHTML(item.id)}" src="${escapeHTML(safeHttpUrl(item.audioUrl))}">
                             عذراً، متصفحك لا يدعم تشغيل هذا الملف الصوتي.
                         </audio>
                     </div>` : `<p style="color:var(--text-muted); font-size:0.85rem; margin:8px 0;">الملف الصوتي غير متوفر حالياً.</p>`;
 
                 const downloadBtnHtml = (item.audioUrl && item.audioUrl.trim() !== '#' && item.audioUrl.trim() !== '') ? `
-                    <button class="btn-action btn-download" style="margin-top:8px;" onclick="downloadAudioFile('${item.id}', '${item.audioUrl}', '${item.title}', '${item.price ?? 'مجاني'}')">${isFree ? '📥 تحميل مجاني' : '📲 شراء وتحميل الملف الصوتي'}</button>
+                    <button class="btn-action btn-download" style="margin-top:8px;" onclick='downloadAudioFile(${escapeHTML(JSON.stringify(String(item.id)))}, ${escapeHTML(JSON.stringify(safeHttpUrl(item.audioUrl)))}, ${escapeHTML(JSON.stringify(String(item.title || "")))}, ${escapeHTML(JSON.stringify(String(item.price ?? "مجاني")))})'>${isFree ? '📥 تحميل مجاني' : '📲 شراء وتحميل الملف الصوتي'}</button>
                 ` : '';
 
                 const html = `
                     <div class="custom-card">
                         <div>
-                            <h3 style="font-family: 'Amiri', serif; font-size: 1.4rem; color: var(--accent-color);">${item.title}</h3>
-                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 10px 0;">${item.desc}</p>
-                            <div class="card-price">سعر التحميل: ${item.price ?? 'مجاني'}</div>
+                            <h3 style="font-family: 'Amiri', serif; font-size: 1.4rem; color: var(--accent-color);">${escapeHTML(item.title)}</h3>
+                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 10px 0;">${escapeHTML(item.desc)}</p>
+                            <div class="card-price">سعر التحميل: ${escapeHTML(item.price ?? 'مجاني')}</div>
                             <div class="book-stats" style="margin: 8px 0;">
                                 <span>🎧 <strong id="audioCount_${item.id}">${item.listens ?? 0}</strong> استماع</span>
                                 <span>📥 <strong id="audioDownloadCount_${item.id}">${item.downloads ?? 0}</strong> تحميل</span>
@@ -2750,7 +2804,7 @@ onAuthStateChanged(auth, async (user) => {
                     id: 'defV1', 
                     title: '🎬 الحلقة التشويقية - ظلال لا تنام', 
                     desc: 'عرض تشويقي كرتوني يستعرض مقتطفات ومشاعر درامية من أزقة رواية ظلال لا تنام.', 
-                    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', 
+                    videoUrl: '', 
                     updatedAt: 1 
                 }];
             renderVideos();
@@ -2774,7 +2828,7 @@ onAuthStateChanged(auth, async (user) => {
                     </div>` : '';
 
                 let playerHtml = '';
-                if (item.videoUrl && (item.videoUrl.includes('youtube.com') || item.videoUrl.includes('youtu.be'))) {
+                if (item.videoUrl && safeHttpUrl(item.videoUrl) && (item.videoUrl.includes('youtube.com') || item.videoUrl.includes('youtu.be'))) {
                     const embedUrl = getYouTubeEmbedUrl(item.videoUrl);
                     playerHtml = `
                         <div class="video-container">
@@ -2911,7 +2965,7 @@ onAuthStateChanged(auth, async (user) => {
             const data = snapshot.val();
             allCourses = data
                 ? Object.entries(data).map(([id, c]) => ({ id, ...c })).sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
-                : [{ id: 'defC1', title: '🖊️ ورشة صناعة الحبكة الروائية', desc: 'دورة تدريبية مكثفة لتعلم أسرار بناء الحبكة الروائية، تطوير الشخصيات، وصنع التشويق.', price: 'الاشتراك: 250 جنيه', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', updatedAt: 1 }];
+                : [{ id: 'defC1', title: '🖊️ ورشة صناعة الحبكة الروائية', desc: 'دورة تدريبية مكثفة لتعلم أسرار بناء الحبكة الروائية، تطوير الشخصيات، وصنع التشويق.', price: 'الاشتراك: 250 جنيه', videoUrl: '', updatedAt: 1 }];
             renderCourses();
         });
 
@@ -2943,7 +2997,7 @@ onAuthStateChanged(auth, async (user) => {
                             </div>`;
                     }
                 }
-                const fileBtn = item.fileUrl ? `<a class="btn-secondary course-action-btn" href="${item.fileUrl}" target="_blank" rel="noopener noreferrer" download>📥 تحميل الملف</a>` : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
+                const fileBtn = item.fileUrl ? `<a class="btn-secondary course-action-btn" href="${item.fileUrl}" target="_blank" rel="noopener noreferrer" download> 🔛 تشغيل (مفتاح ON)</a>` : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
 
                 const html = `
                     <div class="custom-card">
@@ -3240,43 +3294,50 @@ onAuthStateChanged(auth, async (user) => {
                         <button class="btn-danger" onclick="deleteBook('${book.id}')">حذف 🗑️</button>
                     </div>` : '';
 
-                const audioPlayerHtml = (book.audioUrl && book.audioUrl.trim() !== '' && book.audioUrl !== '#') ? `
+                const bookAudioUrl = safeHttpUrl(book.audioUrl);
+                const audioPlayerHtml = bookAudioUrl ? `
                     <div class="audio-player-container">
                         <span style="font-size:0.82rem; color:var(--accent-color); font-weight:bold; display:block; margin-bottom:4px;">🎧 الإلقاء الصوتي للرواية</span>
-                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${book.id}" src="${book.audioUrl}">
+                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${escapeHTML(book.id)}" src="${escapeHTML(bookAudioUrl)}">
                             عذراً، متصفحك لا يدعم تشغيل هذا الملف الصوتي.
                         </audio>
                     </div>` : '';
 
-                const amazonBtnHtml = book.amazonLink 
-                    ? `<a href="${book.amazonLink}" target="_blank" class="btn-action btn-amazon">📦 أمازون</a>`
+                const amazonUrl = safeHttpUrl(book.amazonLink);
+                const googlePlayUrl = safeHttpUrl(book.googlePlayLink);
+                const customReadUrl = safeHttpUrl(book.customLink);
+                const amazonBtnHtml = amazonUrl 
+                    ? `<a href="${escapeHTML(amazonUrl)}" target="_blank" rel="noopener noreferrer" class="btn-action btn-amazon">📦 أمازون</a>`
                     : `<button class="btn-action btn-amazon btn-disabled" disabled>📦 أمازون</button>`;
 
-                const googleBtnHtml = book.googlePlayLink 
-                    ? `<a href="${book.googlePlayLink}" target="_blank" class="btn-action btn-googleplay">📱 جوجل بلاي</a>`
+                const googleBtnHtml = googlePlayUrl 
+                    ? `<a href="${escapeHTML(googlePlayUrl)}" target="_blank" rel="noopener noreferrer" class="btn-action btn-googleplay">📱 جوجل بلاي</a>`
                     : `<button class="btn-action btn-googleplay btn-disabled" disabled>📱 جوجل بلاي</button>`;
 
-                const readBtnHtml = book.customLink 
-                    ? `<a href="${book.customLink}" target="_blank" class="btn-action btn-read">📖 اقرأ مباشر</a>`
+                const readBtnHtml = customReadUrl 
+                    ? `<a href="${escapeHTML(customReadUrl)}" target="_blank" rel="noopener noreferrer" class="btn-action btn-read">📖 اقرأ مباشر</a>`
                     : (book.freePages?.length > 0 
-                        ? `<button class="btn-action btn-read" onclick="openReader('${book.id}')">📖 اقرأ مباشر</button>`
+                        ? `<button class="btn-action btn-read" onclick='openReader(${escapeHTML(JSON.stringify(String(book.id)))})'>📖 اقرأ مباشر</button>`
                         : `<button class="btn-action btn-read btn-disabled" disabled>📖 اقرأ مباشر</button>`);
 
                 const isFree = checkIsFree(book.price, book.category);
 
-                const downloadBtnHtml = (book.fileUrl && book.fileUrl !== '#') 
-                    ? `<button class="btn-action btn-download" onclick="downloadBook('${book.id}', '${book.fileUrl}', '${book.price}', '${book.category}')">${isFree ? '📥 تحميل مجاني' : '📄 تحميل الملف'}</button>`
+                const bookFileUrl = safeHttpUrl(book.fileUrl);
+                const bookDownloadArgs = [book.id, bookFileUrl, book.price, book.category].map(value => escapeHTML(JSON.stringify(String(value ?? '')))).join(', ');
+                const downloadBtnHtml = bookFileUrl
+                    ? `<button class="btn-action btn-download" onclick='downloadBook(${bookDownloadArgs})'>${isFree ? '📥 تحميل مجاني' : '📄 تحميل الملف'}</button>`
                     : `<button class="btn-action btn-download btn-disabled" disabled>📄 تحميل الملف</button>`;
 
                 const buySectionHtml = isFree 
-                    ? `<button class="btn-action btn-buy-full" onclick="downloadBook('${book.id}', '${book.fileUrl}', '${book.price}', '${book.category}')">📥 تحميل النسخة المجانية المباشرة</button>`
+                    ? (bookFileUrl ? `<button class="btn-action btn-buy-full" onclick='downloadBook(${bookDownloadArgs})'>📥 تحميل النسخة المجانية المباشرة</button>` : `<button class="btn-action btn-buy-full btn-disabled" disabled>📥 تحميل النسخة المجانية المباشرة</button>`)
                     : `<button class="btn-action btn-buy-full" onclick="toggleBuyDropdown('${book.id}')">🛒 شراء الكتاب الآن ▾</button>
                        <div id="buyDropdown_${book.id}" class="buy-dropdown-menu">
                            <button class="btn-buy-paper" onclick="openBuyModal('${book.id}', 'paper')">شراء نسخة ورقية 📦</button>
                            <button class="btn-buy-digital" onclick="openBuyModal('${book.id}', 'digital')">شراء نسخة رقمية 📲</button>
                        </div>`;
 
-                const optimizedCoverUrl = optimizeCloudinaryUrl(book.coverUrl, 400);
+                const safeCoverUrl = safeHttpUrl(book.coverUrl);
+                const optimizedCoverUrl = safeCoverUrl ? optimizeCloudinaryUrl(safeCoverUrl, 400) : '';
                 const categoryName = getCategoryName(book.category);
 
                 const cardHtml = `
@@ -3285,17 +3346,17 @@ onAuthStateChanged(auth, async (user) => {
                             <div class="book-cover">
                                 <span class="book-badge-cat">🏷️ ${categoryName}</span>
                                 <span class="book-badge-reads">👁️ ${book.reads ?? 0}</span>
-                                ${book.coverUrl ? `<img src="${optimizedCoverUrl}" alt="${book.title}" loading="lazy" onclick='openReader(${JSON.stringify(book.id)})' style="cursor:pointer;" title="اضغط لبدء القراءة">` : `<span onclick='openReader(${JSON.stringify(book.id)})' style="cursor:pointer;" title="اضغط لبدء القراءة">14 × 20</span>`}
+                                ${safeCoverUrl ? `<img src="${escapeHTML(optimizedCoverUrl)}" alt="${escapeHTML(book.title)}" loading="lazy" onclick='openReader(${escapeHTML(JSON.stringify(book.id))})' style="cursor:pointer;" title="اضغط لبدء القراءة">` : `<span onclick='openReader(${JSON.stringify(book.id)})' style="cursor:pointer;" title="اضغط لبدء القراءة">14 × 20</span>`}
                             </div>
-                            <h3 style="font-family: 'Amiri', serif; font-size: 1.45rem; color: var(--accent-color);">${book.title}</h3>
-                            <div class="book-author-tag">تأليف: ${book.author ?? 'سعيد الشوادفي'}</div>
-                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px; text-align: justify; text-justify: inter-word;">${book.desc}</p>
+                            <h3 style="font-family: 'Amiri', serif; font-size: 1.45rem; color: var(--accent-color);">${escapeHTML(book.title)}</h3>
+                            <div class="book-author-tag">تأليف: ${escapeHTML(book.author ?? 'سعيد الشوادفي')}</div>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px; text-align: justify; text-justify: inter-word;">${escapeHTML(book.desc)}</p>
                             
                             ${audioPlayerHtml}
 
                             <div class="book-stats">
                                 <span>👁️ ${book.reads ?? 0} قراءة</span>
-                                <span>📥 ${book.downloads ?? 0} تحميل</span>
+                                <span>📥 <strong id="bookDownloadCount_${escapeHTML(book.id)}">${Number(book.downloads ?? 0).toLocaleString('ar-EG')}</strong> تحميل</span>
                                 <span>⭐ ${avgRating} / 5</span>
                             </div>
 
@@ -3523,16 +3584,23 @@ onAuthStateChanged(auth, async (user) => {
                     if (container) container.innerHTML = '';
                     if (data) {
                         Object.values(data).forEach(rev => {
-                            const revHtml = `
-                                <div class="review-card">
-                                    <div class="review-header">
-                                        <span class="review-author">👤 ${rev.name}</span>
-                                        <span class="review-date">${rev.date ?? ''}</span>
-                                    </div>
-                                    <div class="review-text">${rev.text}</div>
-                                </div>
-                            `;
-                            container?.insertAdjacentHTML('beforeend', revHtml);
+                            if (!container) return;
+                            const card = document.createElement('div');
+                            card.className = 'review-card';
+                            const header = document.createElement('div');
+                            header.className = 'review-header';
+                            const author = document.createElement('span');
+                            author.className = 'review-author';
+                            author.textContent = `👤 ${String(rev.name || 'قارئ')}`;
+                            const date = document.createElement('span');
+                            date.className = 'review-date';
+                            date.textContent = String(rev.date || '');
+                            const body = document.createElement('div');
+                            body.className = 'review-text';
+                            body.textContent = String(rev.text || '');
+                            header.append(author, date);
+                            card.append(header, body);
+                            container.appendChild(card);
                         });
                     } else if (container) {
                         container.innerHTML = '<p style="color: var(--text-muted); text-align: center;">لا توجد مراجعات مكتوبة بعد. كن أول من يكتب رأيه! ✍️</p>';
