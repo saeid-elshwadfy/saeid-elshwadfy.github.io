@@ -2981,9 +2981,6 @@ onAuthStateChanged(auth, async (user) => {
                             ? `<iframe src="${getYouTubeEmbedUrl(item.videoUrl)}" allowfullscreen loading="lazy" style="width:100%; min-height:220px; border:0; border-radius:12px;"></iframe>`
                             : `<video controls preload="metadata" playsinline style="width:100%; min-height:220px; border:0; border-radius:12px; display:block;"><source src="${item.videoUrl}">متصفحك لا يدعم تشغيل هذا الفيديو.</video>`}
                     </div>` : '';
-                const videoDownloadBtn = item.videoUrl && !isYouTubeVideo
-                    ? `<a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(item.videoUrl)}" rel="noopener noreferrer" download>📥 تحميل الفيديو</a>`
-                    : '';
                 const fileBtn = item.fileUrl ? `<a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(item.fileUrl)}" rel="noopener noreferrer" download>📥 تحميل الملف</a>` : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
 
                 const html = `
@@ -2995,7 +2992,6 @@ onAuthStateChanged(auth, async (user) => {
                         </div>
                         ${videoBtn}
                         <div class="course-actions-row">
-                            ${videoDownloadBtn}
                             ${fileBtn}
                             <button class="btn-primary course-action-btn" type="button" onclick='shareCourse(${JSON.stringify(item.title)}, ${JSON.stringify(item.id)})'>🔗 مشاركة</button>
                             ${adminBtns}
