@@ -1049,7 +1049,7 @@
             <a href="#aboutTitle" class="drawer-link-item">✨ مرحبا بكم في عالمي</a>
             <a href="#books" class="drawer-link-item">📚 الأعمال الأدبية</a>
             <a href="#audio" class="drawer-link-item">🎙️ الملفات الصوتية</a>
-            <a href="#videos" class="drawer-link-item">📺 الفيديوهات</a>
+            <a href="#videos" class="drawer-link-item">📺 مكتبة الفيديوهات</a>
             <a href="#services" class="drawer-link-item">🛠️ الخدمات</a>
             <a href="#courses" class="drawer-link-item">🎓 الدورات والورش</a>
             <a href="#store" class="drawer-link-item">🛍️ المنتجات الرقمية</a>
@@ -1073,7 +1073,7 @@
             <nav class="nav-links">
                 <a href="#books">الأعمال الأدبية</a>
                 <a href="#audio">الصوتيات</a>
-                <a href="#videos">الفيديوهات</a>
+                <a href="#videos">مكتبة الفيديوهات</a>
                 <a href="#services">الخدمات الأدبية</a>
                 <a href="#courses">الدورات والورش</a>
                 <a href="#store">المنتجات الرقمية</a>
@@ -1172,8 +1172,6 @@
                     <div class="analytics-card"><span>👁️ الزيارات</span><strong id="analyticsVisits">0</strong></div>
                     <div class="analytics-card"><span>📖 القراءات</span><strong id="analyticsReads">0</strong></div>
                     <div class="analytics-card"><span>🔗 المشاركات</span><strong id="analyticsShares">0</strong></div>
-                    <div class="analytics-card"><span>📥 التحميلات</span><strong id="analyticsDownloads">0</strong></div>
-                    <div class="analytics-card"><span>🎧 الاستماعات</span><strong id="analyticsListens">0</strong></div>
                     <div class="analytics-card"><span>⭐ التقييمات</span><strong id="analyticsRatings">0</strong></div>
                     <div class="analytics-card"><span>💬 الآراء</span><strong id="analyticsReviews">0</strong></div>
                     <div class="analytics-card"><span>📚 الأعمال</span><strong id="analyticsBooks">0</strong></div>
@@ -1699,17 +1697,13 @@
             if (event.target === termsModal) termsModal.style.display = 'none';
         });
 
-        // لا نسجل الاستماع بمجرد الضغط على تشغيل؛ يجب سماع جزء فعلي من الملف.
-        document.addEventListener('timeupdate', function(e) {
-            const player = e.target;
-            if (!player || player.tagName !== 'AUDIO' || player.dataset.listenCounted === '1') return;
-            const audioId = player.getAttribute('data-id');
-            const duration = Number(player.duration);
-            const threshold = Number.isFinite(duration) && duration > 0
-                ? Math.min(15, Math.max(3, duration * 0.25)) : 15;
-            if (audioId && player.currentTime >= threshold && window.trackAudioListen) {
-                player.dataset.listenCounted = '1';
-                window.trackAudioListen(audioId);
+        // تفويض الأحداث للتشغيل السريع وتجنب الثقل
+        document.addEventListener('play', function(e) {
+            if (e.target && e.target.tagName === 'AUDIO') {
+                const audioId = e.target.getAttribute('data-id');
+                if (audioId && window.trackAudioListen) {
+                    window.trackAudioListen(audioId);
+                }
             }
         }, true);
     </script>
@@ -1718,8 +1712,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
         import { getDatabase, ref, onValue, set, push, update, remove, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, getIdTokenResult, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-        
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, getIdTokenResult } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+
         const firebaseConfig = {
           apiKey: "AIzaSyDGG6NxTUZl5lLqD7qPq_nE0h6c_jVbaNA",
           authDomain: "saeid-elshwadfy.firebaseapp.com",
@@ -1736,106 +1730,6 @@
         const analytics = getAnalytics(app);
         const db = getDatabase(app);
         const auth = getAuth(app);
-        let anonymousAuthReady = null;
-        function ensureVisitorAuth() {
-            if (auth.currentUser) return Promise.resolve(auth.currentUser);
-            if (!anonymousAuthReady) anonymousAuthReady = signInAnonymously(auth).then(result => result.user).catch(error => { anonymousAuthReady = null; console.error('عدادات الموقع: فشل تسجيل الدخول المجهول إلى Firebase. فعّل Anonymous في Firebase Authentication.', error); throw error; });
-            return anonymousAuthReady;
-        }
-        async function recordMetric(metric, id = '') {
-            if (isAdmin) return -1;
-            await ensureVisitorAuth();
-            const key = String(id || '');
-
-            const increment = async (path) => {
-                const result = await runTransaction(ref(db, path), current => (Number(current) || 0) + 1);
-                return Number(result.snapshot.val() || 0);
-            };
-
-            if (metric === 'siteVisit') {
-                return increment('siteStats/visits');
-            }
-
-            if (metric === 'bookRead' && key && !key.startsWith('def')) {
-                return increment(`books/${key}/reads`);
-            }
-
-            if (metric === 'bookDownload' && key && !key.startsWith('def')) {
-                return increment(`books/${key}/downloads`);
-            }
-
-            if (metric === 'audioListen' && key && !key.startsWith('def')) {
-                return increment(`audioItems/${key}/listens`);
-            }
-
-            if (metric === 'audioDownload' && key && !key.startsWith('def')) {
-                return increment(`audioItems/${key}/downloads`);
-            }
-
-            if (metric === 'dailyEvent') {
-                const parts = key.split('|');
-                const date = parts[0];
-                const event = String(parts[1] || '').replace(/[^a-zA-Z0-9_-]/g, '_');
-                if (!date || !event) return 0;
-                const amount = Math.max(1, Number(parts[2] || 1));
-                const result = await runTransaction(ref(db, `siteStats/daily/${date}/${event}`), current => (Number(current) || 0) + amount);
-                return Number(result.snapshot.val() || 0);
-            }
-
-            if (metric === 'bookEvent') {
-                const parts = key.split('|');
-                const bookId = String(parts[0] || '');
-                const event = String(parts[1] || '').replace(/[^a-zA-Z0-9_-]/g, '_');
-                if (!bookId || bookId.startsWith('def') || !event) return 0;
-                return increment(`siteStats/bookEvents/${bookId}/${event}`);
-            }
-
-            // التقييمات تحتاج مسارين معاً، لذلك نحفظ العدد والمجموع مباشرة.
-            if (metric === 'bookRating') {
-                const parts = key.split('|');
-                const bookId = String(parts[0] || '');
-                const rating = Number(parts[1]);
-                if (!bookId || bookId.startsWith('def') || !Number.isFinite(rating) || rating < 1 || rating > 5) return 0;
-                await runTransaction(ref(db, `books/${bookId}/ratingSum`), current => (Number(current) || 0) + rating);
-                const result = await runTransaction(ref(db, `books/${bookId}/ratingCount`), current => (Number(current) || 0) + 1);
-                return Number(result.snapshot.val() || 0);
-            }
-
-            return 0;
-        }
-        // تهيئة هوية زائر مجهول لتسجيل الإحصاءات مباشرة في Realtime Database.
-        ensureVisitorAuth().catch(error => console.warn('تعذر تهيئة جلسة الزائر:', error));
-
-        // ترميز آمن لكل البيانات القادمة من قاعدة البيانات أو نماذج الزوار قبل إدراجها في HTML.
-        function escapeHTML(value) {
-            return String(value ?? '').replace(/[&<>"']/g, ch => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-            })[ch]);
-        }
-
-        // السماح بروابط HTTP/HTTPS فقط عند فتح ملفات أو روابط خارجية.
-        function safeHttpUrl(value) {
-            const raw = String(value || '').trim();
-            if (!raw || raw === '#') return '';
-            try {
-                const parsed = new URL(raw, window.location.href);
-                return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
-            } catch (_) { return ''; }
-        }
-
-        // إنشاء رابط تنزيل مباشر لملفات Cloudinary دون التأثير على روابط العرض والتشغيل.
-        function cloudinaryAttachmentUrl(value) {
-            const safeUrl = safeHttpUrl(value);
-            if (!safeUrl) return '';
-            try {
-                const parsed = new URL(safeUrl);
-                const isCloudinary = parsed.hostname === 'res.cloudinary.com' || parsed.hostname.endsWith('.cloudinary.com');
-                if (!isCloudinary || !parsed.pathname.includes('/upload/')) return safeUrl;
-                if (/\/upload\/(?:[^/]*,)*fl_attachment(?:[,/]|$)/i.test(parsed.pathname)) return parsed.href;
-                parsed.pathname = parsed.pathname.replace('/upload/', '/upload/fl_attachment/');
-                return parsed.href;
-            } catch (_) { return safeUrl; }
-        }
 
         // دالة تحسين الصور تلقائياً لسرعة التحميل
         function optimizeCloudinaryUrl(url, width = 400) {
@@ -1846,11 +1740,6 @@
         }
 
         async function uploadToCloudinary(file) {
-            if (!file || !file.size) throw new Error('يرجى اختيار ملف صالح.');
-            const allowedMime = /^(image\/(jpeg|png|webp|gif)|audio\/(mpeg|mp3|wav|ogg|mp4|aac|x-m4a)|video\/(mp4|webm|quicktime)|application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document))$/i;
-            if (!allowedMime.test(file.type || '')) throw new Error('نوع الملف غير مسموح به. استخدم صورة أو ملف صوت أو فيديو أو PDF أو Word.');
-            const maxBytes = 100 * 1024 * 1024;
-            if (file.size > maxBytes) throw new Error('حجم الملف أكبر من الحد المسموح (100 ميجابايت).');
             const CLOUD_NAME = "uha8a6rd";
             const UPLOAD_PRESET = "saeid-elshwadfy";
 
@@ -1876,9 +1765,7 @@
             }
 
             const data = await response.json();
-            const uploadedUrl = safeHttpUrl(data.secure_url);
-            if (!uploadedUrl) throw new Error('استجابة الرفع لا تحتوي على رابط آمن صالح.');
-            return uploadedUrl;
+            return data.secure_url;
         }
 
         function getYouTubeEmbedUrl(url) {
@@ -1928,6 +1815,7 @@
         let allRequests = [];
         let currentFilter = 'all';
         let currentAudioFilter = 'all';
+        const ADMIN_EMAIL = 'saeidelshwadfy@gmail.com';
         let isAdmin = false;
         let selectedBookForBuy = null;
         let selectedOrderType = 'digital';
@@ -1959,26 +1847,19 @@
         document.querySelectorAll('.drawer-link-item').forEach(link => link.addEventListener('click', closeDrawer));
 
         const listenedAudioSet = new Set();
-        window.trackAudioListen = async (audioId) => {
-            if (!audioId || isAdmin) return;
-            const sessionKey = `audio_listened_${audioId}`;
-            let alreadyCounted = listenedAudioSet.has(audioId);
-            try { alreadyCounted = alreadyCounted || sessionStorage.getItem(sessionKey) === '1'; } catch (_) {}
-            if (alreadyCounted) return;
+        window.trackAudioListen = (audioId) => {
+            if (!audioId || listenedAudioSet.has(audioId) || isAdmin) return;
             listenedAudioSet.add(audioId);
-            try { sessionStorage.setItem(sessionKey, '1'); } catch (_) {}
-            if (String(audioId).startsWith('def')) return;
-            try {
-                const newValue = await recordMetric('audioListen', audioId);
-                trackListenAnalytics();
-                if (newValue >= 0) {
-                    const el = document.getElementById(`audioCount_${audioId}`);
-                    if (el) el.textContent = newValue.toLocaleString('ar-EG');
-                }
-            } catch (err) {
-                listenedAudioSet.delete(audioId);
-                try { sessionStorage.removeItem(sessionKey); } catch (_) {}
-                console.error('تعذر تسجيل الاستماع:', err);
+
+            const el = document.getElementById(`audioCount_${audioId}`);
+            if (el) {
+                const cur = parseInt(el.innerText) || 0;
+                el.innerText = (cur + 1).toLocaleString('ar-EG');
+            }
+
+            if (!audioId.startsWith('def')) {
+                runTransaction(ref(db, `audioItems/${audioId}/listens`), currentListens => (currentListens ?? 0) + 1)
+                    .catch(err => console.error("Error updating listens count:", err));
             }
         };
 
@@ -1994,27 +1875,23 @@
                 return;
             }
 
-            const safeUrl = cloudinaryAttachmentUrl(url);
-            if (!safeUrl || safeUrl === '#') {
-                alert("عذراً، رابط الملف غير متوفر أو غير آمن حالياً.");
+            if (!url || url === '#' || url.trim() === '') {
+                alert("عذراً، رابط الملف غير متوفر حالياً.");
                 return;
             }
 
-            const openedWindow = window.open(safeUrl, '_blank');
-            if (!openedWindow) {
-                alert('يرجى السماح بالنوافذ المنبثقة لهذا الموقع حتى يفتح رابط التحميل.');
-                return;
+            const el = document.getElementById(`audioDownloadCount_${audioId}`);
+            if (el) {
+                const cur = parseInt(el.innerText) || 0;
+                el.innerText = (cur + 1).toLocaleString('ar-EG');
             }
-            openedWindow.opener = null;
-            if (!String(audioId).startsWith('def') && !isAdmin) {
-                recordMetric('audioDownload', audioId)
-                    .then(value => {
-                        trackDownloadAnalytics();
-                        const el = document.getElementById(`audioDownloadCount_${audioId}`);
-                        if (el) el.textContent = value.toLocaleString('ar-EG');
-                    })
-                    .catch(err => console.error('تعذر تسجيل تحميل الملف الصوتي:', err));
+
+            if (!audioId.startsWith('def') && !isAdmin) {
+                runTransaction(ref(db, `audioItems/${audioId}/downloads`), currentDownloads => (currentDownloads ?? 0) + 1)
+                    .catch(err => console.error("Error updating downloads count:", err));
             }
+
+            window.open(url, '_blank');
         };
 
         window.downloadBook = (bookId, fileUrl, price, category) => {
@@ -2026,24 +1903,17 @@
                 return;
             }
 
-            const safeUrl = cloudinaryAttachmentUrl(fileUrl);
-            if (!safeUrl || safeUrl === '#') {
-                alert("عذراً، رابط الملف غير متوفر أو غير آمن حالياً.");
+            if (!fileUrl || fileUrl === '#') {
+                alert("عذراً، رابط الملف غير متوفر حالياً.");
                 return;
             }
 
-            const openedWindow = window.open(safeUrl, '_blank');
-            if (!openedWindow) {
-                alert('يرجى السماح بالنوافذ المنبثقة لهذا الموقع حتى يفتح رابط التحميل.');
-                return;
+            if (!bookId.startsWith('def') && !isAdmin) {
+                runTransaction(ref(db, `books/${bookId}/downloads`), currentDownloads => (currentDownloads ?? 0) + 1)
+                    .catch(err => console.error("Error updating downloads count:", err));
             }
-            openedWindow.opener = null;
-            if (!String(bookId).startsWith('def') && !isAdmin) {
-                recordMetric('bookDownload', bookId)
-                    .then(value => {
-                        trackDownloadAnalytics(); const el = document.getElementById(`bookDownloadCount_${bookId}`); if (el) el.textContent = value.toLocaleString('ar-EG'); })
-                    .catch(err => console.error('تعذر تسجيل تحميل العمل الأدبي:', err));
-            }
+
+            window.open(fileUrl, '_blank');
         };
 
         document.addEventListener('keydown', (e) => {
@@ -2061,18 +1931,8 @@
         });
 
 onAuthStateChanged(auth, async (user) => {
-            // صلاحية الأدمن تعتمد على Custom Claim من Firebase فقط، وليس على البريد الإلكتروني أو تسجيل الدخول وحده.
-            isAdmin = false;
-
-            if (user) {
-                try {
-                    const tokenResult = await getIdTokenResult(user, true);
-                    isAdmin = tokenResult.claims?.admin === true;
-                } catch (err) {
-                    console.error("تعذر التحقق من صلاحية الأدمن:", err);
-                    isAdmin = false;
-                }
-            }
+            // حساب الإدارة المحدد للموقع هو بريد المالك فقط، بدون الحاجة إلى Custom Claim.
+            isAdmin = !!user && String(user.email || '').trim().toLowerCase() === ADMIN_EMAIL;
 
             const adminPanel = document.getElementById('adminPanel');
             const adminToggleBtn = document.getElementById('adminToggleBtn');
@@ -2092,24 +1952,19 @@ onAuthStateChanged(auth, async (user) => {
             // طلبات النشر حساسة؛ لا نقرأها من قاعدة البيانات إلا للأدمن.
             if (isAdmin) {
                 loadPublishRequests();
-            } else if (publishRequestsUnsubscribe) {
-                publishRequestsUnsubscribe();
-                publishRequestsUnsubscribe = null;
-                publishRequestsListenerAttached = false;
-                const requestsContainer = document.getElementById('publishRequestsContainer');
-                if (requestsContainer) requestsContainer.textContent = 'سجّل دخول الأدمن لعرض طلبات النشر.';
             }
         });
 
         function analyticsDate() {
-            return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+            return new Date().toISOString().slice(0, 10);
         }
 
         function trackAnalyticsEvent(eventName, amount = 1) {
             if (isAdmin) return;
             const date = analyticsDate();
             const safeEvent = String(eventName).replace(/[^a-zA-Z0-9_-]/g, '_');
-            recordMetric('dailyEvent', `${date}|${safeEvent}|${amount}`).catch(err => console.warn('تعذر تسجيل الإحصائية:', err));
+            runTransaction(ref(db, `siteStats/daily/${date}/${safeEvent}`), current => (current ?? 0) + amount)
+                .catch(err => console.warn('تعذر تسجيل الإحصائية:', err));
         }
 
         function trackBookAnalytics(bookId, eventName, amount = 1) {
@@ -2117,36 +1972,21 @@ onAuthStateChanged(auth, async (user) => {
             const date = analyticsDate();
             const safeBookId = String(bookId).replace(/[^a-zA-Z0-9_-]/g, '_');
             const safeEvent = String(eventName).replace(/[^a-zA-Z0-9_-]/g, '_');
-            recordMetric('bookEvent', `${safeBookId}|${safeEvent}|${amount}`).catch(err => console.warn('تعذر تسجيل إحصائية العمل:', err));
-            recordMetric('dailyEvent', `${date}|${safeEvent}|${amount}`).catch(() => {});
-        }
-
-        function trackBookRead(bookId) {
-            if (isAdmin || !bookId || String(bookId).startsWith('def')) return Promise.resolve(-1);
-            return recordMetric('bookRead', bookId).then(value => {
-                trackAnalyticsEvent('reads');
-                return value;
-            });
-        }
-
-        function trackDownloadAnalytics() {
-            trackAnalyticsEvent('downloads');
-        }
-
-        function trackListenAnalytics() {
-            trackAnalyticsEvent('listens');
+            runTransaction(ref(db, `siteStats/bookEvents/${safeBookId}/${safeEvent}`), current => (current ?? 0) + amount)
+                .catch(err => console.warn('تعذر تسجيل إحصائية العمل:', err));
+            runTransaction(ref(db, `siteStats/daily/${date}/${safeEvent}`), current => (current ?? 0) + amount)
+                .catch(() => {});
         }
 
         function trackSiteVisits() {
             if (isAdmin) return;
 
             const today = analyticsDate();
-            let lastVisit = null;
-            try { lastVisit = localStorage.getItem('site_last_visit'); } catch (_) {}
+            const lastVisit = localStorage.getItem('site_last_visit');
 
             if (lastVisit !== today) {
-                try { localStorage.setItem('site_last_visit', today); } catch (_) {}
-                recordMetric('siteVisit').catch(err => console.warn('تعذر تسجيل الزيارة:', err));
+                localStorage.setItem('site_last_visit', today);
+                runTransaction(ref(db, 'siteStats/visits'), currentVisits => (currentVisits ?? 0) + 1);
                 trackAnalyticsEvent('visits');
             }
         }
@@ -2165,30 +2005,17 @@ onAuthStateChanged(auth, async (user) => {
             const ratings = allBooks.reduce((sum, b) => sum + Number(b.ratingCount || 0), 0);
             const ratingSum = allBooks.reduce((sum, b) => sum + Number(b.ratingSum || 0), 0);
             const reviewsCountEl = document.getElementById('analyticsReviews');
-            // إجمالي المشاركات يُقرأ من الإحصائية اليومية لأنها تجمع مشاركات الكتب
-            // والفيديوهات والدورات/الورش تحت نفس الحدث.
-            onValue(ref(db, 'siteStats/daily'), snapshot => {
-                const daily = snapshot.val() || {};
-                const totalShares = Object.values(daily).reduce((sum, day) => sum + Number(day?.shares || 0), 0);
-                const totalDownloads = Object.values(daily).reduce((sum, day) => sum + Number(day?.downloads || 0), 0);
-                const totalListens = Object.values(daily).reduce((sum, day) => sum + Number(day?.listens || 0), 0);
-                const sharesEl = document.getElementById('analyticsShares');
-                const downloadsEl = document.getElementById('analyticsDownloads');
-                const listensEl = document.getElementById('analyticsListens');
-                if (sharesEl) sharesEl.innerText = totalShares.toLocaleString('ar-EG');
-                if (downloadsEl) downloadsEl.innerText = totalDownloads.toLocaleString('ar-EG');
-                if (listensEl) listensEl.innerText = totalListens.toLocaleString('ar-EG');
-            }, { onlyOnce: true });
-
-            // القائمة التفصيلية تظل للكتب التي لديها إحصائية مستقلة، دون التأثير على إجمالي كل المشاركات.
-            onValue(ref(db, 'siteStats/bookEvents'), snapshot => {
+            const sharesPromise = onValue(ref(db, 'siteStats/bookEvents'), snapshot => {
                 const events = snapshot.val() || {};
+                let totalShares = 0;
                 const shares = [];
                 Object.entries(events).forEach(([bookId, data]) => {
                     const count = Number(data?.shares || 0);
+                    totalShares += count;
                     const book = allBooks.find(b => b.id === bookId);
                     if (count > 0) shares.push({ title: book?.title || bookId, count });
                 });
+                document.getElementById('analyticsShares').innerText = totalShares.toLocaleString('ar-EG');
                 renderAnalyticsList('analyticsTopShares', shares.sort((a,b) => b.count-a.count).slice(0,8), 'مشاركة');
             }, { onlyOnce: true });
 
@@ -2215,7 +2042,7 @@ onAuthStateChanged(auth, async (user) => {
                 for (let i=6;i>=0;i--) {
                     const d = new Date(now); d.setDate(now.getDate()-i);
                     const key = d.toISOString().slice(0,10);
-                    days.push({key, visits:Number(daily[key]?.visits||0), shares:Number(daily[key]?.shares||0), downloads:Number(daily[key]?.downloads||0), listens:Number(daily[key]?.listens||0), reads:Number(daily[key]?.reads||0), ratings:Number(daily[key]?.ratings||0), reviews:Number(daily[key]?.reviews||0)});
+                    days.push({key, visits:Number(daily[key]?.visits||0), shares:Number(daily[key]?.shares||0), ratings:Number(daily[key]?.ratings||0), reviews:Number(daily[key]?.reviews||0)});
                 }
                 renderDailyAnalytics(days);
             }, { onlyOnce: true });
@@ -2350,11 +2177,11 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
 
-                // لا يكفي نجاح تسجيل الدخول؛ يجب أن يحمل الحساب Custom Claim باسم admin=true.
-                const tokenResult = await getIdTokenResult(auth.currentUser, true);
-                if (tokenResult.claims?.admin !== true) {
+                // حساب الإدارة المحدد للموقع هو بريد المالك فقط.
+                const signedInEmail = String(auth.currentUser?.email || '').trim().toLowerCase();
+                if (signedInEmail !== ADMIN_EMAIL) {
                     await signOut(auth);
-                    throw new Error("هذا الحساب ليس حساب أدمن مصرحاً له بالدخول إلى لوحة التحكم.");
+                    throw new Error("هذا الحساب مسجل دخول، لكنه لا يملك صلاحيات الإدارة.");
                 }
 
                 document.getElementById('adminLoginModal').style.display = 'none';
@@ -2389,10 +2216,6 @@ onAuthStateChanged(auth, async (user) => {
             
             if (!auth.currentUser || !isAdmin) {
                 alert("هذه العملية متاحة للأدمن فقط.");
-                return;
-            }
-            if (String(newPass).length < 8) {
-                alert('كلمة السر الجديدة يجب ألا تقل عن 8 أحرف.');
                 return;
             }
 
@@ -2472,11 +2295,10 @@ onAuthStateChanged(auth, async (user) => {
         });
 
         let publishRequestsListenerAttached = false;
-        let publishRequestsUnsubscribe = null;
         function loadPublishRequests() {
             if (publishRequestsListenerAttached || !isAdmin) return;
             publishRequestsListenerAttached = true;
-            publishRequestsUnsubscribe = onValue(ref(db, 'publishRequests'), (snapshot) => {
+            onValue(ref(db, 'publishRequests'), (snapshot) => {
             const data = snapshot.val();
             const container = document.getElementById('publishRequestsContainer');
             allRequests = [];
@@ -2494,15 +2316,15 @@ onAuthStateChanged(auth, async (user) => {
                 allRequests.forEach(req => {
                     html += `
                         <tr>
-                            <td><strong>${escapeHTML(req.authorName)}</strong></td>
-                            <td><a href="https://wa.me/${String(req.authorPhone || '').replace(/[^0-9]/g, '')}" target="_blank" rel="noopener noreferrer" style="color:#25d366; text-decoration:none;">💬 ${escapeHTML(req.authorPhone)}</a></td>
-                            <td>${escapeHTML(req.title)}</td>
-                            <td>${escapeHTML(req.category)}</td>
-                            <td>${escapeHTML(req.desc)}</td>
+                            <td><strong>${req.authorName}</strong></td>
+                            <td><a href="https://wa.me/${req.authorPhone}" target="_blank" style="color:#25d366; text-decoration:none;">💬 ${req.authorPhone}</a></td>
+                            <td>${req.title}</td>
+                            <td>${req.category}</td>
+                            <td>${req.desc}</td>
                             <td>
                                 <div style="display:flex; gap:5px;">
-                                    <button class="btn-primary" style="padding:4px 8px; font-size:0.8rem;" onclick="approveRequest('${escapeHTML(req.id)}')">قبول ونشر ✅</button>
-                                    <button class="btn-danger" style="padding:4px 8px; font-size:0.8rem;" onclick="rejectRequest('${escapeHTML(req.id)}')">رفض ❌</button>
+                                    <button class="btn-primary" style="padding:4px 8px; font-size:0.8rem;" onclick="approveRequest('${req.id}')">قبول ونشر ✅</button>
+                                    <button class="btn-danger" style="padding:4px 8px; font-size:0.8rem;" onclick="rejectRequest('${req.id}')">رفض ❌</button>
                                 </div>
                             </td>
                         </tr>
@@ -2719,7 +2541,7 @@ onAuthStateChanged(auth, async (user) => {
             const isFree = checkIsFree(price, 'product');
             
             if (isFree && fileUrl && fileUrl !== '#') {
-                window.open(cloudinaryAttachmentUrl(fileUrl), '_blank');
+                window.open(fileUrl, '_blank');
                 return;
             }
 
@@ -2817,21 +2639,21 @@ onAuthStateChanged(auth, async (user) => {
                 // تحسين preload="metadata" لسرعة الاستجابة ومنع التأخير
                 const audioPlayerHtml = (item.audioUrl && item.audioUrl.trim() !== '#' && item.audioUrl.trim() !== '') ? `
                     <div class="audio-player-container">
-                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${escapeHTML(item.id)}" src="${escapeHTML(safeHttpUrl(item.audioUrl))}">
+                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${item.id}" src="${item.audioUrl}">
                             عذراً، متصفحك لا يدعم تشغيل هذا الملف الصوتي.
                         </audio>
                     </div>` : `<p style="color:var(--text-muted); font-size:0.85rem; margin:8px 0;">الملف الصوتي غير متوفر حالياً.</p>`;
 
                 const downloadBtnHtml = (item.audioUrl && item.audioUrl.trim() !== '#' && item.audioUrl.trim() !== '') ? `
-                    <button class="btn-action btn-download" style="margin-top:8px;" onclick='downloadAudioFile(${escapeHTML(JSON.stringify(String(item.id)))}, ${escapeHTML(JSON.stringify(safeHttpUrl(item.audioUrl)))}, ${escapeHTML(JSON.stringify(String(item.title || "")))}, ${escapeHTML(JSON.stringify(String(item.price ?? "مجاني")))})'>${isFree ? '📥 تحميل مجاني' : '📲 شراء وتحميل الملف الصوتي'}</button>
+                    <button class="btn-action btn-download" style="margin-top:8px;" onclick="downloadAudioFile('${item.id}', '${item.audioUrl}', '${item.title}', '${item.price ?? 'مجاني'}')">${isFree ? '📥 تحميل مجاني' : '📲 شراء وتحميل الملف الصوتي'}</button>
                 ` : '';
 
                 const html = `
                     <div class="custom-card">
                         <div>
-                            <h3 style="font-family: 'Amiri', serif; font-size: 1.4rem; color: var(--accent-color);">${escapeHTML(item.title)}</h3>
-                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 10px 0;">${escapeHTML(item.desc)}</p>
-                            <div class="card-price">سعر التحميل: ${escapeHTML(item.price ?? 'مجاني')}</div>
+                            <h3 style="font-family: 'Amiri', serif; font-size: 1.4rem; color: var(--accent-color);">${item.title}</h3>
+                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 10px 0;">${item.desc}</p>
+                            <div class="card-price">سعر التحميل: ${item.price ?? 'مجاني'}</div>
                             <div class="book-stats" style="margin: 8px 0;">
                                 <span>🎧 <strong id="audioCount_${item.id}">${item.listens ?? 0}</strong> استماع</span>
                                 <span>📥 <strong id="audioDownloadCount_${item.id}">${item.downloads ?? 0}</strong> تحميل</span>
@@ -2919,7 +2741,7 @@ onAuthStateChanged(auth, async (user) => {
                     id: 'defV1', 
                     title: '🎬 الحلقة التشويقية - ظلال لا تنام', 
                     desc: 'عرض تشويقي كرتوني يستعرض مقتطفات ومشاعر درامية من أزقة رواية ظلال لا تنام.', 
-                    videoUrl: '', 
+                    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', 
                     updatedAt: 1 
                 }];
             renderVideos();
@@ -2943,7 +2765,7 @@ onAuthStateChanged(auth, async (user) => {
                     </div>` : '';
 
                 let playerHtml = '';
-                if (item.videoUrl && safeHttpUrl(item.videoUrl) && (item.videoUrl.includes('youtube.com') || item.videoUrl.includes('youtu.be'))) {
+                if (item.videoUrl && (item.videoUrl.includes('youtube.com') || item.videoUrl.includes('youtu.be'))) {
                     const embedUrl = getYouTubeEmbedUrl(item.videoUrl);
                     playerHtml = `
                         <div class="video-container">
@@ -2960,7 +2782,7 @@ onAuthStateChanged(auth, async (user) => {
                 }
 
                 const videoActionBtns = item.videoUrl ? `
-                    <a class="btn-secondary course-action-btn" href="${cloudinaryAttachmentUrl(item.videoUrl)}" target="_blank" rel="noopener noreferrer" download onclick="trackDownloadAnalytics()">📥 تحميل</a>
+                    <a class="btn-secondary course-action-btn" href="${item.videoUrl}" target="_blank" rel="noopener noreferrer" download>📥 تحميل</a>
                     <button class="btn-primary course-action-btn" type="button" onclick='shareVideo(${JSON.stringify(item.title)}, ${JSON.stringify(item.id)})'>🔗 مشاركة</button>
                 ` : '';
 
@@ -2999,7 +2821,6 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
-                    trackAnalyticsEvent('shares');
                     return;
                 } catch (err) {}
             }
@@ -3007,14 +2828,12 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
-                    trackAnalyticsEvent('shares');
                     alert('تم نسخ رابط مشاركة الفيديو. يمكنك مشاركته الآن. 📋');
                     return;
                 }
             } catch (err) {}
 
-            const copied = prompt(`انسخ رابط مشاركة فيديو «${title}» وأرسله:`, shareUrl);
-            if (copied !== null) trackAnalyticsEvent('shares');
+            prompt(`انسخ رابط مشاركة فيديو «${title}» وأرسله:`, shareUrl);
         };
 
         document.getElementById('addVideoForm')?.addEventListener('submit', async (e) => {
@@ -3083,7 +2902,7 @@ onAuthStateChanged(auth, async (user) => {
             const data = snapshot.val();
             allCourses = data
                 ? Object.entries(data).map(([id, c]) => ({ id, ...c })).sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
-                : [{ id: 'defC1', title: '🖊️ ورشة صناعة الحبكة الروائية', desc: 'دورة تدريبية مكثفة لتعلم أسرار بناء الحبكة الروائية، تطوير الشخصيات، وصنع التشويق.', price: 'الاشتراك: 250 جنيه', videoUrl: '', updatedAt: 1 }];
+                : [{ id: 'defC1', title: '🖊️ ورشة صناعة الحبكة الروائية', desc: 'دورة تدريبية مكثفة لتعلم أسرار بناء الحبكة الروائية، تطوير الشخصيات، وصنع التشويق.', price: 'الاشتراك: 250 جنيه', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', updatedAt: 1 }];
             renderCourses();
         });
 
@@ -3098,24 +2917,11 @@ onAuthStateChanged(auth, async (user) => {
                             <button class="btn-danger course-action-btn" onclick="deleteCourse('${item.id}')">حذف 🗑️</button>
                         </div>` : '';
 
-                let videoBtn = '';
-                if (item.videoUrl) {
-                    if (item.videoUrl.includes('youtube.com') || item.videoUrl.includes('youtu.be')) {
-                        videoBtn = `
-                            <div class="video-container" style="margin:12px 0;">
-                                <iframe src="${getYouTubeEmbedUrl(item.videoUrl)}" allowfullscreen loading="lazy" style="width:100%; min-height:220px; border:0; border-radius:12px;"></iframe>
-                            </div>`;
-                    } else {
-                        videoBtn = `
-                            <div class="video-container" style="margin:12px 0;">
-                                <video controls preload="metadata" playsinline style="width:100%; min-height:220px; border:0; border-radius:12px; display:block;">
-                                    <source src="${item.videoUrl}">
-                                    متصفحك لا يدعم تشغيل هذا الفيديو.
-                                </video>
-                            </div>`;
-                    }
-                }
-                const fileBtn = item.fileUrl ? `<a class="btn-secondary course-action-btn" href="${cloudinaryAttachmentUrl(item.fileUrl)}" target="_blank" rel="noopener noreferrer" download onclick="trackDownloadAnalytics()">📥 تحميل الملف</a>` : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
+                const videoBtn = item.videoUrl ? `
+                    <div class="video-container" style="margin:12px 0;">
+                        <iframe src="${getYouTubeEmbedUrl(item.videoUrl)}" allowfullscreen loading="lazy" style="width:100%; min-height:220px; border:0; border-radius:12px;"></iframe>
+                    </div>` : '';
+                const fileBtn = item.fileUrl ? `<a class="btn-secondary course-action-btn" href="${item.fileUrl}" target="_blank" rel="noopener noreferrer" download>📥 تحميل الملف</a>` : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
 
                 const html = `
                     <div class="custom-card">
@@ -3154,7 +2960,6 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
-                    trackAnalyticsEvent('shares');
                     return;
                 } catch (err) {}
             }
@@ -3162,14 +2967,12 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
-                    trackAnalyticsEvent('shares');
                     alert('تم نسخ رابط مشاركة الدورة/الورشة. يمكنك مشاركته الآن. 📋');
                     return;
                 }
             } catch (err) {}
 
-            const copied = prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
-            if (copied !== null) trackAnalyticsEvent('shares');
+            prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
         };
 
         document.getElementById('addCourseForm')?.addEventListener('submit', async (e) => {
@@ -3415,50 +3218,43 @@ onAuthStateChanged(auth, async (user) => {
                         <button class="btn-danger" onclick="deleteBook('${book.id}')">حذف 🗑️</button>
                     </div>` : '';
 
-                const bookAudioUrl = safeHttpUrl(book.audioUrl);
-                const audioPlayerHtml = bookAudioUrl ? `
+                const audioPlayerHtml = (book.audioUrl && book.audioUrl.trim() !== '' && book.audioUrl !== '#') ? `
                     <div class="audio-player-container">
                         <span style="font-size:0.82rem; color:var(--accent-color); font-weight:bold; display:block; margin-bottom:4px;">🎧 الإلقاء الصوتي للرواية</span>
-                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${escapeHTML(book.id)}" src="${escapeHTML(bookAudioUrl)}">
+                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${book.id}" src="${book.audioUrl}">
                             عذراً، متصفحك لا يدعم تشغيل هذا الملف الصوتي.
                         </audio>
                     </div>` : '';
 
-                const amazonUrl = safeHttpUrl(book.amazonLink);
-                const googlePlayUrl = safeHttpUrl(book.googlePlayLink);
-                const customReadUrl = safeHttpUrl(book.customLink);
-                const amazonBtnHtml = amazonUrl 
-                    ? `<a href="${escapeHTML(amazonUrl)}" target="_blank" rel="noopener noreferrer" class="btn-action btn-amazon">📦 أمازون</a>`
+                const amazonBtnHtml = book.amazonLink 
+                    ? `<a href="${book.amazonLink}" target="_blank" class="btn-action btn-amazon">📦 أمازون</a>`
                     : `<button class="btn-action btn-amazon btn-disabled" disabled>📦 أمازون</button>`;
 
-                const googleBtnHtml = googlePlayUrl 
-                    ? `<a href="${escapeHTML(googlePlayUrl)}" target="_blank" rel="noopener noreferrer" class="btn-action btn-googleplay">📱 جوجل بلاي</a>`
+                const googleBtnHtml = book.googlePlayLink 
+                    ? `<a href="${book.googlePlayLink}" target="_blank" class="btn-action btn-googleplay">📱 جوجل بلاي</a>`
                     : `<button class="btn-action btn-googleplay btn-disabled" disabled>📱 جوجل بلاي</button>`;
 
-                const readBtnHtml = customReadUrl 
-                    ? `<a href="${escapeHTML(customReadUrl)}" target="_blank" rel="noopener noreferrer" class="btn-action btn-read" onclick='trackBookRead(${escapeHTML(JSON.stringify(String(book.id)))})'>📖 اقرأ مباشر</a>`
+                const readBtnHtml = book.customLink 
+                    ? `<a href="${book.customLink}" target="_blank" class="btn-action btn-read">📖 اقرأ مباشر</a>`
                     : (book.freePages?.length > 0 
-                        ? `<button class="btn-action btn-read" onclick='openReader(${escapeHTML(JSON.stringify(String(book.id)))})'>📖 اقرأ مباشر</button>`
+                        ? `<button class="btn-action btn-read" onclick="openReader('${book.id}')">📖 اقرأ مباشر</button>`
                         : `<button class="btn-action btn-read btn-disabled" disabled>📖 اقرأ مباشر</button>`);
 
                 const isFree = checkIsFree(book.price, book.category);
 
-                const bookFileUrl = safeHttpUrl(book.fileUrl);
-                const bookDownloadArgs = [book.id, bookFileUrl, book.price, book.category].map(value => escapeHTML(JSON.stringify(String(value ?? '')))).join(', ');
-                const downloadBtnHtml = bookFileUrl
-                    ? `<button class="btn-action btn-download" onclick='downloadBook(${bookDownloadArgs})'>${isFree ? '📥 تحميل مجاني' : '📄 تحميل الملف'}</button>`
+                const downloadBtnHtml = (book.fileUrl && book.fileUrl !== '#') 
+                    ? `<button class="btn-action btn-download" onclick="downloadBook('${book.id}', '${book.fileUrl}', '${book.price}', '${book.category}')">${isFree ? '📥 تحميل مجاني' : '📄 تحميل الملف'}</button>`
                     : `<button class="btn-action btn-download btn-disabled" disabled>📄 تحميل الملف</button>`;
 
                 const buySectionHtml = isFree 
-                    ? (bookFileUrl ? `<button class="btn-action btn-buy-full" onclick='downloadBook(${bookDownloadArgs})'>📥 تحميل النسخة المجانية المباشرة</button>` : `<button class="btn-action btn-buy-full btn-disabled" disabled>📥 تحميل النسخة المجانية المباشرة</button>`)
+                    ? `<button class="btn-action btn-buy-full" onclick="downloadBook('${book.id}', '${book.fileUrl}', '${book.price}', '${book.category}')">📥 تحميل النسخة المجانية المباشرة</button>`
                     : `<button class="btn-action btn-buy-full" onclick="toggleBuyDropdown('${book.id}')">🛒 شراء الكتاب الآن ▾</button>
                        <div id="buyDropdown_${book.id}" class="buy-dropdown-menu">
                            <button class="btn-buy-paper" onclick="openBuyModal('${book.id}', 'paper')">شراء نسخة ورقية 📦</button>
                            <button class="btn-buy-digital" onclick="openBuyModal('${book.id}', 'digital')">شراء نسخة رقمية 📲</button>
                        </div>`;
 
-                const safeCoverUrl = safeHttpUrl(book.coverUrl);
-                const optimizedCoverUrl = safeCoverUrl ? optimizeCloudinaryUrl(safeCoverUrl, 400) : '';
+                const optimizedCoverUrl = optimizeCloudinaryUrl(book.coverUrl, 400);
                 const categoryName = getCategoryName(book.category);
 
                 const cardHtml = `
@@ -3467,17 +3263,17 @@ onAuthStateChanged(auth, async (user) => {
                             <div class="book-cover">
                                 <span class="book-badge-cat">🏷️ ${categoryName}</span>
                                 <span class="book-badge-reads">👁️ ${book.reads ?? 0}</span>
-                                ${safeCoverUrl ? `<img src="${escapeHTML(optimizedCoverUrl)}" alt="${escapeHTML(book.title)}" loading="lazy" onclick='openReader(${escapeHTML(JSON.stringify(book.id))})' style="cursor:pointer;" title="اضغط لبدء القراءة">` : `<span onclick='openReader(${JSON.stringify(book.id)})' style="cursor:pointer;" title="اضغط لبدء القراءة">14 × 20</span>`}
+                                ${book.coverUrl ? `<img src="${optimizedCoverUrl}" alt="${book.title}" loading="lazy" onclick='openReader(${JSON.stringify(book.id)})' style="cursor:pointer;" title="اضغط لبدء القراءة">` : `<span onclick='openReader(${JSON.stringify(book.id)})' style="cursor:pointer;" title="اضغط لبدء القراءة">14 × 20</span>`}
                             </div>
-                            <h3 style="font-family: 'Amiri', serif; font-size: 1.45rem; color: var(--accent-color);">${escapeHTML(book.title)}</h3>
-                            <div class="book-author-tag">تأليف: ${escapeHTML(book.author ?? 'سعيد الشوادفي')}</div>
-                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px; text-align: justify; text-justify: inter-word;">${escapeHTML(book.desc)}</p>
+                            <h3 style="font-family: 'Amiri', serif; font-size: 1.45rem; color: var(--accent-color);">${book.title}</h3>
+                            <div class="book-author-tag">تأليف: ${book.author ?? 'سعيد الشوادفي'}</div>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px; text-align: justify; text-justify: inter-word;">${book.desc}</p>
                             
                             ${audioPlayerHtml}
 
                             <div class="book-stats">
                                 <span>👁️ ${book.reads ?? 0} قراءة</span>
-                                <span>📥 <strong id="bookDownloadCount_${escapeHTML(book.id)}">${Number(book.downloads ?? 0).toLocaleString('ar-EG')}</strong> تحميل</span>
+                                <span>📥 ${book.downloads ?? 0} تحميل</span>
                                 <span>⭐ ${avgRating} / 5</span>
                             </div>
 
@@ -3579,15 +3375,9 @@ onAuthStateChanged(auth, async (user) => {
 
             if (book.id && !book.id.startsWith('def') && !isAdmin && !readBooksSessionSet.has(book.id)) {
                 readBooksSessionSet.add(book.id);
-                trackBookRead(book.id)
-                    .then(value => {
-                        if (value >= 0) {
-                            document.querySelectorAll(`#bookCard_${CSS.escape(String(book.id))} .book-badge-reads`).forEach(el => {
-                                el.textContent = `👁️ ${value.toLocaleString('ar-EG')}`;
-                            });
-                        }
-                    })
-                    .catch(err => console.error("خطأ في تحديث عداد القراءة:", err));
+                runTransaction(ref(db, `books/${book.id}/reads`), reads => (reads ?? 0) + 1)
+                    .then(() => trackBookAnalytics(book.id, 'reads'))
+                    .catch(err => console.error("خطأ في تحديث العداد:", err));
             }
 
             document.getElementById('readerTitle').innerText = book.title;
@@ -3665,8 +3455,7 @@ onAuthStateChanged(auth, async (user) => {
                 // ننتقل إلى الطريقة اليدوية بالأسفل.
             }
 
-            const copied = prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
-            if (copied !== null) markShare();
+            prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
         };
 
         window.rateBook = (bookId) => {
@@ -3680,7 +3469,13 @@ onAuthStateChanged(auth, async (user) => {
             const num = parseFloat(rating);
             if (num >= 1 && num <= 5) {
                 if (!bookId.startsWith('def')) {
-                    recordMetric('bookRating', `${bookId}|${num}`).then(() => {
+                    runTransaction(ref(db, `books/${bookId}`), (book) => {
+                        if (book) {
+                            book.ratingSum = (book.ratingSum ?? 0) + num;
+                            book.ratingCount = (book.ratingCount ?? 0) + 1;
+                        }
+                        return book;
+                    }).then(() => {
                         trackBookAnalytics(bookId, 'ratings');
                         localStorage.setItem(ratingKey, '1');
                         alert("شكراً لتقييمك! ⭐");
@@ -3706,23 +3501,16 @@ onAuthStateChanged(auth, async (user) => {
                     if (container) container.innerHTML = '';
                     if (data) {
                         Object.values(data).forEach(rev => {
-                            if (!container) return;
-                            const card = document.createElement('div');
-                            card.className = 'review-card';
-                            const header = document.createElement('div');
-                            header.className = 'review-header';
-                            const author = document.createElement('span');
-                            author.className = 'review-author';
-                            author.textContent = `👤 ${String(rev.name || 'قارئ')}`;
-                            const date = document.createElement('span');
-                            date.className = 'review-date';
-                            date.textContent = String(rev.date || '');
-                            const body = document.createElement('div');
-                            body.className = 'review-text';
-                            body.textContent = String(rev.text || '');
-                            header.append(author, date);
-                            card.append(header, body);
-                            container.appendChild(card);
+                            const revHtml = `
+                                <div class="review-card">
+                                    <div class="review-header">
+                                        <span class="review-author">👤 ${rev.name}</span>
+                                        <span class="review-date">${rev.date ?? ''}</span>
+                                    </div>
+                                    <div class="review-text">${rev.text}</div>
+                                </div>
+                            `;
+                            container?.insertAdjacentHTML('beforeend', revHtml);
                         });
                     } else if (container) {
                         container.innerHTML = '<p style="color: var(--text-muted); text-align: center;">لا توجد مراجعات مكتوبة بعد. كن أول من يكتب رأيه! ✍️</p>';
