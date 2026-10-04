@@ -1777,7 +1777,9 @@
                 const date = parts[0];
                 const event = String(parts[1] || '').replace(/[^a-zA-Z0-9_-]/g, '_');
                 if (!date || !event) return 0;
-                return increment(`siteStats/daily/${date}/${event}`);
+                const amount = Math.max(1, Number(parts[2] || 1));
+                const result = await runTransaction(ref(db, `siteStats/daily/${date}/${event}`), current => (Number(current) || 0) + amount);
+                return Number(result.snapshot.val() || 0);
             }
 
             if (metric === 'bookEvent') {
@@ -1785,7 +1787,7 @@
                 const bookId = String(parts[0] || '');
                 const event = String(parts[1] || '').replace(/[^a-zA-Z0-9_-]/g, '_');
                 if (!bookId || bookId.startsWith('def') || !event) return 0;
-                return increment(`books/${bookId}/${event}`);
+                return increment(`siteStats/bookEvents/${bookId}/${event}`);
             }
 
             // التقييمات تحتاج مسارين معاً، لذلك نحفظ العدد والمجموع مباشرة.
