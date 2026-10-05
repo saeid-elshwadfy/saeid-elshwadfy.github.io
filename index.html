@@ -1711,7 +1711,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
-        import { getDatabase, ref, onValue, set, push, update, remove, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, push, update, remove, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, getIdTokenResult, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -2021,7 +2021,12 @@ onAuthStateChanged(auth, async (user) => {
                 await ensureVisitorAuth();
                 const date = analyticsDate();
                 const safeEvent = String(eventName).replace(/[^a-zA-Z0-9_-]/g, '_');
-                await runTransaction(ref(db, `siteStats/daily/${date}/${safeEvent}`), current => (current ?? 0) + amount);
+
+                // Transaction تحتاج READ، بينما قراءة daily محجوبة عن الزائر.
+                // Server increment يسمح بالكتابة مباشرة دون قراءة القيمة الحالية.
+                await update(ref(db), {
+                    [`siteStats/daily/${date}/${safeEvent}`]: increment(amount)
+                });
             } catch (err) {
                 console.warn('تعذر تسجيل الإحصائية:', err);
             }
@@ -2040,7 +2045,7 @@ onAuthStateChanged(auth, async (user) => {
                 const statsPath = isBook ? 'siteStats/bookEvents' : 'siteStats/contentEvents';
 
                 await runTransaction(ref(db, `${statsPath}/${safeBookId}/${safeEvent}`), current => (current ?? 0) + amount);
-                await runTransaction(ref(db, `siteStats/daily/${date}/${safeEvent}`), current => (current ?? 0) + amount);
+                await update(ref(db), { [`siteStats/daily/${date}/${safeEvent}`]: increment(amount) });
             } catch (err) {
                 console.warn('تعذر تسجيل إحصائية العمل:', err);
             }
@@ -2085,45 +2090,29 @@ onAuthStateChanged(auth, async (user) => {
                 );
             });
 
-            Promise.all([
-                readOnce('siteStats/bookEvents'),
-                readOnce('siteStats/contentEvents'),
-                readOnce('siteStats/daily')
-            ]).then(([bookEvents, contentEvents, daily]) => {
-                const shares = [];
-                let perWorkShares = 0;
+            readOnce('siteStats/daily').then(daily => {
                 let dailyShares = 0;
-
                 Object.values(daily || {}).forEach(day => {
                     dailyShares += Number(day?.shares || 0);
                 });
 
-                Object.entries(bookEvents || {}).forEach(([id, data]) => {
-                    const count = Number(data?.shares || 0);
-                    if (count > 0) {
-                        perWorkShares += count;
-                        const item = allBooks.find(b => b.id === id);
-                        shares.push({ title: `📖 ${item?.title || id}`, count });
-                    }
-                });
-
-                Object.entries(contentEvents || {}).forEach(([id, data]) => {
-                    const count = Number(data?.shares || 0);
-                    if (count > 0) {
-                        perWorkShares += count;
-                        const item = [...(Array.isArray(allVideos) ? allVideos : []), ...(Array.isArray(allCourses) ? allCourses : [])].find(x => x.id === id);
-                        shares.push({ title: item?.title || id, count });
-                    }
-                });
-
-                const totalShares = Math.max(perWorkShares, dailyShares);
                 const el = document.getElementById('analyticsShares');
-                if (el) el.innerText = totalShares.toLocaleString('ar-EG');
+                if (el) el.innerText = dailyShares.toLocaleString('ar-EG');
 
-                if (shares.length) {
-                    renderAnalyticsList('analyticsTopShares', shares.sort((a,b) => b.count-a.count).slice(0,8), 'مشاركة');
-                } else if (dailyShares > 0) {
-                    document.getElementById('analyticsTopShares').innerHTML = `<div class="analytics-note">تم تسجيل ${dailyShares.toLocaleString('ar-EG')} مشاركة، لكن البيانات القديمة لا تحتوي على توزيع المشاركات حسب العمل، لذلك لا يمكن تحديد «أكثر الأعمال مشاركة» بأثر رجعي.</div>`;
+                const shareRows = [];
+                Object.entries(daily || {}).forEach(([date, day]) => {
+                    const count = Number(day?.shares || 0);
+                    if (count > 0) {
+                        shareRows.push({ title: `🔗 مشاركة بتاريخ ${date}`, count });
+                    }
+                });
+
+                if (shareRows.length) {
+                    renderAnalyticsList(
+                        'analyticsTopShares',
+                        shareRows.sort((a,b) => b.count - a.count).slice(0,8),
+                        'مشاركة'
+                    );
                 } else {
                     renderAnalyticsList('analyticsTopShares', [], 'مشاركة');
                 }
@@ -2939,11 +2928,8 @@ onAuthStateChanged(auth, async (user) => {
             });
         }
 
-        async function recordShareAnalytics(contentId, contentType = 'content') {
+        async function recordShareAnalytics(contentId = '', contentType = 'content', title = '') {
             if (isAdmin) return;
-
-            // سجّل الإجمالي اليومي بشكل مستقل حتى لا يمنعه فشل
-            // إحصائية العمل من الظهور في لوحة التحكم.
             try {
                 await ensureVisitorAuth();
                 const date = analyticsDate();
@@ -2952,20 +2938,7 @@ onAuthStateChanged(auth, async (user) => {
                     current => (Number(current) || 0) + 1
                 );
             } catch (err) {
-                console.warn('تعذر تسجيل المشاركة اليومية:', err);
-            }
-
-            // ثم حاول تسجيل المشاركة حسب العمل بشكل مستقل.
-            if (contentId && !String(contentId).startsWith('def')) {
-                try {
-                    await ensureVisitorAuth();
-                    await runTransaction(
-                        ref(db, `siteStats/contentEvents/${contentType}_${String(contentId)}/shares`),
-                        current => (Number(current) || 0) + 1
-                    );
-                } catch (err) {
-                    console.warn('تعذر تسجيل مشاركة العمل:', err);
-                }
+                console.warn('تعذر تسجيل المشاركة:', err);
             }
         }
 
@@ -2974,10 +2947,6 @@ onAuthStateChanged(auth, async (user) => {
                 alert('هذا الفيديو الافتراضي لا يملك رابط مشاركة دائم حالياً.');
                 return;
             }
-
-            // نحسب الضغطة فوراً، قبل فتح نافذة المشاركة.
-            // بذلك لا يعتمد العداد على نتيجة navigator.share.
-            await trackAnalyticsEvent('shares');
 
             const workerBaseUrl = 'https://tight-firefly-b99c.saeidelshwadfy.workers.dev';
             const shareUrl = `${workerBaseUrl}/video/${encodeURIComponent(videoId)}`;
@@ -2991,6 +2960,7 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
+                    recordShareAnalytics(videoId, 'video', title);
                     return;
                 } catch (err) {}
             }
@@ -2998,12 +2968,14 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
+                    recordShareAnalytics(videoId, 'video', title);
                     alert('تم نسخ رابط مشاركة الفيديو. يمكنك مشاركته الآن. 📋');
                     return;
                 }
             } catch (err) {}
 
             prompt(`انسخ رابط مشاركة فيديو «${title}» وأرسله:`, shareUrl);
+            recordShareAnalytics(videoId, 'video', title);
         };
 
         document.getElementById('addVideoForm')?.addEventListener('submit', async (e) => {
@@ -3121,9 +3093,7 @@ onAuthStateChanged(auth, async (user) => {
                 return;
             }
 
-            await trackAnalyticsEvent('shares');
-
-    const workerBaseUrl = 'https://tight-firefly-b99c.saeidelshwadfy.workers.dev';
+            const workerBaseUrl = 'https://tight-firefly-b99c.saeidelshwadfy.workers.dev';
             const shareUrl = `${workerBaseUrl}/course/${encodeURIComponent(courseId)}`;
 
             const shareData = {
@@ -3135,7 +3105,7 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
-                    trackBookAnalytics(courseId, 'shares');
+                    recordShareAnalytics(courseId, 'course', title);
                     return;
                 } catch (err) {}
             }
@@ -3143,14 +3113,14 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
-                    trackBookAnalytics(courseId, 'shares');
+                    recordShareAnalytics(courseId, 'course', title);
                     alert('تم نسخ رابط مشاركة الدورة/الورشة. يمكنك مشاركته الآن. 📋');
                     return;
                 }
             } catch (err) {}
 
             prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
-            trackBookAnalytics(courseId, 'shares');
+            recordShareAnalytics(courseId, 'course', title);
         };
 
         document.getElementById('addCourseForm')?.addEventListener('submit', async (e) => {
@@ -3596,8 +3566,10 @@ onAuthStateChanged(auth, async (user) => {
         });
 
         window.shareBook = async (bookId, title) => {
-            // نحسب الضغطة فوراً وبنفس عداد المشاركات العام.
-            await trackAnalyticsEvent('shares');
+            let shareTracked = false;
+            const markShare = () => {
+                if (!shareTracked) { shareTracked = true; trackBookAnalytics(bookId, 'shares'); }
+            };
             // رابط الموقع المنشور هو رابط المشاركة الحقيقي.
             // عند تجربة index.html محلياً لا نستخدم file:// لأنه غير صالح للمشاركة.
             const workerBaseUrl = 'https://tight-firefly-b99c.saeidelshwadfy.workers.dev';
@@ -3613,6 +3585,7 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
+                    markShare();
                     return;
                 } catch (err) {
                     // المستخدم قد يكون أغلق نافذة المشاركة، أو المتصفح رفض الطلب.
@@ -3622,6 +3595,7 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
+                    markShare();
                     alert(`تم نسخ رابط مشاركة «${title}» بنجاح! 📋\n\nالرابط خاص بهذا الكتاب ويمكنك إرساله على واتساب أو فيسبوك.`);
                     return;
                 }
