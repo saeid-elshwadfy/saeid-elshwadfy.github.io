@@ -2939,6 +2939,36 @@ onAuthStateChanged(auth, async (user) => {
             });
         }
 
+        async function recordShareAnalytics(contentId, contentType = 'content') {
+            if (isAdmin) return;
+
+            // سجّل الإجمالي اليومي بشكل مستقل حتى لا يمنعه فشل
+            // إحصائية العمل من الظهور في لوحة التحكم.
+            try {
+                await ensureVisitorAuth();
+                const date = analyticsDate();
+                await runTransaction(
+                    ref(db, `siteStats/daily/${date}/shares`),
+                    current => (Number(current) || 0) + 1
+                );
+            } catch (err) {
+                console.warn('تعذر تسجيل المشاركة اليومية:', err);
+            }
+
+            // ثم حاول تسجيل المشاركة حسب العمل بشكل مستقل.
+            if (contentId && !String(contentId).startsWith('def')) {
+                try {
+                    await ensureVisitorAuth();
+                    await runTransaction(
+                        ref(db, `siteStats/contentEvents/${contentType}_${String(contentId)}/shares`),
+                        current => (Number(current) || 0) + 1
+                    );
+                } catch (err) {
+                    console.warn('تعذر تسجيل مشاركة العمل:', err);
+                }
+            }
+        }
+
         window.shareVideo = async (title, videoId) => {
             if (!videoId || String(videoId).startsWith('def')) {
                 alert('هذا الفيديو الافتراضي لا يملك رابط مشاركة دائم حالياً.');
@@ -2957,7 +2987,7 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
-                    trackBookAnalytics(videoId, 'shares');
+                    recordShareAnalytics(videoId, 'video');
                     return;
                 } catch (err) {}
             }
@@ -2965,14 +2995,14 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
-                    trackBookAnalytics(videoId, 'shares');
+                    recordShareAnalytics(videoId, 'video');
                     alert('تم نسخ رابط مشاركة الفيديو. يمكنك مشاركته الآن. 📋');
                     return;
                 }
             } catch (err) {}
 
             prompt(`انسخ رابط مشاركة فيديو «${title}» وأرسله:`, shareUrl);
-            trackBookAnalytics(videoId, 'shares');
+            recordShareAnalytics(videoId, 'video');
         };
 
         document.getElementById('addVideoForm')?.addEventListener('submit', async (e) => {
