@@ -2015,25 +2015,35 @@ onAuthStateChanged(auth, async (user) => {
             return new Date().toISOString().slice(0, 10);
         }
 
-        function trackAnalyticsEvent(eventName, amount = 1) {
+        async function trackAnalyticsEvent(eventName, amount = 1) {
             if (isAdmin) return;
-            const date = analyticsDate();
-            const safeEvent = String(eventName).replace(/[^a-zA-Z0-9_-]/g, '_');
-            runTransaction(ref(db, `siteStats/daily/${date}/${safeEvent}`), current => (current ?? 0) + amount)
-                .catch(err => console.warn('تعذر تسجيل الإحصائية:', err));
+            try {
+                await ensureVisitorAuth();
+                const date = analyticsDate();
+                const safeEvent = String(eventName).replace(/[^a-zA-Z0-9_-]/g, '_');
+                await runTransaction(ref(db, `siteStats/daily/${date}/${safeEvent}`), current => (current ?? 0) + amount);
+            } catch (err) {
+                console.warn('تعذر تسجيل الإحصائية:', err);
+            }
         }
 
-        function trackBookAnalytics(bookId, eventName, amount = 1) {
+        async function trackBookAnalytics(bookId, eventName, amount = 1) {
             if (isAdmin || !bookId || String(bookId).startsWith('def')) return;
-            const date = analyticsDate();
-            const safeBookId = String(bookId).replace(/[^a-zA-Z0-9_-]/g, '_');
-            const safeEvent = String(eventName).replace(/[^a-zA-Z0-9_-]/g, '_');
-            const isBook = allBooks.some(b => b.id === bookId);
-            const statsPath = isBook ? 'siteStats/bookEvents' : 'siteStats/contentEvents';
-            runTransaction(ref(db, `${statsPath}/${safeBookId}/${safeEvent}`), current => (current ?? 0) + amount)
-                .catch(err => console.warn('تعذر تسجيل إحصائية العمل:', err));
-            runTransaction(ref(db, `siteStats/daily/${date}/${safeEvent}`), current => (current ?? 0) + amount)
-                .catch(() => {});
+            try {
+                // نضمن وجود جلسة الزائر المجهول قبل أي كتابة؛ وهذا يمنع ضياع المشاركة
+                // إذا ضغط الزائر على زر المشاركة قبل اكتمال تسجيل الدخول المجهول.
+                await ensureVisitorAuth();
+                const date = analyticsDate();
+                const safeBookId = String(bookId).replace(/[^a-zA-Z0-9_-]/g, '_');
+                const safeEvent = String(eventName).replace(/[^a-zA-Z0-9_-]/g, '_');
+                const isBook = allBooks.some(b => b.id === bookId);
+                const statsPath = isBook ? 'siteStats/bookEvents' : 'siteStats/contentEvents';
+
+                await runTransaction(ref(db, `${statsPath}/${safeBookId}/${safeEvent}`), current => (current ?? 0) + amount);
+                await runTransaction(ref(db, `siteStats/daily/${date}/${safeEvent}`), current => (current ?? 0) + amount);
+            } catch (err) {
+                console.warn('تعذر تسجيل إحصائية العمل:', err);
+            }
         }
 
         function trackSiteVisits() {
