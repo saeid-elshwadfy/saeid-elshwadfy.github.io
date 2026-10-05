@@ -1601,7 +1601,7 @@
                         <h4>⚡ InstaPay (إنستا باي)</h4>
                         <div class="payment-details">
                             <p style="margin-bottom: 8px;">رقم الهاتف للتحويل: <strong style="color: var(--accent-color); font-size: 1.15rem;">01096227242</strong> <small style="color:#10b981;">(تم نسخ الرقم 📋)</small></p>
-                            <a href="instapay://" class="btn-secondary" style="margin: 8px 0; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #fff; border: none;" target="_blank">📲 فتح تطبيق InstaPay مباشر</a>
+                            <a href="instapay://" class="btn-secondary" style="margin: 8px 0; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #fff; border: none;" target="_blank" rel="noopener noreferrer">📲 فتح تطبيق InstaPay مباشر</a>
                             <div class="transfer-form" onclick="event.stopPropagation()">
                                 <label style="font-weight: bold; font-size: 0.88rem;">أدخل بيانات التحويل للتأكيد عبر واتساب:</label>
                                 <input type="text" class="buyer-name" placeholder="الاسم الكامل" required>
@@ -1645,16 +1645,16 @@
         <footer>
             <h4 style="color: var(--accent-color); font-family: 'Amiri', serif; font-size: 1.4rem;">تواصل وتابع الكاتب</h4>
             <div class="social-links">
-                <a href="https://www.facebook.com/Saeid.Elshwadfy" class="social-btn" target="_blank">📘 Facebook</a>
-                <a href="https://www.instagram.com/saeid_elshwadfy" class="social-btn" target="_blank">📷 Instagram</a>
-                <a href="https://www.tiktok.com/@saeid.elshwadfy" class="social-btn" target="_blank">🎵 TikTok</a>
-                <a href="https://x.com/Saeidelshwadfy" class="social-btn" target="_blank">🐦 X</a>
-                <a href="https://wa.me/201096227242" target="_blank" class="social-btn">واتساب 💬</a>
+                <a href="https://www.facebook.com/Saeid.Elshwadfy" class="social-btn" target="_blank" rel="noopener noreferrer">📘 Facebook</a>
+                <a href="https://www.instagram.com/saeid_elshwadfy" class="social-btn" target="_blank" rel="noopener noreferrer">📷 Instagram</a>
+                <a href="https://www.tiktok.com/@saeid.elshwadfy" class="social-btn" target="_blank" rel="noopener noreferrer">🎵 TikTok</a>
+                <a href="https://x.com/Saeidelshwadfy" class="social-btn" target="_blank" rel="noopener noreferrer">🐦 X</a>
+                <a href="https://wa.me/201096227242" target="_blank" rel="noopener noreferrer" class="social-btn">واتساب 💬</a>
                 <a href="mailto://saeidelshwadfy@hotmail.com" class="social-btn">البريد الإلكتروني ✉️</a>
             </div>
             <div class="footer-links">
                 <a href="#aboutTitle">عن الكاتب</a>
-                <a href="https://wa.me/201096227242" target="_blank">تواصل معنا</a>
+                <a href="https://wa.me/201096227242" target="_blank" rel="noopener noreferrer">تواصل معنا</a>
                 <a href="javascript:void(0)" onclick="openLegalModal('privacyModal')">سياسة الخصوصية</a>
                 <a href="javascript:void(0)" onclick="openLegalModal('termsModal')">شروط الاستخدام</a>
             </div>
@@ -1680,6 +1680,54 @@
     </div>
 
     <script>
+        // --- Security helpers ---
+        // Firebase/Cloudinary data is external input. Never inject it into HTML/attributes
+        // without escaping or validating the URL first.
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function safeHttpUrl(value, fallback = '#') {
+            const raw = String(value ?? '').trim();
+            if (!raw) return fallback;
+            try {
+                const url = new URL(raw, window.location.href);
+                if (url.protocol === 'https:' || url.protocol === 'http:') return url.href;
+            } catch (_) {}
+            return fallback;
+        }
+
+        function safeMediaUrl(value, fallback = '') {
+            return safeHttpUrl(value, fallback);
+        }
+
+        function validateUploadFile(file, {
+            maxBytes = 100 * 1024 * 1024,
+            mimePrefixes = [],
+            extensions = []
+        } = {}) {
+            if (!file) return;
+            if (file.size > maxBytes) {
+                throw new Error(`حجم الملف كبير جداً. الحد الأقصى ${Math.round(maxBytes / 1024 / 1024)} ميجابايت.`);
+            }
+            const type = String(file.type || '').toLowerCase();
+            const name = String(file.name || '').toLowerCase();
+            const typeOk = !mimePrefixes.length || mimePrefixes.some(prefix => type.startsWith(prefix));
+            const extOk = !extensions.length || extensions.some(ext => name.endsWith(ext));
+            if (mimePrefixes.length && extensions.length) {
+                if (!typeOk && !extOk) throw new Error('نوع الملف غير مسموح به.');
+            } else if (!typeOk && mimePrefixes.length) {
+                throw new Error('نوع الملف غير مسموح به.');
+            } else if (!extOk && extensions.length) {
+                throw new Error('امتداد الملف غير مسموح به.');
+            }
+        }
+
         function openLegalModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) modal.style.display = 'flex';
@@ -1756,6 +1804,8 @@
         }
 
         async function uploadToCloudinary(file) {
+            if (!file) throw new Error("لم يتم اختيار ملف.");
+            validateUploadFile(file, { maxBytes: 100 * 1024 * 1024 });
             const CLOUD_NAME = "uha8a6rd";
             const UPLOAD_PRESET = "saeid-elshwadfy";
 
@@ -1785,13 +1835,15 @@
         }
 
         function getYouTubeEmbedUrl(url) {
-            if (!url) return '';
+            const safeUrl = safeHttpUrl(url, '');
+            if (!safeUrl) return '';
+            url = safeUrl;
             let videoId = '';
             const matchStandard = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
             if (matchStandard && matchStandard[1]) {
                 videoId = matchStandard[1];
             }
-            return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+            return videoId ? `https://www.youtube.com/embed/${encodeURIComponent(videoId)}` : '';
         }
 
         function checkIsFree(price, category) {
@@ -1882,8 +1934,8 @@
         // إنشاء رابط تنزيل مباشر لملفات Cloudinary باستخدام fl_attachment.
         // هذا يجبر Cloudinary على إرسال الملف كـ Download بدل فتحه داخل المتصفح.
         function cloudinaryDownloadUrl(url) {
-            if (!url || typeof url !== 'string') return url;
-            const cleanUrl = url.trim();
+            if (!url || typeof url !== 'string') return '';
+            const cleanUrl = safeHttpUrl(url, '');
             if (!cleanUrl.includes('res.cloudinary.com') || !cleanUrl.includes('/upload/')) {
                 return cleanUrl;
             }
@@ -2111,13 +2163,26 @@ onAuthStateChanged(auth, async (user) => {
                     }
                 });
 
-                Object.entries(contentEvents || {}).forEach(([id, data]) => {
+                Object.entries(contentEvents || {}).forEach(([rawId, data]) => {
                     const count = Number(data?.shares || 0);
-                    if (count > 0) {
-                        perWorkShares += count;
-                        const item = [...(Array.isArray(allVideos) ? allVideos : []), ...(Array.isArray(allCourses) ? allCourses : [])].find(x => x.id === id);
-                        shares.push({ title: item?.title || id, count });
-                    }
+                    if (count <= 0) return;
+
+                    // المشاركات الجديدة تحفظ النوع مع المعرّف (video_ID / course_ID)،
+                    // مع دعم البيانات القديمة التي كانت تحفظ المعرّف وحده.
+                    const separator = rawId.indexOf('_');
+                    const type = separator > 0 ? rawId.slice(0, separator) : '';
+                    const id = separator > 0 ? rawId.slice(separator + 1) : rawId;
+                    const items = [
+                        ...(Array.isArray(allVideos) ? allVideos : []),
+                        ...(Array.isArray(allCourses) ? allCourses : [])
+                    ];
+                    const item = items.find(x => x.id === id) || items.find(x => x.id === rawId);
+
+                    perWorkShares += count;
+                    shares.push({
+                        title: item?.title || `${type ? type + ' — ' : ''}${id}`,
+                        count
+                    });
                 });
 
                 const totalShares = Math.max(perWorkShares, dailyShares);
@@ -2400,9 +2465,11 @@ onAuthStateChanged(auth, async (user) => {
 
             try {
                 if (coverFile) {
+                    validateUploadFile(coverFile, { maxBytes: 10 * 1024 * 1024, mimePrefixes: ['image/'] });
                     coverUrl = await uploadToCloudinary(coverFile);
                 }
                 if (docFile) {
+                    validateUploadFile(docFile, { maxBytes: 100 * 1024 * 1024, extensions: ['.pdf'] });
                     fileUrl = await uploadToCloudinary(docFile);
                 }
 
@@ -2456,11 +2523,11 @@ onAuthStateChanged(auth, async (user) => {
                 allRequests.forEach(req => {
                     html += `
                         <tr>
-                            <td><strong>${req.authorName}</strong></td>
-                            <td><a href="https://wa.me/${req.authorPhone}" target="_blank" style="color:#25d366; text-decoration:none;">💬 ${req.authorPhone}</a></td>
-                            <td>${req.title}</td>
-                            <td>${req.category}</td>
-                            <td>${req.desc}</td>
+                            <td><strong>${escapeHtml(req.authorName)}</strong></td>
+                            <td><a href="https://wa.me/${escapeHtml(req.authorPhone)}" target="_blank" style="color:#25d366; text-decoration:none;">💬 ${escapeHtml(req.authorPhone)}</a></td>
+                            <td>${escapeHtml(req.title)}</td>
+                            <td>${escapeHtml(req.category)}</td>
+                            <td>${escapeHtml(req.desc)}</td>
                             <td>
                                 <div style="display:flex; gap:5px;">
                                     <button class="btn-primary" style="padding:4px 8px; font-size:0.8rem;" onclick="approveRequest('${req.id}')">قبول ونشر ✅</button>
@@ -2658,18 +2725,18 @@ onAuthStateChanged(auth, async (user) => {
             allServices.forEach(item => {
                 const adminBtns = isAdmin ? `
                     <div style="display:flex; gap:8px; margin-top:10px;">
-                        <button class="btn-edit" onclick="editService('${item.id}')">تعديل ✏️</button>
-                        <button class="btn-danger" onclick="deleteService('${item.id}')">حذف 🗑️</button>
+                        <button class="btn-edit" onclick="editService('${escapeHtml(item.id)}')">تعديل ✏️</button>
+                        <button class="btn-danger" onclick="deleteService('${escapeHtml(item.id)}')">حذف 🗑️</button>
                     </div>` : '';
 
                 const html = `
                     <div class="custom-card">
                         <div>
-                            <h3 style="font-family: 'Amiri', serif; font-size: 1.5rem; color: var(--accent-color);">${item.title}</h3>
-                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 12px 0;">${item.desc}</p>
-                            <div class="card-price">${item.price}</div>
+                            <h3 style="font-family: 'Amiri', serif; font-size: 1.5rem; color: var(--accent-color);">${escapeHtml(item.title)}</h3>
+                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 12px 0;">${escapeHtml(item.desc)}</p>
+                            <div class="card-price">${escapeHtml(item.price)}</div>
                         </div>
-                        <button class="btn-primary" onclick="requestService('${item.title}', '${item.price}')">أطلب الخدمة الآن 📲</button>
+                        <button class="btn-primary" onclick="requestService('${escapeHtml(item.title)}', '${escapeHtml(item.price)}')">أطلب الخدمة الآن 📲</button>
                         ${adminBtns}
                     </div>
                 `;
@@ -2770,8 +2837,8 @@ onAuthStateChanged(auth, async (user) => {
             filteredAudio.forEach(item => {
                 const adminBtns = isAdmin ? `
                     <div style="display:flex; gap:8px; margin-top:10px;">
-                        <button class="btn-edit" onclick="editAudio('${item.id}')">تعديل ✏️</button>
-                        <button class="btn-danger" onclick="deleteAudio('${item.id}')">حذف 🗑️</button>
+                        <button class="btn-edit" onclick="editAudio('${escapeHtml(item.id)}')">تعديل ✏️</button>
+                        <button class="btn-danger" onclick="deleteAudio('${escapeHtml(item.id)}')">حذف 🗑️</button>
                     </div>` : '';
 
                 const isFree = checkIsFree(item.price, 'audio');
@@ -2779,24 +2846,24 @@ onAuthStateChanged(auth, async (user) => {
                 // تحسين preload="metadata" لسرعة الاستجابة ومنع التأخير
                 const audioPlayerHtml = (item.audioUrl && item.audioUrl.trim() !== '#' && item.audioUrl.trim() !== '') ? `
                     <div class="audio-player-container">
-                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${item.id}" src="${item.audioUrl}">
+                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${escapeHtml(item.id)}" src="${safeMediaUrl(item.audioUrl)}">
                             عذراً، متصفحك لا يدعم تشغيل هذا الملف الصوتي.
                         </audio>
                     </div>` : `<p style="color:var(--text-muted); font-size:0.85rem; margin:8px 0;">الملف الصوتي غير متوفر حالياً.</p>`;
 
                 const downloadBtnHtml = (item.audioUrl && item.audioUrl.trim() !== '#' && item.audioUrl.trim() !== '') ? `
-                    <button class="btn-action btn-download" style="margin-top:8px;" onclick="downloadAudioFile('${item.id}', '${item.audioUrl}', '${item.title}', '${item.price ?? 'مجاني'}')">${isFree ? '📥 تحميل مجاني' : '📲 شراء وتحميل الملف الصوتي'}</button>
+                    <button class="btn-action btn-download" style="margin-top:8px;" onclick="downloadAudioFile('${escapeHtml(item.id)}', '${safeMediaUrl(item.audioUrl)}', '${escapeHtml(item.title)}', '${escapeHtml(item.price ?? 'مجاني')}')">${isFree ? '📥 تحميل مجاني' : '📲 شراء وتحميل الملف الصوتي'}</button>
                 ` : '';
 
                 const html = `
                     <div class="custom-card">
                         <div>
-                            <h3 style="font-family: 'Amiri', serif; font-size: 1.4rem; color: var(--accent-color);">${item.title}</h3>
-                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 10px 0;">${item.desc}</p>
-                            <div class="card-price">سعر التحميل: ${item.price ?? 'مجاني'}</div>
+                            <h3 style="font-family: 'Amiri', serif; font-size: 1.4rem; color: var(--accent-color);">${escapeHtml(item.title)}</h3>
+                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 10px 0;">${escapeHtml(item.desc)}</p>
+                            <div class="card-price">سعر التحميل: ${escapeHtml(item.price ?? 'مجاني')}</div>
                             <div class="book-stats" style="margin: 8px 0;">
-                                <span>🎧 <strong id="audioCount_${item.id}">${item.listens ?? 0}</strong> استماع</span>
-                                <span>📥 <strong id="audioDownloadCount_${item.id}">${item.downloads ?? 0}</strong> تحميل</span>
+                                <span>🎧 <strong id="audioCount_${escapeHtml(item.id)}">${escapeHtml(item.listens ?? 0)}</strong> استماع</span>
+                                <span>📥 <strong id="audioDownloadCount_${escapeHtml(item.id)}">${escapeHtml(item.downloads ?? 0)}</strong> تحميل</span>
                             </div>
                             ${audioPlayerHtml}
                             ${downloadBtnHtml}
@@ -2821,6 +2888,7 @@ onAuthStateChanged(auth, async (user) => {
 
             try {
                 if (audioFile) {
+                    validateUploadFile(audioFile, { maxBytes: 100 * 1024 * 1024, mimePrefixes: ['audio/'] });
                     audioUrl = await uploadToCloudinary(audioFile);
                 }
 
@@ -2900,8 +2968,8 @@ onAuthStateChanged(auth, async (user) => {
             allVideos.forEach(item => {
                 const adminBtns = isAdmin ? `
                     <div class="course-admin-actions">
-                        <button class="btn-edit course-action-btn" onclick="editVideo('${item.id}')">تعديل ✏️</button>
-                        <button class="btn-danger course-action-btn" onclick="deleteVideo('${item.id}')">حذف 🗑️</button>
+                        <button class="btn-edit course-action-btn" onclick="editVideo('${escapeHtml(item.id)}')">تعديل ✏️</button>
+                        <button class="btn-danger course-action-btn" onclick="deleteVideo('${escapeHtml(item.id)}')">حذف 🗑️</button>
                     </div>` : '';
 
                 let playerHtml = '';
@@ -2915,7 +2983,7 @@ onAuthStateChanged(auth, async (user) => {
                     playerHtml = `
                         <div class="video-container">
                             <video controls preload="metadata">
-                                <source src="${item.videoUrl}">
+                                <source src="${safeMediaUrl(item.videoUrl)}">
                                 متصفحك لا يدعم تشغيل هذا الفيديو.
                             </video>
                         </div>`;
@@ -2923,14 +2991,14 @@ onAuthStateChanged(auth, async (user) => {
 
                 const videoActionBtns = item.videoUrl ? `
                     <a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(item.videoUrl)}" rel="noopener noreferrer" download>📥 تحميل</a>
-                    <button class="btn-primary course-action-btn" type="button" onclick='shareVideo(${JSON.stringify(item.title)}, ${JSON.stringify(item.id)})'>🔗 مشاركة</button>
+                    <button class="btn-primary course-action-btn" type="button" onclick='shareVideo(${escapeHtml(JSON.stringify(item.title))}, ${escapeHtml(JSON.stringify(item.id))})'>🔗 مشاركة</button>
                 ` : '';
 
                 const html = `
                     <div class="custom-card">
                         <div>
-                            <h3 style="font-family: 'Amiri', serif; font-size: 1.4rem; color: var(--accent-color);">${item.title}</h3>
-                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 10px 0;">${item.desc}</p>
+                            <h3 style="font-family: 'Amiri', serif; font-size: 1.4rem; color: var(--accent-color);">${escapeHtml(item.title)}</h3>
+                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 10px 0;">${escapeHtml(item.desc)}</p>
                             ${playerHtml}
                         </div>
                         <div class="course-actions-row">
@@ -2943,24 +3011,52 @@ onAuthStateChanged(auth, async (user) => {
             });
         }
 
-        async function recordShareAnalytics(contentId, contentType = 'content') {
-            if (isAdmin) return;
+        function showShareToast(message) {
+            const oldToast = document.getElementById('shareToast');
+            if (oldToast) oldToast.remove();
+            const toast = document.createElement('div');
+            toast.id = 'shareToast';
+            toast.textContent = message;
+            Object.assign(toast.style, {
+                position: 'fixed',
+                bottom: '24px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: '99999',
+                background: 'rgba(20,20,20,.94)',
+                color: '#fff',
+                padding: '12px 18px',
+                borderRadius: '12px',
+                fontSize: '15px',
+                boxShadow: '0 6px 24px rgba(0,0,0,.25)',
+                direction: 'rtl',
+                textAlign: 'center',
+                maxWidth: '90vw'
+            });
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2200);
+        }
 
-            // increment يسمح للزائر بالزيادة دون الحاجة إلى صلاحية READ على الإحصائيات.
+        async function recordShareAnalytics(contentId, contentType = 'content') {
+            if (isAdmin || !contentId || String(contentId).startsWith('def')) return false;
+
             try {
                 await ensureVisitorAuth();
                 const date = analyticsDate();
-                const updates = {
+                const safeId = String(contentId).replace(/[^a-zA-Z0-9_-]/g, '_');
+                const safeType = String(contentType || 'content').replace(/[^a-zA-Z0-9_-]/g, '_');
+                const eventPath = safeType === 'book'
+                    ? `siteStats/bookEvents/${safeId}/shares`
+                    : `siteStats/contentEvents/${safeType}_${safeId}/shares`;
+
+                await update(ref(db), {
+                    [eventPath]: increment(1),
                     [`siteStats/daily/${date}/shares`]: increment(1)
-                };
-
-                if (contentId && !String(contentId).startsWith('def')) {
-                    updates[`siteStats/contentEvents/${contentType}_${String(contentId)}/shares`] = increment(1);
-                }
-
-                await update(ref(db), updates);
+                });
+                return true;
             } catch (err) {
                 console.warn('تعذر تسجيل إحصائية المشاركة:', err);
+                return false;
             }
         }
 
@@ -2991,13 +3087,13 @@ onAuthStateChanged(auth, async (user) => {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
                     recordShareAnalytics(videoId, 'video');
-                    alert('تم نسخ رابط مشاركة الفيديو. يمكنك مشاركته الآن. 📋');
+                    showShareToast('تم نسخ رابط مشاركة الفيديو بنجاح. 📋');
                     return;
                 }
             } catch (err) {}
 
-            prompt(`انسخ رابط مشاركة فيديو «${title}» وأرسله:`, shareUrl);
-            recordShareAnalytics(videoId, 'video');
+            const copiedManually = prompt(`انسخ رابط مشاركة فيديو «${title}» وأرسله:`, shareUrl);
+            if (copiedManually !== null) recordShareAnalytics(videoId, 'video');
         };
 
         document.getElementById('addVideoForm')?.addEventListener('submit', async (e) => {
@@ -3013,6 +3109,7 @@ onAuthStateChanged(auth, async (user) => {
 
             try {
                 if (videoFile) {
+                    validateUploadFile(videoFile, { maxBytes: 100 * 1024 * 1024, mimePrefixes: ['video/'] });
                     btn.innerText = "جاري رفع الفيديو إلى Cloudinary... ⏳";
                     videoUrl = await uploadToCloudinary(videoFile);
                 }
@@ -3077,8 +3174,8 @@ onAuthStateChanged(auth, async (user) => {
             allCourses.forEach(item => {
                 const adminBtns = isAdmin ? `
                         <div class="course-admin-actions">
-                            <button class="btn-edit course-action-btn" onclick="editCourse('${item.id}')">تعديل ✏️</button>
-                            <button class="btn-danger course-action-btn" onclick="deleteCourse('${item.id}')">حذف 🗑️</button>
+                            <button class="btn-edit course-action-btn" onclick="editCourse('${escapeHtml(item.id)}')">تعديل ✏️</button>
+                            <button class="btn-danger course-action-btn" onclick="deleteCourse('${escapeHtml(item.id)}')">حذف 🗑️</button>
                         </div>` : '';
 
                 const isYouTubeVideo = item.videoUrl && (item.videoUrl.includes('youtube.com') || item.videoUrl.includes('youtu.be'));
@@ -3086,21 +3183,21 @@ onAuthStateChanged(auth, async (user) => {
                     <div class="video-container" style="margin:12px 0;">
                         ${isYouTubeVideo
                             ? `<iframe src="${getYouTubeEmbedUrl(item.videoUrl)}" allowfullscreen loading="lazy" style="width:100%; min-height:220px; border:0; border-radius:12px;"></iframe>`
-                            : `<video controls preload="metadata" playsinline style="width:100%; min-height:220px; border:0; border-radius:12px; display:block;"><source src="${item.videoUrl}">متصفحك لا يدعم تشغيل هذا الفيديو.</video>`}
+                            : `<video controls preload="metadata" playsinline style="width:100%; min-height:220px; border:0; border-radius:12px; display:block;"><source src="${safeMediaUrl(item.videoUrl)}">متصفحك لا يدعم تشغيل هذا الفيديو.</video>`}
                     </div>` : '';
                 const fileBtn = item.fileUrl ? `<a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(item.fileUrl)}" rel="noopener noreferrer" download>📥 تحميل الملف</a>` : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
 
                 const html = `
                     <div class="custom-card">
                         <div>
-                            <h3 style="font-family: 'Amiri', serif; font-size: 1.5rem; color: var(--accent-color);">${item.title}</h3>
-                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 12px 0;">${item.desc}</p>
-                            <div class="card-price">${item.price}</div>
+                            <h3 style="font-family: 'Amiri', serif; font-size: 1.5rem; color: var(--accent-color);">${escapeHtml(item.title)}</h3>
+                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 12px 0;">${escapeHtml(item.desc)}</p>
+                            <div class="card-price">${escapeHtml(item.price)}</div>
                         </div>
                         ${videoBtn}
                         <div class="course-actions-row">
                             ${fileBtn}
-                            <button class="btn-primary course-action-btn" type="button" onclick='shareCourse(${JSON.stringify(item.title)}, ${JSON.stringify(item.id)})'>🔗 مشاركة</button>
+                            <button class="btn-primary course-action-btn" type="button" onclick='shareCourse(${escapeHtml(JSON.stringify(item.title))}, ${escapeHtml(JSON.stringify(item.id))})'>🔗 مشاركة</button>
                             ${adminBtns}
                         </div>
                     </div>
@@ -3127,7 +3224,7 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
-                    trackBookAnalytics(courseId, 'shares');
+                    recordShareAnalytics(courseId, 'course');
                     return;
                 } catch (err) {}
             }
@@ -3135,14 +3232,14 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
-                    trackBookAnalytics(courseId, 'shares');
-                    alert('تم نسخ رابط مشاركة الدورة/الورشة. يمكنك مشاركته الآن. 📋');
+                    recordShareAnalytics(courseId, 'course');
+                    showShareToast('تم نسخ رابط مشاركة الدورة/الورشة بنجاح. 📋');
                     return;
                 }
             } catch (err) {}
 
             prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
-            trackBookAnalytics(courseId, 'shares');
+            recordShareAnalytics(courseId, 'course');
         };
 
         document.getElementById('addCourseForm')?.addEventListener('submit', async (e) => {
@@ -3229,8 +3326,8 @@ onAuthStateChanged(auth, async (user) => {
             allProducts.forEach(item => {
                 const adminBtns = isAdmin ? `
                     <div style="display:flex; gap:8px; margin-top:10px;">
-                        <button class="btn-edit" onclick="editProduct('${item.id}')">تعديل ✏️</button>
-                        <button class="btn-danger" onclick="deleteProduct('${item.id}')">حذف 🗑️</button>
+                        <button class="btn-edit" onclick="editProduct('${escapeHtml(item.id)}')">تعديل ✏️</button>
+                        <button class="btn-danger" onclick="deleteProduct('${escapeHtml(item.id)}')">حذف 🗑️</button>
                     </div>` : '';
 
                 const isFree = checkIsFree(item.price, 'product');
@@ -3239,11 +3336,11 @@ onAuthStateChanged(auth, async (user) => {
                 const html = `
                     <div class="custom-card">
                         <div>
-                            <h3 style="font-family: 'Amiri', serif; font-size: 1.5rem; color: var(--accent-color);">${item.title}</h3>
-                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 12px 0;">${item.desc}</p>
-                            <div class="card-price">${item.price}</div>
+                            <h3 style="font-family: 'Amiri', serif; font-size: 1.5rem; color: var(--accent-color);">${escapeHtml(item.title)}</h3>
+                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 12px 0;">${escapeHtml(item.desc)}</p>
+                            <div class="card-price">${escapeHtml(item.price)}</div>
                         </div>
-                        <button class="btn-primary" onclick="requestService('${item.title}', '${item.price}', '${item.fileUrl || '#'}')">${btnText}</button>
+                        <button class="btn-primary" onclick="requestService('${escapeHtml(item.title)}', '${escapeHtml(item.price)}', '${escapeHtml(item.fileUrl || '#')}')">${btnText}</button>
                         ${adminBtns}
                     </div>
                 `;
@@ -3349,6 +3446,9 @@ onAuthStateChanged(auth, async (user) => {
             }
 
             renderAnalyticsDashboard();
+            // قد تصل بيانات الفيديوهات والدورات بعد بيانات الكتب؛ نعيد بناء لوحة التحليلات
+            // مرة قصيرة بعد اكتمال مستمعات المحتوى حتى تظهر أسماء الأعمال في «أكثر الأعمال مشاركة».
+            setTimeout(() => { if (isAdmin) renderAnalyticsDashboard(); }, 1200);
 
             const totalReadsEl = document.getElementById('totalBookReadsCount');
             if (totalReadsEl) totalReadsEl.innerText = sumReads.toLocaleString('ar-EG');
@@ -3391,21 +3491,21 @@ onAuthStateChanged(auth, async (user) => {
                 const audioPlayerHtml = (book.audioUrl && book.audioUrl.trim() !== '' && book.audioUrl !== '#') ? `
                     <div class="audio-player-container">
                         <span style="font-size:0.82rem; color:var(--accent-color); font-weight:bold; display:block; margin-bottom:4px;">🎧 الإلقاء الصوتي للرواية</span>
-                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${book.id}" src="${book.audioUrl}">
+                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${book.id}" src="${safeMediaUrl(book.audioUrl)}">
                             عذراً، متصفحك لا يدعم تشغيل هذا الملف الصوتي.
                         </audio>
                     </div>` : '';
 
                 const amazonBtnHtml = book.amazonLink 
-                    ? `<a href="${book.amazonLink}" target="_blank" class="btn-action btn-amazon">📦 أمازون</a>`
+                    ? `<a href="${safeHttpUrl(book.amazonLink)}" target="_blank" class="btn-action btn-amazon">📦 أمازون</a>`
                     : `<button class="btn-action btn-amazon btn-disabled" disabled>📦 أمازون</button>`;
 
                 const googleBtnHtml = book.googlePlayLink 
-                    ? `<a href="${book.googlePlayLink}" target="_blank" class="btn-action btn-googleplay">📱 جوجل بلاي</a>`
+                    ? `<a href="${safeHttpUrl(book.googlePlayLink)}" target="_blank" class="btn-action btn-googleplay">📱 جوجل بلاي</a>`
                     : `<button class="btn-action btn-googleplay btn-disabled" disabled>📱 جوجل بلاي</button>`;
 
                 const readBtnHtml = book.customLink 
-                    ? `<a href="${book.customLink}" target="_blank" class="btn-action btn-read">📖 اقرأ مباشر</a>`
+                    ? `<a href="${safeHttpUrl(book.customLink)}" target="_blank" class="btn-action btn-read">📖 اقرأ مباشر</a>`
                     : (book.freePages?.length > 0 
                         ? `<button class="btn-action btn-read" onclick="openReader('${book.id}')">📖 اقرأ مباشر</button>`
                         : `<button class="btn-action btn-read btn-disabled" disabled>📖 اقرأ مباشر</button>`);
@@ -3413,11 +3513,11 @@ onAuthStateChanged(auth, async (user) => {
                 const isFree = checkIsFree(book.price, book.category);
 
                 const downloadBtnHtml = (book.fileUrl && book.fileUrl !== '#') 
-                    ? `<button class="btn-action btn-download" onclick="downloadBook('${book.id}', '${book.fileUrl}', '${book.price}', '${book.category}')">${isFree ? '📥 تحميل مجاني' : '📄 تحميل الملف'}</button>`
+                    ? `<button class="btn-action btn-download" onclick="downloadBook('${book.id}', '${safeMediaUrl(book.fileUrl)}', '${book.price}', '${book.category}')">${isFree ? '📥 تحميل مجاني' : '📄 تحميل الملف'}</button>`
                     : `<button class="btn-action btn-download btn-disabled" disabled>📄 تحميل الملف</button>`;
 
                 const buySectionHtml = isFree 
-                    ? `<button class="btn-action btn-buy-full" onclick="downloadBook('${book.id}', '${book.fileUrl}', '${book.price}', '${book.category}')">📥 تحميل النسخة المجانية المباشرة</button>`
+                    ? `<button class="btn-action btn-buy-full" onclick="downloadBook('${book.id}', '${safeMediaUrl(book.fileUrl)}', '${book.price}', '${book.category}')">📥 تحميل النسخة المجانية المباشرة</button>`
                     : `<button class="btn-action btn-buy-full" onclick="toggleBuyDropdown('${book.id}')">🛒 شراء الكتاب الآن ▾</button>
                        <div id="buyDropdown_${book.id}" class="buy-dropdown-menu">
                            <button class="btn-buy-paper" onclick="openBuyModal('${book.id}', 'paper')">شراء نسخة ورقية 📦</button>
@@ -3433,11 +3533,11 @@ onAuthStateChanged(auth, async (user) => {
                             <div class="book-cover">
                                 <span class="book-badge-cat">🏷️ ${categoryName}</span>
                                 <span class="book-badge-reads">👁️ ${book.reads ?? 0}</span>
-                                ${book.coverUrl ? `<img src="${optimizedCoverUrl}" alt="${book.title}" loading="lazy" onclick='openReader(${JSON.stringify(book.id)})' style="cursor:pointer;" title="اضغط لبدء القراءة">` : `<span onclick='openReader(${JSON.stringify(book.id)})' style="cursor:pointer;" title="اضغط لبدء القراءة">14 × 20</span>`}
+                                ${book.coverUrl ? `<img src="${safeMediaUrl(optimizedCoverUrl)}" alt="${escapeHtml(book.title)}" loading="lazy" onclick='openReader(${escapeHtml(JSON.stringify(book.id))})' style="cursor:pointer;" title="اضغط لبدء القراءة">` : `<span onclick='openReader(${escapeHtml(JSON.stringify(book.id))})' style="cursor:pointer;" title="اضغط لبدء القراءة">14 × 20</span>`}
                             </div>
-                            <h3 style="font-family: 'Amiri', serif; font-size: 1.45rem; color: var(--accent-color);">${book.title}</h3>
-                            <div class="book-author-tag">تأليف: ${book.author ?? 'سعيد الشوادفي'}</div>
-                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px; text-align: justify; text-justify: inter-word;">${book.desc}</p>
+                            <h3 style="font-family: 'Amiri', serif; font-size: 1.45rem; color: var(--accent-color);">${escapeHtml(book.title)}</h3>
+                            <div class="book-author-tag">تأليف: ${escapeHtml(book.author ?? 'سعيد الشوادفي')}</div>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px; text-align: justify; text-justify: inter-word;">${escapeHtml(book.desc)}</p>
                             
                             ${audioPlayerHtml}
 
@@ -3447,13 +3547,13 @@ onAuthStateChanged(auth, async (user) => {
                                 <span>⭐ ${avgRating} / 5</span>
                             </div>
 
-                            <div class="rating-stars" onclick="rateBook('${book.id}')" title="قيم هذا العمل">
+                            <div class="rating-stars" onclick="rateBook('${escapeHtml(book.id)}')" title="قيم هذا العمل">
                                 <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
                                 <small style="font-size:0.75rem; color:var(--text-muted);">(أنقر للتقييم)</small>
                             </div>
 
                             <div class="book-price">
-                                <span>الرقمية: ${book.price ?? 'مجاني'}</span> | <span>الورقية: ${book.paperPrice ?? 'غير متاحة'}</span>
+                                <span>الرقمية: ${escapeHtml(book.price ?? 'مجاني')}</span> | <span>الورقية: ${escapeHtml(book.paperPrice ?? 'غير متاحة')}</span>
                             </div>
                         </div>
 
@@ -3463,8 +3563,8 @@ onAuthStateChanged(auth, async (user) => {
                             ${readBtnHtml}
                             ${downloadBtnHtml}
 
-                            <button class="btn-action btn-share" onclick='shareBook(${JSON.stringify(book.id)}, ${JSON.stringify(book.title)})'>🔗 مشاركة</button>
-                            <button class="btn-action btn-reviews" onclick="openReviewsModal('${book.id}')">⭐ تقييمات القراء</button>
+                            <button class="btn-action btn-share" onclick='shareBook(${escapeHtml(JSON.stringify(book.id))}, ${escapeHtml(JSON.stringify(book.title))})'>🔗 مشاركة</button>
+                            <button class="btn-action btn-reviews" onclick="openReviewsModal('${escapeHtml(book.id)}')">⭐ تقييمات القراء</button>
 
                             ${buySectionHtml}
 
@@ -3525,7 +3625,7 @@ onAuthStateChanged(auth, async (user) => {
 
             document.querySelectorAll('.buy-dropdown-menu').forEach(menu => menu.style.display = 'none');
 
-            document.getElementById('buyTitle').innerText = `طلب ${type === 'paper' ? 'نسخة ورقية' : 'نسخة رقمية'}: ${book.title}`;
+            document.getElementById('buyTitle').innerText = `طلب ${type === 'paper' ? 'نسخة ورقية' : 'نسخة رقمية'}: ${escapeHtml(book.title)}`;
             document.getElementById('buySubtitle').innerText = `السعر: ${type === 'paper' ? book.paperPrice : book.price}`;
 
             const codEl = document.getElementById('codMethod');
@@ -3588,10 +3688,7 @@ onAuthStateChanged(auth, async (user) => {
         });
 
         window.shareBook = async (bookId, title) => {
-            let shareTracked = false;
-            const markShare = () => {
-                if (!shareTracked) { shareTracked = true; trackBookAnalytics(bookId, 'shares'); }
-            };
+            const markShare = () => recordShareAnalytics(bookId, 'book');
             // رابط الموقع المنشور هو رابط المشاركة الحقيقي.
             // عند تجربة index.html محلياً لا نستخدم file:// لأنه غير صالح للمشاركة.
             const workerBaseUrl = 'https://tight-firefly-b99c.saeidelshwadfy.workers.dev';
@@ -3618,14 +3715,15 @@ onAuthStateChanged(auth, async (user) => {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
                     markShare();
-                    alert(`تم نسخ رابط مشاركة «${title}» بنجاح! 📋\n\nالرابط خاص بهذا الكتاب ويمكنك إرساله على واتساب أو فيسبوك.`);
+                    showShareToast(`تم نسخ رابط مشاركة «${title}» بنجاح. 📋`);
                     return;
                 }
             } catch (err) {
                 // ننتقل إلى الطريقة اليدوية بالأسفل.
             }
 
-            prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
+            const copiedManually = prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
+            if (copiedManually !== null) await markShare();
         };
 
         window.rateBook = (bookId) => {
@@ -3674,10 +3772,10 @@ onAuthStateChanged(auth, async (user) => {
                             const revHtml = `
                                 <div class="review-card">
                                     <div class="review-header">
-                                        <span class="review-author">👤 ${rev.name}</span>
-                                        <span class="review-date">${rev.date ?? ''}</span>
+                                        <span class="review-author">👤 ${escapeHtml(rev.name)}</span>
+                                        <span class="review-date">${escapeHtml(rev.date ?? '')}</span>
                                     </div>
-                                    <div class="review-text">${rev.text}</div>
+                                    <div class="review-text">${escapeHtml(rev.text)}</div>
                                 </div>
                             `;
                             container?.insertAdjacentHTML('beforeend', revHtml);
@@ -3742,12 +3840,15 @@ onAuthStateChanged(auth, async (user) => {
 
             try {
                 if (coverFile) {
+                    validateUploadFile(coverFile, { maxBytes: 10 * 1024 * 1024, mimePrefixes: ['image/'] });
                     coverUrl = await uploadToCloudinary(coverFile);
                 }
                 if (docFile) {
+                    validateUploadFile(docFile, { maxBytes: 100 * 1024 * 1024, extensions: ['.pdf'] });
                     fileUrl = await uploadToCloudinary(docFile);
                 }
                 if (bookAudioFile) {
+                    validateUploadFile(bookAudioFile, { maxBytes: 100 * 1024 * 1024, mimePrefixes: ['audio/'] });
                     bookAudioUrl = await uploadToCloudinary(bookAudioFile);
                 }
 
