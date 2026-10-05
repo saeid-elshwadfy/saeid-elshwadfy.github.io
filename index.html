@@ -2048,7 +2048,7 @@ onAuthStateChanged(auth, async (user) => {
             if (adminPanel) adminPanel.style.display = isAdmin ? 'block' : 'none';
             if (adminToggleBtn) adminToggleBtn.innerText = isAdmin ? '🛠️ لوحة التحكم' : '🔒 تسجيل الدخول';
 
-            trackSiteVisits();
+            void trackSiteVisits();
 
             renderBooks();
             renderAudio();
@@ -2091,10 +2091,10 @@ onAuthStateChanged(auth, async (user) => {
                 const safeBookId = String(bookId).replace(/[^a-zA-Z0-9_-]/g, '_');
                 const safeEvent = String(eventName).replace(/[^a-zA-Z0-9_-]/g, '_');
                 const isBook = allBooks.some(b => b.id === bookId);
-                const statsPath = isBook ? 'siteStats/bookEvents' : 'siteStats/contentEvents';
+                const statId = isBook ? safeBookId : `${safeEvent}_${safeBookId}`;
 
                 await update(ref(db), {
-                    [`${statsPath}/${safeBookId}/${safeEvent}`]: increment(amount),
+                    [`siteStats/bookEvents/${statId}/${safeEvent}`]: increment(amount),
                     [`siteStats/daily/${date}/${safeEvent}`]: increment(amount)
                 });
             } catch (err) {
@@ -2102,16 +2102,31 @@ onAuthStateChanged(auth, async (user) => {
             }
         }
 
-        function trackSiteVisits() {
+        async function trackSiteVisits() {
             if (isAdmin) return;
 
-            const today = analyticsDate();
-            const lastVisit = localStorage.getItem('site_last_visit');
+            try {
+                // لا نحاول الكتابة قبل اكتمال جلسة Firebase المجهولة.
+                // هذا هو سبب توقف عداد الزيارات في بعض المتصفحات بعد تعديلات العداد.
+                await ensureVisitorAuth();
 
-            if (lastVisit !== today) {
+                const today = analyticsDate();
+                const lastVisit = localStorage.getItem('site_last_visit');
+
+                if (lastVisit === today) return;
+
+                // increment() لا يحتاج قراءة القيمة الحالية، ونكتب الإجمالي
+                // والعداد اليومي في عملية واحدة حتى لا يحدث عدم تطابق بينهما.
+                await update(ref(db), {
+                    'siteStats/visits': increment(1),
+                    [`siteStats/daily/${today}/visits`]: increment(1)
+                });
+
+                // لا نحفظ تاريخ الزيارة إلا بعد نجاح Firebase.
+                // لو فشلت الكتابة سيُعاد الاختبار في الزيارة التالية.
                 localStorage.setItem('site_last_visit', today);
-                runTransaction(ref(db, 'siteStats/visits'), currentVisits => (currentVisits ?? 0) + 1);
-                trackAnalyticsEvent('visits');
+            } catch (err) {
+                console.warn('تعذر تسجيل زيارة الموقع:', err);
             }
         }
 
@@ -2143,9 +2158,8 @@ onAuthStateChanged(auth, async (user) => {
 
             Promise.all([
                 readOnce('siteStats/bookEvents'),
-                readOnce('siteStats/contentEvents'),
                 readOnce('siteStats/daily')
-            ]).then(([bookEvents, contentEvents, daily]) => {
+            ]).then(([bookEvents, daily]) => {
                 const shares = [];
                 let perWorkShares = 0;
                 let dailyShares = 0;
@@ -2154,33 +2168,29 @@ onAuthStateChanged(auth, async (user) => {
                     dailyShares += Number(day?.shares || 0);
                 });
 
-                Object.entries(bookEvents || {}).forEach(([id, data]) => {
-                    const count = Number(data?.shares || 0);
-                    if (count > 0) {
-                        perWorkShares += count;
-                        const item = allBooks.find(b => b.id === id);
-                        shares.push({ title: `📖 ${item?.title || id}`, count });
-                    }
-                });
-
-                Object.entries(contentEvents || {}).forEach(([rawId, data]) => {
+                Object.entries(bookEvents || {}).forEach(([rawId, data]) => {
                     const count = Number(data?.shares || 0);
                     if (count <= 0) return;
 
-                    // المشاركات الجديدة تحفظ النوع مع المعرّف (video_ID / course_ID)،
-                    // مع دعم البيانات القديمة التي كانت تحفظ المعرّف وحده.
+                    // الكتب تحفظ بالـID مباشرة، والفيديوهات/الدورات تحفظ بصيغة
+                    // video_ID / course_ID. هكذا نستخدم مسارًا واحدًا مضمون الصلاحية.
                     const separator = rawId.indexOf('_');
-                    const type = separator > 0 ? rawId.slice(0, separator) : '';
+                    const type = separator > 0 ? rawId.slice(0, separator) : 'book';
                     const id = separator > 0 ? rawId.slice(separator + 1) : rawId;
-                    const items = [
-                        ...(Array.isArray(allVideos) ? allVideos : []),
-                        ...(Array.isArray(allCourses) ? allCourses : [])
-                    ];
-                    const item = items.find(x => x.id === id) || items.find(x => x.id === rawId);
+
+                    let item = null;
+                    if (type === 'book') {
+                        item = allBooks.find(b => b.id === id);
+                    } else if (type === 'video') {
+                        item = (Array.isArray(allVideos) ? allVideos : []).find(v => v.id === id);
+                    } else if (type === 'course') {
+                        item = (Array.isArray(allCourses) ? allCourses : []).find(c => c.id === id);
+                    }
 
                     perWorkShares += count;
+                    const icon = type === 'book' ? '📖' : (type === 'video' ? '🎬' : '📚');
                     shares.push({
-                        title: item?.title || `${type ? type + ' — ' : ''}${id}`,
+                        title: `${icon} ${item?.title || id}`,
                         count
                     });
                 });
@@ -3038,21 +3048,28 @@ onAuthStateChanged(auth, async (user) => {
         }
 
         async function recordShareAnalytics(contentId, contentType = 'content') {
-            if (isAdmin || !contentId || String(contentId).startsWith('def')) return false;
+            if (!contentId || String(contentId).startsWith('def')) return false;
 
             try {
+                // ننتظر جلسة Firebase أولاً، ثم نسجل المشاركة في عملية واحدة.
+                // مهم: نستخدم increment() لأن الزائر لا يملك صلاحية قراءة الإحصائيات.
                 await ensureVisitorAuth();
+
                 const date = analyticsDate();
                 const safeId = String(contentId).replace(/[^a-zA-Z0-9_-]/g, '_');
                 const safeType = String(contentType || 'content').replace(/[^a-zA-Z0-9_-]/g, '_');
-                const eventPath = safeType === 'book'
-                    ? `siteStats/bookEvents/${safeId}/shares`
-                    : `siteStats/contentEvents/${safeType}_${safeId}/shares`;
 
-                await update(ref(db), {
-                    [eventPath]: increment(1),
+                const updates = {
                     [`siteStats/daily/${date}/shares`]: increment(1)
-                });
+                };
+
+                // نستخدم bookEvents لكل أنواع المحتوى عمدًا؛ هذا المسار موجود ومسموح
+                // في قواعد Firebase الحالية، وبذلك لا تعتمد المشاركات على contentEvents
+                // الذي كان يتسبب في فشل لوحة التحليلات بالكامل عند رفض قراءته.
+                const statId = safeType === 'book' ? safeId : `${safeType}_${safeId}`;
+                updates[`siteStats/bookEvents/${statId}/shares`] = increment(1);
+
+                await update(ref(db), updates);
                 return true;
             } catch (err) {
                 console.warn('تعذر تسجيل إحصائية المشاركة:', err);
@@ -3078,7 +3095,7 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
-                    recordShareAnalytics(videoId, 'video');
+                    await recordShareAnalytics(videoId, 'video');
                     return;
                 } catch (err) {}
             }
@@ -3086,14 +3103,14 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
-                    recordShareAnalytics(videoId, 'video');
-                    showShareToast('تم نسخ رابط مشاركة الفيديو بنجاح. 📋');
+                    const recorded = await recordShareAnalytics(videoId, 'video');
+                    showShareToast(recorded ? 'تم نسخ رابط مشاركة الفيديو بنجاح. 📋' : 'تمت المشاركة، لكن تعذر تسجيل الإحصائية حالياً.');
                     return;
                 }
             } catch (err) {}
 
             const copiedManually = prompt(`انسخ رابط مشاركة فيديو «${title}» وأرسله:`, shareUrl);
-            if (copiedManually !== null) recordShareAnalytics(videoId, 'video');
+            if (copiedManually !== null) await recordShareAnalytics(videoId, 'video');
         };
 
         document.getElementById('addVideoForm')?.addEventListener('submit', async (e) => {
@@ -3224,7 +3241,7 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
-                    recordShareAnalytics(courseId, 'course');
+                    await recordShareAnalytics(courseId, 'course');
                     return;
                 } catch (err) {}
             }
@@ -3232,14 +3249,14 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
-                    recordShareAnalytics(courseId, 'course');
-                    showShareToast('تم نسخ رابط مشاركة الدورة/الورشة بنجاح. 📋');
+                    const recorded = await recordShareAnalytics(courseId, 'course');
+                    showShareToast(recorded ? 'تم نسخ رابط مشاركة الدورة/الورشة بنجاح. 📋' : 'تمت المشاركة، لكن تعذر تسجيل الإحصائية حالياً.');
                     return;
                 }
             } catch (err) {}
 
-            prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
-            recordShareAnalytics(courseId, 'course');
+            const copiedManually = prompt(`انسخ رابط مشاركة «${title}» وأرسله:`, shareUrl);
+            if (copiedManually !== null) await recordShareAnalytics(courseId, 'course');
         };
 
         document.getElementById('addCourseForm')?.addEventListener('submit', async (e) => {
@@ -3704,7 +3721,7 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
-                    markShare();
+                    await markShare();
                     return;
                 } catch (err) {
                     // المستخدم قد يكون أغلق نافذة المشاركة، أو المتصفح رفض الطلب.
@@ -3714,8 +3731,8 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
-                    markShare();
-                    showShareToast(`تم نسخ رابط مشاركة «${title}» بنجاح. 📋`);
+                    const recorded = await markShare();
+                    showShareToast(recorded ? `تم نسخ رابط مشاركة «${title}» بنجاح. 📋` : 'تمت المشاركة، لكن تعذر تسجيل الإحصائية حالياً.');
                     return;
                 }
             } catch (err) {
