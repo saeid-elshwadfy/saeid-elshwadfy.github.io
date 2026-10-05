@@ -2975,6 +2975,10 @@ onAuthStateChanged(auth, async (user) => {
                 return;
             }
 
+            // نحسب الضغطة فوراً، قبل فتح نافذة المشاركة.
+            // بذلك لا يعتمد العداد على نتيجة navigator.share.
+            await trackAnalyticsEvent('shares');
+
             const workerBaseUrl = 'https://tight-firefly-b99c.saeidelshwadfy.workers.dev';
             const shareUrl = `${workerBaseUrl}/video/${encodeURIComponent(videoId)}`;
 
@@ -2987,7 +2991,6 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
-                    recordShareAnalytics(videoId, 'video');
                     return;
                 } catch (err) {}
             }
@@ -2995,14 +2998,12 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
-                    recordShareAnalytics(videoId, 'video');
                     alert('تم نسخ رابط مشاركة الفيديو. يمكنك مشاركته الآن. 📋');
                     return;
                 }
             } catch (err) {}
 
             prompt(`انسخ رابط مشاركة فيديو «${title}» وأرسله:`, shareUrl);
-            recordShareAnalytics(videoId, 'video');
         };
 
         document.getElementById('addVideoForm')?.addEventListener('submit', async (e) => {
@@ -3120,7 +3121,9 @@ onAuthStateChanged(auth, async (user) => {
                 return;
             }
 
-            const workerBaseUrl = 'https://tight-firefly-b99c.saeidelshwadfy.workers.dev';
+            await trackAnalyticsEvent('shares');
+
+    const workerBaseUrl = 'https://tight-firefly-b99c.saeidelshwadfy.workers.dev';
             const shareUrl = `${workerBaseUrl}/course/${encodeURIComponent(courseId)}`;
 
             const shareData = {
@@ -3593,10 +3596,8 @@ onAuthStateChanged(auth, async (user) => {
         });
 
         window.shareBook = async (bookId, title) => {
-            let shareTracked = false;
-            const markShare = () => {
-                if (!shareTracked) { shareTracked = true; trackBookAnalytics(bookId, 'shares'); }
-            };
+            // نحسب الضغطة فوراً وبنفس عداد المشاركات العام.
+            await trackAnalyticsEvent('shares');
             // رابط الموقع المنشور هو رابط المشاركة الحقيقي.
             // عند تجربة index.html محلياً لا نستخدم file:// لأنه غير صالح للمشاركة.
             const workerBaseUrl = 'https://tight-firefly-b99c.saeidelshwadfy.workers.dev';
@@ -3612,7 +3613,6 @@ onAuthStateChanged(auth, async (user) => {
             if (navigator.share) {
                 try {
                     await navigator.share(shareData);
-                    markShare();
                     return;
                 } catch (err) {
                     // المستخدم قد يكون أغلق نافذة المشاركة، أو المتصفح رفض الطلب.
@@ -3622,7 +3622,6 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(shareUrl);
-                    markShare();
                     alert(`تم نسخ رابط مشاركة «${title}» بنجاح! 📋\n\nالرابط خاص بهذا الكتاب ويمكنك إرساله على واتساب أو فيسبوك.`);
                     return;
                 }
