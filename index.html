@@ -3493,6 +3493,45 @@ onAuthStateChanged(auth, async (user) => {
             });
         });
 
+        // عرض أحدث مراجعة أسفل وصف الكتاب بدون التأثير على نافذة "تقييمات القراء" الحالية.
+        function loadLatestReviewPreview(bookId) {
+            const preview = document.getElementById(`latestReview_${bookId}`);
+            if (!preview || !bookId || String(bookId).startsWith('def')) return;
+
+            onValue(ref(db, `reviews/${bookId}`), (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    preview.style.display = 'none';
+                    return;
+                }
+
+                const reviews = Object.values(data).filter(Boolean);
+                const latestReviews = reviews.slice(-10).reverse();
+                if (!latestReviews.length) {
+                    preview.style.display = 'none';
+                    return;
+                }
+
+                preview.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:7px; margin-bottom:8px; color:var(--accent-color); font-weight:bold;">
+                        <span>💬 آخر ${Math.min(latestReviews.length, 10)} مراجعات وآراء القراء</span>
+                    </div>
+                    <div style="max-height:300px; overflow-y:auto; padding-left:3px;">
+                        ${latestReviews.map((review, index) => `
+                            <div style="padding:9px 0; ${index < latestReviews.length - 1 ? 'border-bottom:1px solid var(--border-color);' : ''}">
+                                <div style="font-size:0.9rem; line-height:1.65;">
+                                    <strong>👤 ${escapeHtml(review.name ?? 'قارئ')}</strong>
+                                    <span style="color:var(--text-muted); font-size:0.78rem; margin-right:6px;">${escapeHtml(review.date ?? '')}</span>
+                                </div>
+                                <div style="color:var(--text-muted); font-size:0.88rem; line-height:1.65; margin-top:3px;">${escapeHtml(review.text ?? '')}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                preview.style.display = 'block';
+            }, { onlyOnce: true });
+        }
+
         function renderBooks() {
             const grid = document.getElementById('booksGrid');
             if (!grid) return;
@@ -3568,6 +3607,8 @@ onAuthStateChanged(auth, async (user) => {
                             <h3 style="font-family: 'Amiri', serif; font-size: 1.45rem; color: var(--accent-color);">${escapeHtml(book.title)}</h3>
                             <div class="book-author-tag">تأليف: ${escapeHtml(book.author ?? 'سعيد الشوادفي')}</div>
                             <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px; text-align: justify; text-justify: inter-word;">${escapeHtml(book.desc)}</p>
+
+                            <div id="latestReview_${escapeHtml(book.id)}" style="display:none; margin:10px 0 14px; padding:10px 12px; border:1px dashed var(--border-color); border-radius:12px; background:rgba(128,128,128,.06); text-align:right;"></div>
                             
                             ${audioPlayerHtml}
 
@@ -3603,6 +3644,7 @@ onAuthStateChanged(auth, async (user) => {
                     </div>
                 `;
                 grid.insertAdjacentHTML('beforeend', cardHtml);
+                loadLatestReviewPreview(book.id);
             });
         }
 
