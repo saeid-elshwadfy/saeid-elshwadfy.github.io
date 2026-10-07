@@ -1471,7 +1471,8 @@
                 <hr style="border: 0; border-top: 1px dashed var(--border-color); margin: 18px 0;">
 
                 <form id="addReviewForm" style="text-align: right;">
-                    <h4 style="color: var(--accent-color); font-size: 1.1rem; margin-bottom: 10px; font-family: 'Amiri', serif;">✍️ أضف رأيك في هذا العمل:</h4>
+                    <h4 id="reviewFormTitle" style="color: var(--accent-color); font-size: 1.1rem; margin-bottom: 10px; font-family: 'Amiri', serif;">✍️ أضف رأيك في هذا العمل:</h4>
+                    <input type="hidden" id="editingReviewKey" value="">
                     <div class="form-group">
                         <input type="text" id="reviewerName" placeholder="اسمك / لقبك" required>
                     </div>
@@ -1479,6 +1480,7 @@
                         <textarea id="reviewerText" rows="3" placeholder="اكتب انطباعك ورأيك في الرواية هنا..." required></textarea>
                     </div>
                     <button type="submit" id="submitReviewBtn" class="btn-primary" style="width: 100%;">إرسال الرأي 🚀</button>
+                    <button type="button" id="cancelReviewEditBtn" class="btn-secondary" style="width: 100%; margin-top: 8px; display: none;">إلغاء التعديل</button>
                 </form>
             </div>
         </div>
@@ -1759,7 +1761,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
-        import { getDatabase, ref, onValue, set, push, update, remove, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, push, update, remove, runTransaction, increment, get } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, getIdTokenResult, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -3505,7 +3507,7 @@ onAuthStateChanged(auth, async (user) => {
                     return;
                 }
 
-                const reviews = Object.values(data).filter(Boolean);
+                const reviews = Object.entries(data).filter(([, review]) => review).map(([key, review]) => ({ key, ...review }));
                 const latestReviews = reviews.slice(-10).reverse();
                 if (!latestReviews.length) {
                     preview.style.display = 'none';
@@ -3524,6 +3526,7 @@ onAuthStateChanged(auth, async (user) => {
                                     <span style="color:var(--text-muted); font-size:0.78rem; margin-right:6px;">${escapeHtml(review.date ?? '')}</span>
                                 </div>
                                 <div style="color:var(--text-muted); font-size:0.88rem; line-height:1.65; margin-top:3px;">${escapeHtml(review.text ?? '')}</div>
+                                ${((isAdmin || (auth.currentUser?.uid && review.uid && review.uid === auth.currentUser.uid))) ? `<div style="margin-top:8px; display:flex; gap:7px; justify-content:flex-start; flex-wrap:wrap;">${auth.currentUser?.uid && review.uid && review.uid === auth.currentUser.uid ? `<button type="button" onclick="editReaderReview('${escapeHtml(bookId)}','${escapeHtml(review.key)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:8px; padding:5px 9px; cursor:pointer; font-size:.78rem;">✏️ تعديل</button>` : ''}${isAdmin ? `<button type="button" onclick="deleteReaderReview('${escapeHtml(bookId)}','${escapeHtml(review.key)}')" style="border:1px solid #d9534f; background:transparent; color:#d9534f; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:.78rem;">🗑️ حذف</button>` : ''}</div>` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -3618,9 +3621,9 @@ onAuthStateChanged(auth, async (user) => {
                                 <span>⭐ ${avgRating} / 5</span>
                             </div>
 
-                            <div class="rating-stars" onclick="rateBook('${escapeHtml(book.id)}')" title="قيم هذا العمل">
+                            <div class="rating-stars" onclick="rateBook('${escapeHtml(book.id)}')" title="اضغط هنا للتقييم أو تعديل تقييمك">
                                 <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                                <small style="font-size:0.75rem; color:var(--text-muted);">(أنقر للتقييم)</small>
+                                <small style="font-size:0.75rem; color:var(--text-muted);">(اضغط للتقييم أو تعديل تقييمك)</small>
                             </div>
 
                             <div class="book-price">
@@ -3808,34 +3811,142 @@ onAuthStateChanged(auth, async (user) => {
             if (copiedManually !== null) await markShare();
         };
 
-        window.rateBook = (bookId) => {
-            const ratingKey = `book_rated_${bookId}`;
-            if (localStorage.getItem(ratingKey)) {
-                alert("لقد قيّمت هذا العمل من هذا المتصفح من قبل. ⭐");
+        // تقييم قابل للتعديل: يُحفظ تقييم كل زائر في ratingsByUid،
+        // بينما تُحدّث قيمتا المجموع والعدد في مساراتهما فقط حتى تسمح Firebase Rules
+        // بالعملية بدون فتح صلاحية الكتاب بالكامل للزائر.
+        window.rateBook = async (bookId) => {
+            if (!bookId) return;
+
+            const ratingKey = `book_rating_${bookId}`;
+
+            if (bookId.startsWith('def')) {
+                const oldLocal = parseFloat(localStorage.getItem(ratingKey) || '');
+                const promptText = oldLocal >= 1 && oldLocal <= 5
+                    ? `تقييمك الحالي ${oldLocal} نجوم.\nضع التقييم الجديد من 1 إلى 5 نجوم:`
+                    : 'ضع تقييمك للعمل من 1 إلى 5 نجوم:';
+                const rating = prompt(promptText, oldLocal >= 1 && oldLocal <= 5 ? String(oldLocal) : '');
+                if (rating === null) return;
+                const num = parseFloat(rating);
+                if (!(num >= 1 && num <= 5)) { alert('من فضلك اختر رقماً من 1 إلى 5. ⭐'); return; }
+                localStorage.setItem(ratingKey, String(num));
+                alert(oldLocal >= 1 && oldLocal <= 5 ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
                 return;
             }
 
-            const rating = prompt("ضع تقييمك للعمل من 1 إلى 5 نجوم:");
-            const num = parseFloat(rating);
-            if (num >= 1 && num <= 5) {
-                if (!bookId.startsWith('def')) {
-                    runTransaction(ref(db, `books/${bookId}`), (book) => {
-                        if (book) {
-                            book.ratingSum = (book.ratingSum ?? 0) + num;
-                            book.ratingCount = (book.ratingCount ?? 0) + 1;
-                        }
-                        return book;
-                    }).then(() => {
-                        trackBookAnalytics(bookId, 'ratings');
-                        localStorage.setItem(ratingKey, '1');
-                        alert("شكراً لتقييمك! ⭐");
-                    }).catch(err => alert(`تعذر حفظ التقييم: ${err.message}`));
-                } else {
-                    localStorage.setItem(ratingKey, '1');
-                    alert("شكراً لتقييمك! ⭐");
+            try {
+                if (typeof ensureAnonymousAuth === 'function') await ensureAnonymousAuth();
+                const activeUid = auth.currentUser?.uid ?? null;
+                if (!activeUid) {
+                    alert('تعذر تحديد صاحب التقييم حالياً. حاول مرة أخرى.');
+                    return;
                 }
+
+                const bookSnapshot = await get(ref(db, `books/${bookId}`));
+                const existingBook = bookSnapshot.val();
+                if (!existingBook) {
+                    alert('العمل غير موجود حالياً.');
+                    return;
+                }
+
+                const firebasePrevious = Number(existingBook?.ratingsByUid?.[activeUid]);
+                const localPrevious = Number(localStorage.getItem(ratingKey));
+                const previous = Number.isFinite(firebasePrevious) && firebasePrevious >= 1 && firebasePrevious <= 5
+                    ? firebasePrevious
+                    : localPrevious;
+                const hasPrevious = Number.isFinite(previous) && previous >= 1 && previous <= 5;
+
+                const promptText = hasPrevious
+                    ? `تقييمك الحالي ${previous} نجوم.\nعدّل تقييمك وضع الدرجة الجديدة من 1 إلى 5 نجوم:`
+                    : 'ضع تقييمك للعمل من 1 إلى 5 نجوم:';
+                const rating = prompt(promptText, hasPrevious ? String(previous) : '');
+                if (rating === null) return;
+
+                const num = parseFloat(rating);
+                if (!(num >= 1 && num <= 5)) {
+                    alert('من فضلك اختر رقماً من 1 إلى 5. ⭐');
+                    return;
+                }
+
+                const currentSum = Number(existingBook.ratingSum ?? 0);
+                const currentCount = Number(existingBook.ratingCount ?? 0);
+                const nextSum = hasPrevious
+                    ? Math.max(0, currentSum - previous + num)
+                    : currentSum + num;
+                const nextCount = hasPrevious ? currentCount : currentCount + 1;
+
+                // تحديث الفروع الثلاثة فقط؛ لا نكتب على books/{bookId} بالكامل.
+                await update(ref(db), {
+                    [`books/${bookId}/ratingSum`]: nextSum,
+                    [`books/${bookId}/ratingCount`]: nextCount,
+                    [`books/${bookId}/ratingsByUid/${activeUid}`]: num
+                });
+
+                localStorage.setItem(ratingKey, String(num));
+                if (!hasPrevious) trackBookAnalytics(bookId, 'ratings');
+                alert(hasPrevious ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
+            } catch (err) {
+                console.error('تعذر حفظ/تعديل التقييم:', err);
+                alert(`تعذر حفظ التقييم: ${err.message}`);
             }
         };
+
+        window.deleteReaderReview = async (bookId, reviewKey) => {
+            if (!isAdmin) { alert('غير مصرح: حذف المراجعات للأدمن فقط.'); return; }
+            if (!bookId || !reviewKey || String(bookId).startsWith('def')) return;
+            const confirmed = confirm('هل أنت متأكد من حذف هذه المراجعة؟\nسيتم حذفها نهائياً من الموقع.');
+            if (!confirmed) return;
+            try {
+                await remove(ref(db, `reviews/${bookId}/${reviewKey}`));
+                alert('تم حذف المراجعة بنجاح.');
+                openReviewsModal(bookId);
+                loadLatestReviewPreview(bookId);
+            } catch (err) {
+                alert(`تعذر حذف المراجعة: ${err.message}`);
+            }
+        };
+
+        window.editReaderReview = async (bookId, reviewKey) => {
+            if (!bookId || !reviewKey || String(bookId).startsWith('def')) return;
+            const currentUid = auth.currentUser?.uid ?? null;
+            if (!currentUid) {
+                alert('يجب تسجيل الدخول حتى تتمكن من تعديل رأيك.');
+                return;
+            }
+
+            try {
+                const snapshot = await get(ref(db, `reviews/${bookId}/${reviewKey}`));
+                const review = snapshot.val();
+                if (!review) {
+                    alert('هذه المراجعة لم تعد موجودة.');
+                    openReviewsModal(bookId);
+                    return;
+                }
+                if (!review.uid || review.uid !== currentUid) {
+                    alert('يمكنك تعديل رأيك أنت فقط.');
+                    return;
+                }
+
+                selectedBookForReviews = bookId;
+                document.getElementById('editingReviewKey').value = reviewKey;
+                document.getElementById('reviewerName').value = review.name ?? '';
+                document.getElementById('reviewerText').value = review.text ?? '';
+                document.getElementById('reviewFormTitle').innerText = '✏️ تعديل رأيك في هذا العمل:';
+                document.getElementById('submitReviewBtn').innerText = 'حفظ التعديل 💾';
+                document.getElementById('cancelReviewEditBtn').style.display = 'block';
+                document.getElementById('reviewerText').focus();
+            } catch (err) {
+                alert(`تعذر فتح المراجعة للتعديل: ${err.message}`);
+            }
+        };
+
+        function resetReviewForm() {
+            document.getElementById('editingReviewKey').value = '';
+            document.getElementById('reviewerName').value = '';
+            document.getElementById('reviewerText').value = '';
+            document.getElementById('reviewFormTitle').innerText = '✍️ أضف رأيك في هذا العمل:';
+            document.getElementById('submitReviewBtn').innerText = 'إرسال الرأي 🚀';
+            document.getElementById('cancelReviewEditBtn').style.display = 'none';
+        }
 
         window.openReviewsModal = (bookId) => {
             selectedBookForReviews = bookId;
@@ -3850,7 +3961,7 @@ onAuthStateChanged(auth, async (user) => {
                     const data = snapshot.val();
                     if (container) container.innerHTML = '';
                     if (data) {
-                        Object.values(data).forEach(rev => {
+                        Object.entries(data).forEach(([reviewKey, rev]) => {
                             const revHtml = `
                                 <div class="review-card">
                                     <div class="review-header">
@@ -3858,6 +3969,7 @@ onAuthStateChanged(auth, async (user) => {
                                         <span class="review-date">${escapeHtml(rev.date ?? '')}</span>
                                     </div>
                                     <div class="review-text">${escapeHtml(rev.text)}</div>
+                                    ${(isAdmin || (auth.currentUser?.uid && rev.uid && rev.uid === auth.currentUser.uid)) ? `<div style="margin-top:10px; display:flex; gap:7px; justify-content:flex-start; flex-wrap:wrap;">${auth.currentUser?.uid && rev.uid && rev.uid === auth.currentUser.uid ? `<button type="button" onclick="editReaderReview('${escapeHtml(bookId)}','${escapeHtml(reviewKey)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:8px; padding:6px 10px; cursor:pointer;">✏️ تعديل</button>` : ''}${isAdmin ? `<button type="button" onclick="deleteReaderReview('${escapeHtml(bookId)}','${escapeHtml(reviewKey)}')" style="border:1px solid #d9534f; background:transparent; color:#d9534f; border-radius:8px; padding:6px 10px; cursor:pointer;">🗑️ حذف المراجعة</button>` : ''}</div>` : ''}
                                 </div>
                             `;
                             container?.insertAdjacentHTML('beforeend', revHtml);
@@ -3879,29 +3991,65 @@ onAuthStateChanged(auth, async (user) => {
 
         document.getElementById('addReviewForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('reviewerName').value;
-            const text = document.getElementById('reviewerText').value;
+            const name = document.getElementById('reviewerName').value.trim();
+            const text = document.getElementById('reviewerText').value.trim();
+            const editingReviewKey = document.getElementById('editingReviewKey').value.trim();
 
             if (!selectedBookForReviews) return;
-
-            const reviewData = {
-                name,
-                text,
-                uid: auth.currentUser?.uid ?? null,
-                date: new Date().toLocaleDateString('ar-EG')
-            };
-
-            if (!selectedBookForReviews.startsWith('def')) {
-                await push(ref(db, `reviews/${selectedBookForReviews}`), reviewData);
-                trackBookAnalytics(selectedBookForReviews, 'reviews');
-                alert("تم إرسال رأيك بنجاح! ✨");
-                document.getElementById('addReviewForm').reset();
-                openReviewsModal(selectedBookForReviews);
-            } else {
-                alert("تم إرسال رأيك بنجاح! ✨");
-                document.getElementById('addReviewForm').reset();
-                document.getElementById('reviewsModal').style.display = 'none';
+            if (!name || !text) {
+                alert('من فضلك اكتب الاسم والرأي أولاً.');
+                return;
             }
+
+            const currentUid = auth.currentUser?.uid ?? null;
+            if (!currentUid) {
+                alert('يجب تسجيل الدخول حتى تتمكن من نشر أو تعديل رأيك.');
+                return;
+            }
+
+            try {
+                if (!selectedBookForReviews.startsWith('def')) {
+                    if (editingReviewKey) {
+                        const reviewRef = ref(db, `reviews/${selectedBookForReviews}/${editingReviewKey}`);
+                        const snapshot = await get(reviewRef);
+                        const existing = snapshot.val();
+                        if (!existing || existing.uid !== currentUid) {
+                            alert('لا يمكنك تعديل هذه المراجعة.');
+                            return;
+                        }
+                        await update(reviewRef, {
+                            name,
+                            text,
+                            uid: currentUid,
+                            date: existing.date ?? new Date().toLocaleDateString('ar-EG'),
+                            updatedAt: new Date().toISOString()
+                        });
+                        alert('تم تعديل رأيك بنجاح! ✨');
+                    } else {
+                        const reviewData = {
+                            name,
+                            text,
+                            uid: currentUid,
+                            date: new Date().toLocaleDateString('ar-EG')
+                        };
+                        await push(ref(db, `reviews/${selectedBookForReviews}`), reviewData);
+                        trackBookAnalytics(selectedBookForReviews, 'reviews');
+                        alert('تم إرسال رأيك بنجاح! ✨');
+                    }
+                    resetReviewForm();
+                    openReviewsModal(selectedBookForReviews);
+                } else {
+                    alert('تم إرسال رأيك بنجاح! ✨');
+                    resetReviewForm();
+                    document.getElementById('reviewsModal').style.display = 'none';
+                }
+            } catch (err) {
+                alert(`تعذر حفظ الرأي: ${err.message}`);
+            }
+        });
+
+        document.getElementById('cancelReviewEditBtn')?.addEventListener('click', () => {
+            resetReviewForm();
         });
 
         document.getElementById('addBookForm')?.addEventListener('submit', async (e) => {
