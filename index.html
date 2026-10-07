@@ -843,6 +843,90 @@
             border: 0;
         }
 
+        /* تحسين كارت فيديوهات الدورات والورش */
+        #coursesGrid.single-course {
+            grid-template-columns: minmax(320px, 680px);
+            justify-content: center;
+        }
+
+        .course-video-card {
+            padding: 18px;
+            overflow: hidden;
+            border-color: rgba(212,175,55,.38);
+            box-shadow: 0 12px 32px rgba(0,0,0,.28), 0 0 24px rgba(212,175,55,.08);
+        }
+
+        .course-video-card .course-video-player {
+            margin: 14px 0 10px;
+            padding-bottom: 56.25%;
+            border-radius: 16px;
+            border: 1px solid rgba(212,175,55,.38);
+            box-shadow: 0 8px 22px rgba(0,0,0,.28);
+        }
+
+        .course-video-heading {
+            margin: 0;
+            font-family: 'Amiri', serif;
+            font-size: 1.65rem;
+            line-height: 1.45;
+            color: var(--accent-color);
+        }
+
+        .course-video-desc {
+            color: var(--text-muted);
+            font-size: .98rem;
+            line-height: 1.85;
+            margin: 8px 0 10px;
+        }
+
+        .course-video-meta {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 8px 0 2px;
+        }
+
+        .course-video-meta span {
+            background: rgba(212,175,55,.07);
+            border: 1px solid rgba(212,175,55,.22);
+            border-radius: 999px;
+            padding: 5px 12px;
+            color: var(--text-muted);
+            font-size: .86rem;
+        }
+
+        .course-video-meta .course-price-pill {
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .course-video-actions {
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .course-video-actions .course-admin-actions {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            #coursesGrid.single-course {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            .course-video-card { padding: 13px; }
+            .course-video-heading { font-size: 1.35rem; }
+            .course-video-actions, .course-video-actions .course-admin-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .book-author-tag {
             font-size: 0.95rem;
             color: var(--accent-color);
@@ -1170,6 +1254,7 @@
                 <p class="analytics-note">الإحصاءات التالية تُجمع من تفاعل الزوار داخل الموقع. أرقام الزيارات والتفاعل من المتصفح قابلة للتأثر بإعدادات المتصفح، بينما تحليلات مصادر الزيارات والأجهزة المتقدمة متاحة أيضاً عبر Firebase Analytics المرتبط بالموقع.</p>
                 <div class="analytics-cards">
                     <div class="analytics-card"><span>👁️ الزيارات</span><strong id="analyticsVisits">0</strong></div>
+                    <div class="analytics-card"><span>🎬 مشاهدات الفيديو</span><strong id="analyticsVideoViews">0</strong></div>
                     <div class="analytics-card"><span>📖 القراءات</span><strong id="analyticsReads">0</strong></div>
                     <div class="analytics-card"><span>🔗 المشاركات</span><strong id="analyticsShares">0</strong></div>
                     <div class="analytics-card"><span>⭐ التقييمات</span><strong id="analyticsRatings">0</strong></div>
@@ -1376,7 +1461,12 @@
                     <div class="form-group"><label>عنوان الدورة (مع الإيموجي):</label><input type="text" id="courseTitle" placeholder="مثال: 🖊️ ورشة صناعة الحبكة الروائية" required></div>
                     <div class="form-group"><label>وصف الدورة:</label><textarea id="courseDesc" rows="2" placeholder="ماذا سيتعلم المتدرب..." required></textarea></div>
                     <div class="form-group"><label>سعر الاشتراك:</label><input type="text" id="coursePrice" placeholder="مثال: الاشتراك: 250 جنيه" required></div>
-                    <div class="form-group"><label>رابط فيديو المقدمة (Embed URL):</label><input type="text" id="courseVideoUrl" placeholder="https://www.youtube.com/embed/..."></div>
+                    <div class="form-group">
+                        <label>🎬 فيديو الدورة / الورشة:</label>
+                        <input type="file" id="courseVideoFileInput" accept="video/*" style="margin-bottom: 8px;">
+                        <input type="text" id="courseVideoUrl" placeholder="أو ضع رابط فيديو مباشر / YouTube Embed URL">
+                        <small style="display:block; color:var(--text-muted); margin-top:6px;">يمكنك اختيار فيديو من جهازك، وسيتم رفعه تلقائيًا إلى Cloudinary، أو وضع رابط الفيديو مباشرة.</small>
+                    </div>
                     <div class="form-group">
                         <label>📄 ملف الدورة أو الورشة (اختياري):</label>
                         <input type="file" id="courseFileInput" accept=".pdf,.zip,.rar,.doc,.docx" style="margin-bottom: 8px;">
@@ -2151,6 +2241,9 @@ onAuthStateChanged(auth, async (user) => {
                 if (analyticsVisitsEl) analyticsVisitsEl.innerText = visits.toLocaleString('ar-EG');
             }, { onlyOnce: true });
             const reads = allBooks.reduce((sum, b) => sum + Number(b.reads || 0), 0);
+            const videoViews = (Array.isArray(allVideos) ? allVideos : []).reduce((sum, v) => sum + Number(v.views || 0), 0);
+            const videoViewsEl = document.getElementById('analyticsVideoViews');
+            if (videoViewsEl) videoViewsEl.innerText = videoViews.toLocaleString('ar-EG');
             const ratings = allBooks.reduce((sum, b) => sum + Number(b.ratingCount || 0), 0);
             const ratingSum = allBooks.reduce((sum, b) => sum + Number(b.ratingSum || 0), 0);
             const reviewsCountEl = document.getElementById('analyticsReviews');
@@ -2875,6 +2968,8 @@ onAuthStateChanged(auth, async (user) => {
                     <button class="btn-action btn-download" style="margin-top:8px;" onclick="downloadAudioFile('${escapeHtml(item.id)}', '${safeMediaUrl(item.audioUrl)}', '${escapeHtml(item.title)}', '${escapeHtml(item.price ?? 'مجاني')}')">${isFree ? '📥 تحميل مجاني' : '📲 شراء وتحميل الملف الصوتي'}</button>
                 ` : '';
 
+                const safeVideoId = String(item.id).replace(/[^a-zA-Z0-9_-]/g, '_');
+                const currentVideoViews = Number(item.views || 0);
                 const html = `
                     <div class="custom-card">
                         <div>
@@ -2998,7 +3093,7 @@ onAuthStateChanged(auth, async (user) => {
                     const embedUrl = getYouTubeEmbedUrl(item.videoUrl);
                     playerHtml = `
                         <div class="video-container">
-                            <iframe src="${embedUrl}" allowfullscreen loading="lazy"></iframe>
+                            <iframe src="${embedUrl}?enablejsapi=1" data-view-tracking="1" data-video-id="${escapeHtml(item.id)}" allowfullscreen loading="lazy"></iframe>
                         </div>`;
                 } else if (item.videoUrl) {
                     playerHtml = `
@@ -3009,6 +3104,9 @@ onAuthStateChanged(auth, async (user) => {
                             </video>
                         </div>`;
                 }
+
+                const safeVideoId = String(item.id).replace(/[^a-zA-Z0-9_-]/g, '_');
+                const currentVideoViews = Number(item.views || 0);
 
                 const videoActionBtns = item.videoUrl ? `
                     <a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(item.videoUrl)}" rel="noopener noreferrer" download>📥 تحميل</a>
@@ -3021,6 +3119,9 @@ onAuthStateChanged(auth, async (user) => {
                             <h3 style="font-family: 'Amiri', serif; font-size: 1.4rem; color: var(--accent-color);">${escapeHtml(item.title)}</h3>
                             <p style="color: var(--text-muted); font-size: 0.95rem; margin: 10px 0;">${escapeHtml(item.desc)}</p>
                             ${playerHtml}
+                            <div class="video-stats" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; color:var(--text-muted); font-size:.88rem;">
+                                <span id="video-views-${safeVideoId}">👁️ ${currentVideoViews.toLocaleString('ar-EG')} مشاهدة</span>
+                            </div>
                         </div>
                         <div class="course-actions-row">
                             ${videoActionBtns}
@@ -3029,7 +3130,62 @@ onAuthStateChanged(auth, async (user) => {
                     </div>
                 `;
                 container.insertAdjacentHTML('beforeend', html);
+
+                if (item.videoUrl && !item.videoUrl.includes('youtube.com') && !item.videoUrl.includes('youtu.be')) {
+                    const nativeVideo = container.querySelector(`[src=\"${safeMediaUrl(item.videoUrl).replace(/([\"\\])/g, '\\$1')}\"]`)?.closest('video');
+                    if (nativeVideo) {
+                        nativeVideo.addEventListener('play', () => recordVideoView(item.id), { once: true });
+                    }
+                }
             });
+
+            initYouTubeVideoViewTracking();
+        }
+
+        const countedVideoViews = new Set();
+        async function recordVideoView(videoId) {
+            if (!videoId || String(videoId).startsWith('def') || countedVideoViews.has(String(videoId))) return false;
+            countedVideoViews.add(String(videoId));
+            try {
+                await ensureVisitorAuth();
+                await update(ref(db, `videos/${videoId}`), { views: increment(1) });
+                // لا نحدّث الرقم محليًا هنا؛ Firebase سيعيد القيمة الجديدة عبر onValue
+                // حتى لا يظهر العداد مرتين ثم يرجع للرقم الصحيح.
+                return true;
+            } catch (err) {
+                countedVideoViews.delete(String(videoId));
+                console.warn('تعذر تسجيل مشاهدة الفيديو:', err);
+                return false;
+            }
+        }
+
+        function initYouTubeVideoViewTracking() {
+            const iframes = document.querySelectorAll('#videosGrid iframe[data-view-tracking=\"1\"]');
+            if (!iframes.length) return;
+            const start = () => {
+                if (!window.YT || !YT.Player) return;
+                iframes.forEach(frame => {
+                    if (frame.dataset.ytReady) return;
+                    frame.dataset.ytReady = '1';
+                    const videoId = frame.dataset.videoId;
+                    try {
+                        new YT.Player(frame, {
+                            events: { onStateChange: event => { if (event.data === YT.PlayerState.PLAYING) recordVideoView(videoId); } }
+                        });
+                    } catch (e) { console.warn('تعذر تفعيل عداد مشاهدات YouTube:', e); }
+                });
+            };
+            if (window.YT && YT.Player) start();
+            else if (!window._videoYTApiLoading) {
+                window._videoYTApiLoading = true;
+                const script = document.createElement('script');
+                script.src = 'https://www.youtube.com/iframe_api';
+                document.head.appendChild(script);
+                window.onYouTubeIframeAPIReady = start;
+            } else {
+                const oldReady = window.onYouTubeIframeAPIReady;
+                window.onYouTubeIframeAPIReady = () => { oldReady?.(); start(); };
+            }
         }
 
         function showShareToast(message) {
@@ -3191,7 +3347,7 @@ onAuthStateChanged(auth, async (user) => {
             const data = snapshot.val();
             allCourses = data
                 ? Object.entries(data).map(([id, c]) => ({ id, ...c })).sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
-                : [{ id: 'defC1', title: '🖊️ ورشة صناعة الحبكة الروائية', desc: 'دورة تدريبية مكثفة لتعلم أسرار بناء الحبكة الروائية، تطوير الشخصيات، وصنع التشويق.', price: 'الاشتراك: 250 جنيه', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', updatedAt: 1 }];
+                : [];
             renderCourses();
             if (isAdmin) renderAnalyticsDashboard();
         });
@@ -3200,6 +3356,7 @@ onAuthStateChanged(auth, async (user) => {
             const container = document.getElementById('coursesGrid');
             if (!container) return;
             container.innerHTML = '';
+            container.classList.toggle('single-course', allCourses.length === 1);
             allCourses.forEach(item => {
                 const adminBtns = isAdmin ? `
                         <div class="course-admin-actions">
@@ -3208,23 +3365,25 @@ onAuthStateChanged(auth, async (user) => {
                         </div>` : '';
 
                 const isYouTubeVideo = item.videoUrl && (item.videoUrl.includes('youtube.com') || item.videoUrl.includes('youtu.be'));
+                const safeCourseVideoId = String(item.id).replace(/[^a-zA-Z0-9_-]/g, '_');
+                const currentCourseViews = Number(item.views || 0);
                 const videoBtn = item.videoUrl ? `
-                    <div class="video-container" style="margin:12px 0;">
+                    <div class="video-container course-video-player" style="margin:12px 0;">
                         ${isYouTubeVideo
-                            ? `<iframe src="${getYouTubeEmbedUrl(item.videoUrl)}" allowfullscreen loading="lazy" style="width:100%; min-height:220px; border:0; border-radius:12px;"></iframe>`
-                            : `<video controls preload="metadata" playsinline style="width:100%; min-height:220px; border:0; border-radius:12px; display:block;"><source src="${safeMediaUrl(item.videoUrl)}">متصفحك لا يدعم تشغيل هذا الفيديو.</video>`}
+                            ? `<iframe src="${getYouTubeEmbedUrl(item.videoUrl)}?enablejsapi=1" data-course-view-tracking="1" data-course-id="${escapeHtml(item.id)}" allowfullscreen loading="lazy" style="width:100%; min-height:220px; border:0; border-radius:12px;"></iframe>`
+                            : `<video controls preload="metadata" playsinline data-course-id="${escapeHtml(item.id)}" style="width:100%; min-height:220px; border:0; border-radius:12px; display:block;"><source src="${safeMediaUrl(item.videoUrl)}">متصفحك لا يدعم تشغيل هذا الفيديو.</video>`}
                     </div>` : '';
                 const fileBtn = item.fileUrl ? `<a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(item.fileUrl)}" rel="noopener noreferrer" download>📥 تحميل الملف</a>` : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
 
                 const html = `
-                    <div class="custom-card">
+                    <div class="custom-card course-video-card">
                         <div>
-                            <h3 style="font-family: 'Amiri', serif; font-size: 1.5rem; color: var(--accent-color);">${escapeHtml(item.title)}</h3>
-                            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 12px 0;">${escapeHtml(item.desc)}</p>
-                            <div class="card-price">${escapeHtml(item.price)}</div>
+                            <h3 class="course-video-heading">${escapeHtml(item.title)}</h3>
+                            <p class="course-video-desc">${escapeHtml(item.desc)}</p>
                         </div>
                         ${videoBtn}
-                        <div class="course-actions-row">
+                        ${item.videoUrl ? `<div class="course-video-meta"><span class="course-price-pill">💰 ${escapeHtml(item.price)}</span><span id="course-video-views-${safeCourseVideoId}">👁️ ${currentCourseViews.toLocaleString('ar-EG')} مشاهدة</span></div>` : `<div class="course-video-meta"><span class="course-price-pill">💰 ${escapeHtml(item.price)}</span></div>`}
+                        <div class="course-video-actions">
                             ${fileBtn}
                             <button class="btn-primary course-action-btn" type="button" onclick='shareCourse(${escapeHtml(JSON.stringify(item.title))}, ${escapeHtml(JSON.stringify(item.id))})'>🔗 مشاركة</button>
                             ${adminBtns}
@@ -3232,7 +3391,59 @@ onAuthStateChanged(auth, async (user) => {
                     </div>
                 `;
                 container.insertAdjacentHTML('beforeend', html);
+
+                if (item.videoUrl && !isYouTubeVideo) {
+                    const nativeVideo = container.querySelector(`video[data-course-id="${String(item.id).replace(/(["\\])/g, '\\$1')}"]`);
+                    if (nativeVideo) nativeVideo.addEventListener('play', () => recordCourseVideoView(item.id), { once: true });
+                }
             });
+            initYouTubeCourseViewTracking();
+        }
+
+        const countedCourseVideoViews = new Set();
+        async function recordCourseVideoView(courseId) {
+            if (!courseId || String(courseId).startsWith('def') || countedCourseVideoViews.has(String(courseId))) return false;
+            countedCourseVideoViews.add(String(courseId));
+            try {
+                await ensureVisitorAuth();
+                await update(ref(db, `courses/${courseId}`), { views: increment(1) });
+                // Firebase سيعيد القيمة الجديدة عبر onValue؛ لا نزيد الرقم محليًا حتى لا يظهر مرتين.
+                return true;
+            } catch (err) {
+                countedCourseVideoViews.delete(String(courseId));
+                console.warn('تعذر تسجيل مشاهدة فيديو الدورة/الورشة:', err);
+                return false;
+            }
+        }
+
+        function initYouTubeCourseViewTracking() {
+            const iframes = document.querySelectorAll('#coursesGrid iframe[data-course-view-tracking="1"]');
+            if (!iframes.length) return;
+            const start = () => {
+                if (!window.YT || !YT.Player) return;
+                iframes.forEach(frame => {
+                    if (frame.dataset.ytCourseReady) return;
+                    frame.dataset.ytCourseReady = '1';
+                    const courseId = frame.dataset.courseId;
+                    try {
+                        new YT.Player(frame, {
+                            events: { onStateChange: event => { if (event.data === YT.PlayerState.PLAYING) recordCourseVideoView(courseId); } }
+                        });
+                    } catch (e) { console.warn('تعذر تفعيل عداد فيديو الدورة/الورشة:', e); }
+                });
+            };
+            if (window.YT && YT.Player) start();
+            else if (!window._courseYTApiLoading) {
+                window._courseYTApiLoading = true;
+                const script = document.createElement('script');
+                script.src = 'https://www.youtube.com/iframe_api';
+                document.head.appendChild(script);
+                const previousReady = window.onYouTubeIframeAPIReady;
+                window.onYouTubeIframeAPIReady = () => {
+                    if (typeof previousReady === 'function') previousReady();
+                    start();
+                };
+            }
         }
 
         window.shareCourse = async (title, courseId) => {
@@ -3274,47 +3485,63 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('addCourseForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!isAdmin) { alert("غير مصرح: لوحة الإدارة للأدمن فقط."); return; }
-            const editId = document.getElementById('editCourseId').value;
-            const selectedFile = document.getElementById('courseFileInput')?.files?.[0];
-            let courseFileUrl = document.getElementById('courseFileUrl').value.trim();
 
-            if (selectedFile) {
-                const submitBtn = document.getElementById('submitCourseBtn');
-                const originalText = submitBtn.innerText;
-                submitBtn.disabled = true;
-                submitBtn.innerText = 'جاري رفع ملف الدورة... ⏳';
-                try {
-                    courseFileUrl = await uploadToCloudinary(selectedFile);
-                } catch (uploadError) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = originalText;
-                    alert(`تعذر رفع ملف الدورة: ${uploadError.message}`);
-                    return;
+            const editId = document.getElementById('editCourseId').value;
+            const selectedVideoFile = document.getElementById('courseVideoFileInput')?.files?.[0];
+            const selectedCourseFile = document.getElementById('courseFileInput')?.files?.[0];
+            let courseVideoUrl = document.getElementById('courseVideoUrl').value.trim();
+            let courseFileUrl = document.getElementById('courseFileUrl').value.trim();
+            const existingCourse = editId ? allCourses.find(c => c.id === editId) : null;
+            const submitBtn = document.getElementById('submitCourseBtn');
+            const originalText = submitBtn.innerText;
+
+            try {
+                // إذا اختار المستخدم فيديو من الجهاز، ارفعه إلى Cloudinary واحفظ رابطه في videoUrl.
+                if (selectedVideoFile) {
+                    validateUploadFile(selectedVideoFile, {
+                        maxBytes: 100 * 1024 * 1024,
+                        mimePrefixes: ['video/']
+                    });
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = 'جاري رفع فيديو الدورة إلى Cloudinary... ⏳';
+                    courseVideoUrl = await uploadToCloudinary(selectedVideoFile);
+                } else if (editId && !courseVideoUrl && existingCourse?.videoUrl) {
+                    // عند التعديل بدون اختيار فيديو جديد، حافظ على الفيديو القديم.
+                    courseVideoUrl = existingCourse.videoUrl;
                 }
+
+                if (selectedCourseFile) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = 'جاري رفع ملف الدورة... ⏳';
+                    courseFileUrl = await uploadToCloudinary(selectedCourseFile);
+                } else if (editId && !courseFileUrl && existingCourse?.fileUrl) {
+                    courseFileUrl = existingCourse.fileUrl;
+                }
+
+                const data = {
+                    title: document.getElementById('courseTitle').value,
+                    desc: document.getElementById('courseDesc').value,
+                    price: document.getElementById('coursePrice').value,
+                    videoUrl: courseVideoUrl,
+                    fileUrl: courseFileUrl,
+                    updatedAt: Date.now()
+                };
+                if (editId && !editId.startsWith('def')) {
+                    await update(ref(db, `courses/${editId}`), data);
+                    alert("تم تحديث الدورة بنجاح! 🎉");
+                } else {
+                    await push(ref(db, 'courses'), data);
+                    alert("تمت إضافة الدورة بنجاح! 🚀");
+                }
+
+                document.getElementById('addCourseForm').reset();
+                document.getElementById('editCourseId').value = '';
+            } catch (err) {
+                alert(`خطأ أثناء رفع أو حفظ الدورة/الورشة: ${err.message}`);
+            } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = originalText;
-            } else if (editId) {
-                const existingCourse = allCourses.find(c => c.id === editId);
-                if (existingCourse?.fileUrl && !courseFileUrl) courseFileUrl = existingCourse.fileUrl;
             }
-
-            const data = {
-                title: document.getElementById('courseTitle').value,
-                desc: document.getElementById('courseDesc').value,
-                price: document.getElementById('coursePrice').value,
-                videoUrl: document.getElementById('courseVideoUrl').value,
-                fileUrl: courseFileUrl,
-                updatedAt: Date.now()
-            };
-            if (editId && !editId.startsWith('def')) {
-                await update(ref(db, `courses/${editId}`), data);
-                alert("تم تحديث الدورة بنجاح! 🎉");
-            } else {
-                await push(ref(db, 'courses'), data);
-                alert("تمت إضافة الدورة بنجاح! 🚀");
-            }
-            document.getElementById('addCourseForm').reset();
-            document.getElementById('editCourseId').value = '';
         });
 
         window.editCourse = (id) => {
@@ -3328,6 +3555,7 @@ onAuthStateChanged(auth, async (user) => {
             document.getElementById('courseVideoUrl').value = item.videoUrl ?? '';
             document.getElementById('courseFileUrl').value = item.fileUrl ?? '';
             document.getElementById('courseFileInput').value = '';
+            document.getElementById('courseVideoFileInput').value = '';
             window.scrollTo({ top: document.getElementById('addCourseForm').offsetTop - 20, behavior: 'smooth' });
         };
 
