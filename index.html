@@ -3777,7 +3777,13 @@ onAuthStateChanged(auth, async (user) => {
             // رابط الموقع المنشور هو رابط المشاركة الحقيقي.
             // عند تجربة index.html محلياً لا نستخدم file:// لأنه غير صالح للمشاركة.
             const workerBaseUrl = 'https://tight-firefly-b99c.saeidelshwadfy.workers.dev';
-            const shareUrl = `${workerBaseUrl}/book/${encodeURIComponent(title)}`;
+            const shareKey = String(bookId || title || '').trim();
+            if (!shareKey) {
+                showShareToast('تعذر إنشاء رابط المشاركة لهذا الكتاب حالياً.');
+                return;
+            }
+            // نستخدم Firebase ID أولاً لأنه ثابت ولا يتأثر بمسافات أو رموز عنوان الكتاب.
+            const shareUrl = `${workerBaseUrl}/book/${encodeURIComponent(shareKey)}`;
 
             const shareData = {
                 title: `📖 ${title}`,
