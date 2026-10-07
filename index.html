@@ -3779,6 +3779,7 @@ onAuthStateChanged(auth, async (user) => {
                                     <span style="color:var(--text-muted); font-size:0.78rem; margin-right:6px;">${escapeHtml(review.date ?? '')}</span>
                                 </div>
                                 <div style="color:var(--text-muted); font-size:0.88rem; line-height:1.65; margin-top:3px;">${escapeHtml(review.text ?? '')}</div>
+                                ${review.reply?.text ? `<div style="margin-top:9px; margin-right:12px; padding:8px 10px; border-right:3px solid var(--accent-color); background:rgba(127,127,127,.06); border-radius:8px;"><div style="font-weight:bold; color:var(--accent-color); font-size:.82rem;">↳ ✍️ رد الكاتب سعيد الشوادفي</div><div style="color:var(--text-muted); font-size:.84rem; line-height:1.65; margin-top:3px;">${escapeHtml(review.reply.text)}</div><div style="color:var(--text-muted); font-size:.72rem; margin-top:3px;">${escapeHtml(review.reply.date ?? '')}</div>${isAdmin ? `<div style="margin-top:6px; display:flex; gap:6px;"><button type="button" onclick="editReaderReply('${escapeHtml(bookId)}','${escapeHtml(review.key)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:7px; padding:4px 8px; cursor:pointer; font-size:.72rem;">✏️ تعديل الرد</button><button type="button" onclick="deleteReaderReply('${escapeHtml(bookId)}','${escapeHtml(review.key)}')" style="border:1px solid #d9534f; background:transparent; color:#d9534f; border-radius:7px; padding:4px 8px; cursor:pointer; font-size:.72rem;">🗑️ حذف الرد</button></div>` : ''}</div>` : (isAdmin ? `<div style="margin-top:8px;"><button type="button" onclick="addReaderReply('${escapeHtml(bookId)}','${escapeHtml(review.key)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:8px; padding:5px 9px; cursor:pointer; font-size:.78rem;">↳ ✍️ الرد على التعليق</button></div>` : '')}
                                 ${((isAdmin || (auth.currentUser?.uid && review.uid && review.uid === auth.currentUser.uid))) ? `<div style="margin-top:8px; display:flex; gap:7px; justify-content:flex-start; flex-wrap:wrap;">${auth.currentUser?.uid && review.uid && review.uid === auth.currentUser.uid ? `<button type="button" onclick="editReaderReview('${escapeHtml(bookId)}','${escapeHtml(review.key)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:8px; padding:5px 9px; cursor:pointer; font-size:.78rem;">✏️ تعديل</button>` : ''}${isAdmin ? `<button type="button" onclick="deleteReaderReview('${escapeHtml(bookId)}','${escapeHtml(review.key)}')" style="border:1px solid #d9534f; background:transparent; color:#d9534f; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:.78rem;">🗑️ حذف</button>` : ''}</div>` : ''}
                             </div>
                         `).join('')}
@@ -4288,6 +4289,65 @@ onAuthStateChanged(auth, async (user) => {
             document.getElementById('cancelReviewEditBtn').style.display = 'none';
         }
 
+        // إدارة رد الكاتب على مراجعات القراء (للأدمن/الكاتب فقط).
+        window.manageReaderReply = async (bookId, reviewKey, mode = 'add') => {
+            if (!isAdmin) {
+                alert('غير مصرح: الرد على تعليقات القراء للكاتب/الأدمن فقط.');
+                return;
+            }
+            if (!bookId || !reviewKey || String(bookId).startsWith('def')) return;
+
+            const reviewRef = ref(db, `reviews/${bookId}/${reviewKey}`);
+            try {
+                const snapshot = await get(reviewRef);
+                const review = snapshot.val();
+                if (!review) {
+                    alert('هذه المراجعة لم تعد موجودة.');
+                    openReviewsModal(bookId);
+                    return;
+                }
+
+                if (mode === 'delete') {
+                    if (!review.reply) return;
+                    if (!confirm('هل تريد حذف رد الكاتب على هذا التعليق؟')) return;
+                    await update(reviewRef, { reply: null });
+                    alert('تم حذف رد الكاتب بنجاح.');
+                } else {
+                    const currentReply = review.reply?.text ?? '';
+                    const promptTitle = mode === 'edit'
+                        ? 'عدّل ردك على تعليق القارئ:'
+                        : 'اكتب رد الكاتب على تعليق القارئ:';
+                    const replyText = prompt(promptTitle, currentReply);
+                    if (replyText === null) return;
+                    const cleanReply = replyText.trim();
+                    if (!cleanReply) {
+                        alert('من فضلك اكتب نص الرد أولاً.');
+                        return;
+                    }
+
+                    await update(reviewRef, {
+                        reply: {
+                            text: cleanReply,
+                            author: 'الكاتب سعيد الشوادفي',
+                            date: new Date().toLocaleDateString('ar-EG'),
+                            updatedAt: new Date().toISOString()
+                        }
+                    });
+                    alert(mode === 'edit' ? 'تم تعديل رد الكاتب بنجاح. ✨' : 'تم نشر رد الكاتب بنجاح. ✨');
+                }
+
+                openReviewsModal(bookId);
+                loadLatestReviewPreview(bookId);
+            } catch (err) {
+                console.error('تعذر حفظ رد الكاتب:', err);
+                alert(`تعذر حفظ رد الكاتب: ${err.message}`);
+            }
+        };
+
+        window.addReaderReply = (bookId, reviewKey) => manageReaderReply(bookId, reviewKey, 'add');
+        window.editReaderReply = (bookId, reviewKey) => manageReaderReply(bookId, reviewKey, 'edit');
+        window.deleteReaderReply = (bookId, reviewKey) => manageReaderReply(bookId, reviewKey, 'delete');
+
         window.openReviewsModal = (bookId) => {
             selectedBookForReviews = bookId;
             const book = allBooks.find(b => b.id === bookId);
@@ -4309,6 +4369,8 @@ onAuthStateChanged(auth, async (user) => {
                                         <span class="review-date">${escapeHtml(rev.date ?? '')}</span>
                                     </div>
                                     <div class="review-text">${escapeHtml(rev.text)}</div>
+                                    ${rev.reply?.text ? `<div style="margin-top:10px; margin-right:12px; padding:9px 11px; border-right:3px solid var(--accent-color); background:rgba(127,127,127,.06); border-radius:9px;"><div style="font-weight:bold; color:var(--accent-color); font-size:.86rem;">↳ ✍️ رد الكاتب سعيد الشوادفي</div><div style="color:var(--text-muted); font-size:.88rem; line-height:1.7; margin-top:3px;">${escapeHtml(rev.reply.text)}</div><div style="color:var(--text-muted); font-size:.74rem; margin-top:3px;">${escapeHtml(rev.reply.date ?? '')}</div></div>` : ''}
+                                    ${isAdmin ? `<div style="margin-top:9px; display:flex; gap:7px; justify-content:flex-start; flex-wrap:wrap;">${rev.reply?.text ? `<button type="button" onclick="editReaderReply('${escapeHtml(bookId)}','${escapeHtml(reviewKey)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:8px; padding:6px 10px; cursor:pointer;">✏️ ${rev.reply?.text ? 'تعديل الرد' : 'الرد'}</button><button type="button" onclick="deleteReaderReply('${escapeHtml(bookId)}','${escapeHtml(reviewKey)}')" style="border:1px solid #d9534f; background:transparent; color:#d9534f; border-radius:8px; padding:6px 10px; cursor:pointer;">🗑️ حذف الرد</button>` : `<button type="button" onclick="addReaderReply('${escapeHtml(bookId)}','${escapeHtml(reviewKey)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:8px; padding:6px 10px; cursor:pointer;">↳ ✍️ الرد على التعليق</button>`}</div>` : ''}
                                     ${(isAdmin || (auth.currentUser?.uid && rev.uid && rev.uid === auth.currentUser.uid)) ? `<div style="margin-top:10px; display:flex; gap:7px; justify-content:flex-start; flex-wrap:wrap;">${auth.currentUser?.uid && rev.uid && rev.uid === auth.currentUser.uid ? `<button type="button" onclick="editReaderReview('${escapeHtml(bookId)}','${escapeHtml(reviewKey)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:8px; padding:6px 10px; cursor:pointer;">✏️ تعديل</button>` : ''}${isAdmin ? `<button type="button" onclick="deleteReaderReview('${escapeHtml(bookId)}','${escapeHtml(reviewKey)}')" style="border:1px solid #d9534f; background:transparent; color:#d9534f; border-radius:8px; padding:6px 10px; cursor:pointer;">🗑️ حذف المراجعة</button>` : ''}</div>` : ''}
                                 </div>
                             `;
