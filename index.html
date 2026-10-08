@@ -1298,6 +1298,19 @@
             </div>
         </div>
 
+        <!-- Rating Login Modal (تجربة) -->
+        <div id="ratingLoginModal" class="modal" style="z-index:1200;">
+            <div class="modal-content" style="max-width: 430px; text-align:center;">
+                <span class="close-modal" id="closeRatingLoginBtn">&times;</span>
+                <div style="font-size:2.4rem; margin-bottom:8px;">⭐</div>
+                <h3 style="color: var(--accent-color); font-family:'Amiri', serif; font-size:1.8rem; margin-bottom:10px;">تسجيل الدخول للتقييم</h3>
+                <p style="color:var(--text-muted); margin-bottom:18px;">علشان التقييمات تكون حقيقية، لازم تسجل دخول بحسابك أولاً.</p>
+                <button type="button" id="googleRatingLoginBtn" class="btn-primary" style="width:100%; margin-bottom:10px;">🔴 الدخول بحساب Google</button>
+                <button type="button" id="facebookRatingLoginBtn" class="btn-primary" style="width:100%;">🔵 الدخول بحساب Facebook</button>
+                <p style="font-size:.78rem; color:var(--text-muted); margin-top:14px;">لن يتم طلب كلمة سر الموقع، وسيُستخدم حسابك فقط لربط التقييم به.<br>إذا كنت تختبر الملف محليًا، افتحه عبر الموقع/localhost وليس file:// حتى تعمل نوافذ تسجيل الدخول.</p>
+            </div>
+        </div>
+
         <!-- Admin Panel -->
         <section id="adminPanel" class="admin-panel">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -1575,7 +1588,7 @@
 
         <div class="books-grid" id="booksGrid"></div>
 
-        <h2 id="audio" class="section-title">🎙️ المكتبة الصوتية والإلقاء 🎙️</h2>
+        <h2 id="audio" class="section-title">🎙️ المكتبة الصوتية 🎙️</h2>
         
         <div class="category-tabs" id="audioCategoryTabs">
             <button class="tab-btn active" data-audiocat="all">الكل</button>
@@ -1658,10 +1671,10 @@
                     <h4 id="reviewFormTitle" style="color: var(--accent-color); font-size: 1.1rem; margin-bottom: 10px; font-family: 'Amiri', serif;">✍️ أضف رأيك في هذا العمل:</h4>
                     <input type="hidden" id="editingReviewKey" value="">
                     <div class="form-group">
-                        <input type="text" id="reviewerName" placeholder="اسمك / لقبك" required>
-                    </div>
+                        </div>
                     <div class="form-group">
-                        <textarea id="reviewerText" rows="3" placeholder="اكتب انطباعك ورأيك في الرواية هنا..." required></textarea>
+                        <div style="font-size:.9rem;opacity:.9;margin:8px 0;color:var(--accent-color);">🔐 لإرسال الرأي، سجّل الدخول بحساب Google أو Facebook أولاً.</div>
+<textarea id="reviewerText" rows="3" placeholder="اكتب انطباعك ورأيك في الرواية هنا..." required></textarea>
                     </div>
                     <button type="submit" id="submitReviewBtn" class="btn-primary" style="width: 100%;">إرسال الرأي 🚀</button>
                     <button type="button" id="cancelReviewEditBtn" class="btn-secondary" style="width: 100%; margin-top: 8px; display: none;">إلغاء التعديل</button>
@@ -1947,7 +1960,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
         import { getDatabase, ref, onValue, set, push, update, remove, runTransaction, increment, get } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, getIdTokenResult, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, getIdTokenResult, signInAnonymously, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, linkWithPopup } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyDGG6NxTUZl5lLqD7qPq_nE0h6c_jVbaNA",
@@ -3787,8 +3800,8 @@ onAuthStateChanged(auth, async (user) => {
             if (!productId || String(productId).startsWith('def')) return;
             const ratingKey = `product_rating_${productId}`;
             try {
-                await ensureVisitorAuth();
-                const activeUid = auth.currentUser?.uid ?? null;
+                const verifiedUser = await ensureRatingAuth();
+                const activeUid = verifiedUser?.uid ?? auth.currentUser?.uid ?? null;
                 if (!activeUid) return;
 
                 const snap = await get(ref(db, `products/${productId}`));
@@ -4370,6 +4383,108 @@ onAuthStateChanged(auth, async (user) => {
             });
         };
 
+        // تسجيل الدخول بحساب حقيقي مطلوب قبل أي تقييم.
+        let pendingRatingAuthResolve = null;
+        let pendingRatingAuthReject = null;
+
+        function closeRatingLoginModal() {
+            const modal = document.getElementById('ratingLoginModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function openRatingLoginModal() {
+            const modal = document.getElementById('ratingLoginModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        async function loginForRating(providerType) {
+            try {
+                const provider = providerType === 'facebook' ? new FacebookAuthProvider() : new GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+
+                let result;
+                // لو الزائر مجهول، نربط الحساب الحقيقي بالمستخدم الحالي أولاً حتى نحافظ على UID قدر الإمكان.
+                if (auth.currentUser?.isAnonymous) {
+                    try {
+                        result = await linkWithPopup(auth.currentUser, provider);
+                    } catch (linkError) {
+                        if (linkError?.code === 'auth/credential-already-in-use' || linkError?.code === 'auth/provider-already-linked') {
+                            result = await signInWithPopup(auth, provider);
+                        } else {
+                            throw linkError;
+                        }
+                    }
+                } else {
+                    result = await signInWithPopup(auth, provider);
+                }
+
+                closeRatingLoginModal();
+                if (pendingRatingAuthResolve) pendingRatingAuthResolve(result.user);
+                pendingRatingAuthResolve = null;
+                pendingRatingAuthReject = null;
+                return result.user;
+            } catch (err) {
+                console.error('تعذر تسجيل الدخول للتقييم:', err);
+                if (pendingRatingAuthReject) pendingRatingAuthReject(err);
+                pendingRatingAuthResolve = null;
+                pendingRatingAuthReject = null;
+                alert(`تعذر تسجيل الدخول: ${err.message}`);
+                return null;
+            }
+        }
+
+        
+async function ensureReviewAuth() {
+    const user = auth.currentUser;
+    if (user && !user.isAnonymous) return user;
+
+    openRatingLoginModal();
+    return new Promise((resolve, reject) => {
+        pendingRatingAuthResolve = resolve;
+        pendingRatingAuthReject = reject;
+    });
+}
+
+function ensureRatingAuth() {
+            const user = auth.currentUser;
+
+            // الحساب الحقيقي يسمح بالتقييم مباشرة.
+            if (user && !user.isAnonymous) {
+                return Promise.resolve(user);
+            }
+
+            // الزائر المجهول/غير المسجل يجب أن يرى نافذة Google/Facebook أولاً.
+            openRatingLoginModal();
+
+            return new Promise((resolve, reject) => {
+                pendingRatingAuthResolve = resolve;
+                pendingRatingAuthReject = reject;
+            });
+        }
+
+        document.getElementById('closeRatingLoginBtn')?.addEventListener('click', () => {
+            closeRatingLoginModal();
+            if (pendingRatingAuthReject) pendingRatingAuthReject(new Error('تم إلغاء تسجيل الدخول.'));
+            pendingRatingAuthResolve = null;
+            pendingRatingAuthReject = null;
+        });
+        document.getElementById('googleRatingLoginBtn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('googleRatingLoginBtn');
+            if (btn) { btn.disabled = true; btn.textContent = 'جاري فتح Google... ⏳'; }
+            try { await loginForRating('google'); }
+            finally {
+                if (btn) { btn.disabled = false; btn.textContent = '🔴 الدخول بحساب Google'; }
+            }
+        });
+        document.getElementById('facebookRatingLoginBtn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('facebookRatingLoginBtn');
+            if (btn) { btn.disabled = true; btn.textContent = 'جاري فتح Facebook... ⏳'; }
+            try { await loginForRating('facebook'); }
+            finally {
+                if (btn) { btn.disabled = false; btn.textContent = '🔵 الدخول بحساب Facebook'; }
+            }
+        });
+
         // تقييم قابل للتعديل: يُحفظ تقييم كل زائر في ratingsByUid،
         // بينما تُحدّث قيمتا المجموع والعدد في مساراتهما فقط حتى تسمح Firebase Rules
         // بالعملية بدون فتح صلاحية الكتاب بالكامل للزائر.
@@ -4379,6 +4494,7 @@ onAuthStateChanged(auth, async (user) => {
             const ratingKey = `book_rating_${bookId}`;
 
             if (bookId.startsWith('def')) {
+                try { await ensureRatingAuth(); } catch { return; }
                 const oldLocal = parseFloat(localStorage.getItem(ratingKey) || '');
                 const promptText = oldLocal >= 1 && oldLocal <= 5
                     ? `تقييمك الحالي ${oldLocal} نجوم.\nضع التقييم الجديد من 1 إلى 5 نجوم:`
@@ -4393,8 +4509,8 @@ onAuthStateChanged(auth, async (user) => {
             }
 
             try {
-                if (typeof ensureAnonymousAuth === 'function') await ensureAnonymousAuth();
-                const activeUid = auth.currentUser?.uid ?? null;
+                const verifiedUser = await ensureRatingAuth();
+                const activeUid = verifiedUser?.uid ?? auth.currentUser?.uid ?? null;
                 if (!activeUid) {
                     alert('تعذر تحديد صاحب التقييم حالياً. حاول مرة أخرى.');
                     return;
@@ -4461,6 +4577,7 @@ onAuthStateChanged(auth, async (user) => {
             const ratingKey = `media_rating_${mediaType}_${mediaId}`;
 
             if (String(mediaId).startsWith('def')) {
+                try { await ensureRatingAuth(); } catch { return; }
                 const oldLocal = parseFloat(localStorage.getItem(ratingKey) || '');
                 const promptText = oldLocal >= 1 && oldLocal <= 5
                     ? `تقييمك الحالي ${oldLocal} نجوم.\nضع التقييم الجديد من 1 إلى 5 نجوم:`
@@ -4478,7 +4595,7 @@ onAuthStateChanged(auth, async (user) => {
             }
 
             try {
-                await ensureVisitorAuth();
+                await ensureRatingAuth();
                 const activeUid = auth.currentUser?.uid ?? null;
                 if (!activeUid) {
                     alert('تعذر تحديد صاحب التقييم حالياً. حاول مرة أخرى.');
@@ -4597,7 +4714,7 @@ onAuthStateChanged(auth, async (user) => {
 
                 selectedBookForReviews = bookId;
                 document.getElementById('editingReviewKey').value = reviewKey;
-                document.getElementById('reviewerName').value = review.name ?? '';
+                
                 document.getElementById('reviewerText').value = review.text ?? '';
                 document.getElementById('reviewFormTitle').innerText = '✏️ تعديل رأيك في هذا العمل:';
                 document.getElementById('submitReviewBtn').innerText = 'حفظ التعديل 💾';
@@ -4610,7 +4727,7 @@ onAuthStateChanged(auth, async (user) => {
 
         function resetReviewForm() {
             document.getElementById('editingReviewKey').value = '';
-            document.getElementById('reviewerName').value = '';
+            
             document.getElementById('reviewerText').value = '';
             document.getElementById('reviewFormTitle').innerText = '✍️ أضف رأيك في هذا العمل:';
             document.getElementById('submitReviewBtn').innerText = 'إرسال الرأي 🚀';
@@ -4721,21 +4838,28 @@ onAuthStateChanged(auth, async (user) => {
 
         document.getElementById('addReviewForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('reviewerName').value.trim();
-            const text = document.getElementById('reviewerText').value.trim();
-            const editingReviewKey = document.getElementById('editingReviewKey').value.trim();
 
             if (!selectedBookForReviews) return;
-            if (!name || !text) {
-                alert('من فضلك اكتب الاسم والرأي أولاً.');
+
+            // لا يمكن نشر أو تعديل أي رأي بدون حساب Google/Facebook.
+            const reviewUser = await ensureReviewAuth();
+            if (!reviewUser || reviewUser.isAnonymous) return;
+
+            const text = document.getElementById('reviewerText')?.value.trim() || '';
+            const editingReviewKey = document.getElementById('editingReviewKey')?.value.trim() || '';
+
+            // الاسم يؤخذ تلقائياً من الحساب، ولا يكتبه الزائر يدوياً.
+            const name =
+                String(reviewUser.displayName || '').trim() ||
+                String(reviewUser.email || '').trim() ||
+                'قارئ مسجل';
+
+            if (!text) {
+                alert('من فضلك اكتب رأيك أولاً.');
                 return;
             }
 
-            const currentUid = auth.currentUser?.uid ?? null;
-            if (!currentUid) {
-                alert('يجب تسجيل الدخول حتى تتمكن من نشر أو تعديل رأيك.');
-                return;
-            }
+            const currentUid = reviewUser.uid;
 
             try {
                 if (!selectedBookForReviews.startsWith('def')) {
@@ -4747,6 +4871,7 @@ onAuthStateChanged(auth, async (user) => {
                             alert('لا يمكنك تعديل هذه المراجعة.');
                             return;
                         }
+
                         await update(reviewRef, {
                             name,
                             text,
@@ -4762,10 +4887,22 @@ onAuthStateChanged(auth, async (user) => {
                             uid: currentUid,
                             date: new Date().toLocaleDateString('ar-EG')
                         };
+
                         await push(ref(db, `reviews/${selectedBookForReviews}`), reviewData);
                         trackBookAnalytics(selectedBookForReviews, 'reviews');
+
+                        if (typeof createAdminNotification === 'function') {
+                            createAdminNotification('review', {
+                                title: `رأي جديد: ${name}`,
+                                sender: name,
+                                targetId: selectedBookForReviews,
+                                targetSection: 'reviews'
+                            });
+                        }
+
                         alert('تم إرسال رأيك بنجاح! ✨');
                     }
+
                     resetReviewForm();
                     openReviewsModal(selectedBookForReviews);
                 } else {
