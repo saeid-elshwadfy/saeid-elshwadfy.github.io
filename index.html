@@ -3424,7 +3424,9 @@ onAuthStateChanged(auth, async (user) => {
                     await update(ref(db, `videos/${editId}`), data);
                     alert("تم تحديث الفيديو بنجاح! 🎉");
                 } else {
-                    data.views = 0;
+                    // لا نكتب views عند إنشاء فيديو جديد.
+                    // Firebase Rules تتحكم في هذا الحقل كعداد، وكتابته بقيمة 0
+                    // كانت سبب PERMISSION_DENIED أثناء push.
                     data.ratingSum = 0;
                     data.ratingCount = 0;
                     await push(ref(db, 'videos'), data);
