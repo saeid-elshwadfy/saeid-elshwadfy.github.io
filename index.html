@@ -2,7 +2,12 @@
 <html lang="ar" dir="rtl" data-theme="dark">
 <head>
     <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8690301062221202" crossorigin="anonymous"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8690301062221202" crossorigin="anonymous">document.getElementById('adminNotificationsBtn')?.addEventListener('click', () => {
+            const list = document.getElementById('adminNotificationsList');
+            if (!list) return;
+            list.style.display = list.style.display === 'none' ? 'block' : 'none';
+        });
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
@@ -2088,7 +2093,103 @@
         let currentAudioFilter = 'all';
         let currentProductFilter = 'all';
         const ADMIN_EMAIL = 'saeidelshwadfy@gmail.com';
-        let isAdmin = false;
+        let adminNotifications = {};
+        let adminNotificationsUnsubscribe = null;
+
+        const isCurrentAdminUser = () => {
+            const user = auth.currentUser;
+            return !!user && !user.isAnonymous &&
+                (String(user.email || '').trim().toLowerCase() === ADMIN_EMAIL ||
+                 user?.getIdTokenResult?.__admin === true);
+        };
+
+        
+function updateAdminNotificationsVisibility() {
+    const box = document.getElementById('adminNotificationsBox');
+    if (box) box.style.display = isAdmin ? 'block' : 'none';
+}
+
+function renderAdminNotifications() {
+            const list = document.getElementById('adminNotificationsList');
+            const badge = document.getElementById('adminNotificationsBadge');
+            if (!list || !badge) return;
+
+            const items = Object.entries(adminNotifications || {})
+                .map(([id, item]) => ({ id, ...(item || {}) }))
+                .filter(item => item.createdAt)
+                .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
+            const unreadCount = items.filter(item => item.read !== true).length;
+            badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+            badge.style.display = unreadCount ? 'inline-block' : 'none';
+
+            if (!items.length) {
+                list.innerHTML = '<div class="admin-notification-empty" style="padding:12px;text-align:center;color:var(--text-muted)">لا توجد إشعارات حالياً.</div>';
+                return;
+            }
+
+            list.innerHTML = items.map(item => {
+                const typeLabel = item.type === 'publish'
+                    ? '✒️ طلب نشر جديد'
+                    : item.type === 'review'
+                        ? '💬 رأي جديد'
+                        : '⭐ تقييم جديد';
+                const when = item.createdAt
+                    ? new Date(Number(item.createdAt)).toLocaleString('ar-EG')
+                    : '';
+                const title = escapeHtml(item.title || 'إشعار جديد');
+                const sender = item.sender ? `<div class="meta" style="margin-top:4px;color:var(--text-muted);font-size:.82rem">👤 ${escapeHtml(item.sender)}</div>` : '';
+                return `
+                    <button type="button" class="admin-notification-item ${item.read === true ? '' : 'unread'}"
+                        data-notification-id="${escapeHtml(item.id)}"
+                        data-notification-type="${escapeHtml(item.type || '')}"
+                        data-target-id="${escapeHtml(item.targetId || '')}"
+                        style="display:block;width:100%;text-align:right;border:0;background:transparent;color:inherit;padding:10px;border-radius:10px;cursor:pointer;margin-bottom:4px">
+                        <div style="font-weight:700">${typeLabel}</div>
+                        <div style="margin-top:4px">${title}</div>
+                        ${sender}
+                        <div class="meta" style="margin-top:5px;color:var(--text-muted);font-size:.78rem">${when}</div>
+                    </button>`;
+            }).join('');
+
+            list.querySelectorAll('.admin-notification-item').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.dataset.notificationId;
+                    const type = btn.dataset.notificationType;
+                    const targetId = btn.dataset.targetId || '';
+
+                    try {
+                        if (id) {
+                            await update(ref(db, `adminNotifications/${id}`), { read: true });
+                        }
+                    } catch (err) {
+                        console.warn('تعذر تعليم الإشعار كمقروء:', err);
+                    }
+
+                    if (type === 'publish') {
+                        document.getElementById('publishRequestsContainer')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        document.getElementById('books')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        if (type === 'review' && targetId && typeof openReviewsModal === 'function') {
+                            setTimeout(() => openReviewsModal(targetId), 250);
+                        }
+                    }
+                });
+            });
+        }
+
+        function startAdminNotificationsListener() {
+            if (!isCurrentAdminUser() || adminNotificationsUnsubscribe) return;
+            adminNotificationsUnsubscribe = onValue(
+                ref(db, 'adminNotifications'),
+                snapshot => {
+                    adminNotifications = snapshot.val() || {};
+                    updateAdminNotificationsVisibility();
+        renderAdminNotifications();
+                },
+                error => console.warn('تعذر قراءة إشعارات الأدمن:', error)
+            );
+let isAdmin = false;
         let selectedBookForBuy = null;
         let selectedOrderType = 'digital';
         let selectedBookForReviews = null;
@@ -2372,6 +2473,14 @@ onAuthStateChanged(auth, async (user) => {
             const videoViewsEl = document.getElementById('analyticsVideoViews');
             if (videoViewsEl) videoViewsEl.innerText = videoViews.toLocaleString('ar-EG');
             const bookRatings = allBooks.reduce((sum, b) => sum + Number(b.ratingCount || 0), 0);
+        if (typeof createAdminNotification === 'function') {
+            createAdminNotification('rating', {
+                title: 'تقييم جديد',
+                sender: String(auth.currentUser?.displayName || auth.currentUser?.email || 'زائر مسجل'),
+                targetId: String(bookId || mediaId || ''),
+                targetSection: 'ratings'
+            });
+        }
             const bookRatingSum = allBooks.reduce((sum, b) => sum + Number(b.ratingSum || 0), 0);
 
             const getMediaRatingData = (item) => {
@@ -5040,5 +5149,12 @@ function ensureRatingAuth() {
 
         renderBooks();
     </script>
+<div id="adminNotificationsBox" style="margin:0 0 16px;position:relative">
+                <button type="button" id="adminNotificationsBtn" class="btn-primary" style="width:auto;position:relative">
+                    🔔 الإشعارات
+                    <span id="adminNotificationsBadge" style="display:none;position:absolute;top:-7px;right:-7px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#d32f2f;color:#fff;font-size:12px;line-height:22px;font-weight:700">0</span>
+                </button>
+                <div id="adminNotificationsList" style="display:none;margin-top:10px;max-height:320px;overflow:auto;border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:8px;background:rgba(0,0,0,.15)"></div>
+            </div>
 </body>
 </html>
