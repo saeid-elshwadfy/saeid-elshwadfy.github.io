@@ -1054,6 +1054,24 @@
         .rating-stars { color: #f59e0b; cursor: pointer; font-size: 1.15rem; }
         .rating-stars span { transition: transform 0.15s; display: inline-block; padding: 0 1px; }
         .rating-stars span:hover { transform: scale(1.4); }
+        .media-rating-box {
+            margin: 10px 0 4px;
+            padding: 7px 10px;
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            background: rgba(212, 175, 55, 0.04);
+        }
+        .media-rating-box .rating-stars {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1px;
+        }
+        .media-rating-box .rating-stars small {
+            margin-right: 7px;
+            font-size: .72rem;
+            color: var(--text-muted);
+        }
         
         .site-stats-badge { background: rgba(212, 175, 55, 0.05); border: 1px solid var(--accent-color); border-radius: 16px; padding: 20px; margin-bottom: 25px; display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 15px; }
         .site-stats-item { text-align: center; }
@@ -1578,6 +1596,11 @@
         <div class="grid-container" id="coursesGrid"></div>
 
         <h2 id="store" class="section-title">🛍️ متجر المنتجات الرقمية 🛍️</h2>
+        <div class="category-tabs" id="productCategoryTabs">
+            <button class="tab-btn active" data-productcat="all">الكل</button>
+            <button class="tab-btn" data-productcat="free">🆓 المنتجات المجانية</button>
+            <button class="tab-btn" data-productcat="paid">💰 المنتجات المدفوعة</button>
+        </div>
         <div class="grid-container" id="productsGrid"></div>
 
         <h2 id="blog" class="section-title">📝 المقالات والترشيحات الأدبية 📝</h2>
@@ -2047,6 +2070,7 @@
         let allRequests = [];
         let currentFilter = 'all';
         let currentAudioFilter = 'all';
+        let currentProductFilter = 'all';
         const ADMIN_EMAIL = 'saeidelshwadfy@gmail.com';
         let isAdmin = false;
         let selectedBookForBuy = null;
@@ -2331,8 +2355,29 @@ onAuthStateChanged(auth, async (user) => {
             const videoViews = (Array.isArray(allVideos) ? allVideos : []).reduce((sum, v) => sum + Number(v.views || 0), 0);
             const videoViewsEl = document.getElementById('analyticsVideoViews');
             if (videoViewsEl) videoViewsEl.innerText = videoViews.toLocaleString('ar-EG');
-            const ratings = allBooks.reduce((sum, b) => sum + Number(b.ratingCount || 0), 0);
-            const ratingSum = allBooks.reduce((sum, b) => sum + Number(b.ratingSum || 0), 0);
+            const bookRatings = allBooks.reduce((sum, b) => sum + Number(b.ratingCount || 0), 0);
+            const bookRatingSum = allBooks.reduce((sum, b) => sum + Number(b.ratingSum || 0), 0);
+
+            const getMediaRatingData = (item) => {
+                const values = item?.ratingsByUid && typeof item.ratingsByUid === 'object'
+                    ? Object.values(item.ratingsByUid).map(Number).filter(v => v >= 1 && v <= 5)
+                    : [];
+                return {
+                    count: values.length || Number(item?.ratingCount || 0),
+                    sum: values.length ? values.reduce((total, value) => total + value, 0) : Number(item?.ratingSum || 0)
+                };
+            };
+
+            const mediaRatingData = [...(Array.isArray(allAudio) ? allAudio : []), ...(Array.isArray(allVideos) ? allVideos : [])]
+                .reduce((totals, item) => {
+                    const data = getMediaRatingData(item);
+                    totals.count += data.count;
+                    totals.sum += data.sum;
+                    return totals;
+                }, { count: 0, sum: 0 });
+
+            const ratings = bookRatings + mediaRatingData.count;
+            const ratingSum = bookRatingSum + mediaRatingData.sum;
             const reviewsCountEl = document.getElementById('analyticsReviews');
             const readOnce = (path) => new Promise(resolve => {
                 onValue(
@@ -3004,7 +3049,7 @@ onAuthStateChanged(auth, async (user) => {
             const data = snapshot.val();
             allAudio = data
                 ? Object.entries(data).map(([id, a]) => ({ id, ...a })).sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
-                : [{ id: 'defA1', title: '🎙️ الإلقاء الصوتي - مقدمة رواية ظلال لا تنام', desc: 'استمع إلى مقدمة رواية ظلال لا تنام بإلقاء صوتي مميز.', price: 'مجاني', audioUrl: 'https://files.catbox.moe/tn7sb7.mpeg', listens: 0, downloads: 0, updatedAt: 1 }];
+                : [{ id: 'defA1', title: '🎙️ الإلقاء الصوتي - مقدمة رواية ظلال لا تنام', desc: 'استمع إلى مقدمة رواية ظلال لا تنام بإلقاء صوتي مميز.', price: 'مجاني', audioUrl: 'https://files.catbox.moe/tn7sb7.mpeg', listens: 0, downloads: 0, ratingSum: 0, ratingCount: 0, updatedAt: 1 }];
             renderAudio();
         });
 
@@ -3055,8 +3100,11 @@ onAuthStateChanged(auth, async (user) => {
                     <button class="btn-action btn-download" style="margin-top:8px;" onclick="downloadAudioFile('${escapeHtml(item.id)}', '${safeMediaUrl(item.audioUrl)}', '${escapeHtml(item.title)}', '${escapeHtml(item.price ?? 'مجاني')}')">${isFree ? '📥 تحميل مجاني' : '📲 شراء وتحميل الملف الصوتي'}</button>
                 ` : '';
 
-                const safeVideoId = String(item.id).replace(/[^a-zA-Z0-9_-]/g, '_');
-                const currentVideoViews = Number(item.views || 0);
+                const safeAudioId = String(item.id).replace(/[^a-zA-Z0-9_-]/g, '_');
+                const audioRatings = item.ratingsByUid && typeof item.ratingsByUid === 'object' ? Object.values(item.ratingsByUid).map(Number).filter(v => v >= 1 && v <= 5) : [];
+                const audioRatingCount = audioRatings.length || Number(item.ratingCount || 0);
+                const audioRatingSum = audioRatings.length ? audioRatings.reduce((sum, v) => sum + v, 0) : Number(item.ratingSum || 0);
+                const audioAvgRating = audioRatingCount > 0 ? (audioRatingSum / audioRatingCount).toFixed(1) : '0.0';
                 const html = `
                     <div class="custom-card">
                         <div>
@@ -3066,6 +3114,13 @@ onAuthStateChanged(auth, async (user) => {
                             <div class="book-stats" style="margin: 8px 0;">
                                 <span>🎧 <strong id="audioCount_${escapeHtml(item.id)}">${escapeHtml(item.listens ?? 0)}</strong> استماع</span>
                                 <span>📥 <strong id="audioDownloadCount_${escapeHtml(item.id)}">${escapeHtml(item.downloads ?? 0)}</strong> تحميل</span>
+                                <span>⭐ <strong>${audioAvgRating}</strong> / 5 (${audioRatingCount} تقييم)</span>
+                            </div>
+                            <div class="media-rating-box">
+                                <div class="rating-stars" onclick="rateMedia('audio','${escapeHtml(item.id)}')" title="اضغط للتقييم أو تعديل تقييمك">
+                                    <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                                    <small>(اضغط للتقييم أو تعديل تقييمك)</small>
+                                </div>
                             </div>
                             ${audioPlayerHtml}
                             ${downloadBtnHtml}
@@ -3108,6 +3163,8 @@ onAuthStateChanged(auth, async (user) => {
                 } else {
                     data.listens = 0;
                     data.downloads = 0;
+                    data.ratingSum = 0;
+                    data.ratingCount = 0;
                     await push(ref(db, 'audioItems'), data);
                     alert("تمت إضافة المقطع الصوتي بنجاح! 🚀");
                 }
@@ -3152,6 +3209,7 @@ onAuthStateChanged(auth, async (user) => {
                     title: '🎬 الحلقة التشويقية - ظلال لا تنام', 
                     desc: 'عرض تشويقي كرتوني يستعرض مقتطفات ومشاعر درامية من أزقة رواية ظلال لا تنام.', 
                     videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', 
+                    views: 0, ratingSum: 0, ratingCount: 0,
                     updatedAt: 1 
                 }];
             renderVideos();
@@ -3194,6 +3252,10 @@ onAuthStateChanged(auth, async (user) => {
 
                 const safeVideoId = String(item.id).replace(/[^a-zA-Z0-9_-]/g, '_');
                 const currentVideoViews = Number(item.views || 0);
+                const videoRatings = item.ratingsByUid && typeof item.ratingsByUid === 'object' ? Object.values(item.ratingsByUid).map(Number).filter(v => v >= 1 && v <= 5) : [];
+                const videoRatingCount = videoRatings.length || Number(item.ratingCount || 0);
+                const videoRatingSum = videoRatings.length ? videoRatings.reduce((sum, v) => sum + v, 0) : Number(item.ratingSum || 0);
+                const videoAvgRating = videoRatingCount > 0 ? (videoRatingSum / videoRatingCount).toFixed(1) : '0.0';
 
                 const videoActionBtns = item.videoUrl ? `
                     <a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(item.videoUrl)}" rel="noopener noreferrer" download>📥 تحميل</a>
@@ -3208,6 +3270,13 @@ onAuthStateChanged(auth, async (user) => {
                             ${playerHtml}
                             <div class="video-stats" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; color:var(--text-muted); font-size:.88rem;">
                                 <span id="video-views-${safeVideoId}">👁️ ${currentVideoViews.toLocaleString('ar-EG')} مشاهدة</span>
+                                <span>⭐ ${videoAvgRating} / 5 (${videoRatingCount} تقييم)</span>
+                            </div>
+                            <div class="media-rating-box">
+                                <div class="rating-stars" onclick="rateMedia('video','${escapeHtml(item.id)}')" title="اضغط للتقييم أو تعديل تقييمك">
+                                    <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                                    <small>(اضغط للتقييم أو تعديل تقييمك)</small>
+                                </div>
                             </div>
                         </div>
                         <div class="course-actions-row">
@@ -3352,6 +3421,9 @@ onAuthStateChanged(auth, async (user) => {
                     await update(ref(db, `videos/${editId}`), data);
                     alert("تم تحديث الفيديو بنجاح! 🎉");
                 } else {
+                    data.views = 0;
+                    data.ratingSum = 0;
+                    data.ratingCount = 0;
                     await push(ref(db, 'videos'), data);
                     alert("تمت إضافة الفيديو بنجاح! 🚀");
                 }
@@ -3605,7 +3677,20 @@ onAuthStateChanged(auth, async (user) => {
             const container = document.getElementById('productsGrid');
             if (!container) return;
             container.innerHTML = '';
-            allProducts.forEach(item => {
+
+            const filteredProducts = allProducts.filter(item => {
+                const isFree = checkIsFree(item.price, 'product');
+                if (currentProductFilter === 'free') return isFree;
+                if (currentProductFilter === 'paid') return !isFree;
+                return true;
+            });
+
+            if (!filteredProducts.length) {
+                container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:var(--text-muted);">لا توجد منتجات في هذا القسم حالياً.</p>';
+                return;
+            }
+
+            filteredProducts.forEach(item => {
                 const adminBtns = isAdmin ? `
                     <div style="display:flex; gap:8px; margin-top:10px;">
                         <button class="btn-edit" onclick="editProduct('${escapeHtml(item.id)}')">تعديل ✏️</button>
@@ -3613,7 +3698,20 @@ onAuthStateChanged(auth, async (user) => {
                     </div>` : '';
 
                 const isFree = checkIsFree(item.price, 'product');
-                const btnText = isFree ? '📥 تحميل مجاناً' : '🛍️ شراء وشحن مباشر';
+                const btnText = isFree ? '📥 تحميل مجاني' : '🛍️ شراء المنتج';
+                const productRatings = item.ratingsByUid && typeof item.ratingsByUid === 'object'
+                    ? Object.values(item.ratingsByUid).map(Number).filter(v => v >= 1 && v <= 5)
+                    : [];
+                const productRatingCount = productRatings.length || Number(item.ratingCount || 0);
+                const productRatingSum = productRatings.length
+                    ? productRatings.reduce((sum, v) => sum + v, 0)
+                    : Number(item.ratingSum || 0);
+                const productAvgRating = productRatingCount > 0
+                    ? (productRatingSum / productRatingCount).toFixed(1)
+                    : '0.0';
+
+                const downloadCountHtml = isFree ? `
+                    <span>📥 <strong id="productDownloadCount_${escapeHtml(item.id)}">${Number(item.downloads || 0).toLocaleString('ar-EG')}</strong> تحميل</span>` : '';
 
                 const html = `
                     <div class="custom-card">
@@ -3621,14 +3719,129 @@ onAuthStateChanged(auth, async (user) => {
                             <h3 style="font-family: 'Amiri', serif; font-size: 1.5rem; color: var(--accent-color);">${escapeHtml(item.title)}</h3>
                             <p style="color: var(--text-muted); font-size: 0.95rem; margin: 12px 0;">${escapeHtml(item.desc)}</p>
                             <div class="card-price">${escapeHtml(item.price)}</div>
+                            <div class="book-stats" style="margin-top:12px;">
+                                ${downloadCountHtml}
+                                <span>⭐ ${productAvgRating} / 5 (${productRatingCount} تقييم)</span>
+                            </div>
+                            <div class="rating-stars" onclick="rateProduct('${escapeHtml(item.id)}')" title="اضغط للتقييم أو تعديل تقييمك">
+                                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                                <small style="font-size:0.75rem; color:var(--text-muted);">(اضغط للتقييم أو تعديل تقييمك)</small>
+                            </div>
                         </div>
-                        <button class="btn-primary" onclick="requestService('${escapeHtml(item.title)}', '${escapeHtml(item.price)}', '${escapeHtml(item.fileUrl || '#')}')">${btnText}</button>
+                        <button class="btn-primary" onclick="handleProductAction('${escapeHtml(item.id)}', '${escapeHtml(item.title)}', '${escapeHtml(item.price)}', '${escapeHtml(item.fileUrl || '#')}')">${btnText}</button>
                         ${adminBtns}
                     </div>
                 `;
                 container.insertAdjacentHTML('beforeend', html);
             });
         }
+
+        document.querySelectorAll('#productCategoryTabs .tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('#productCategoryTabs .tab-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentProductFilter = e.target.getAttribute('data-productcat') || 'all';
+                renderProducts();
+            });
+        });
+
+        window.handleProductAction = async (productId, title, price, fileUrl) => {
+            const isFree = checkIsFree(price, 'product');
+            if (!isFree) {
+                requestService(title, price, fileUrl);
+                return;
+            }
+
+            if (!fileUrl || fileUrl === '#') {
+                alert('ملف هذا المنتج المجاني غير متاح للتحميل حالياً.');
+                return;
+            }
+
+            try {
+                await ensureVisitorAuth();
+                await update(ref(db), {
+                    [`products/${productId}/downloads`]: increment(1),
+                    [`siteStats/daily/${analyticsDate()}/downloads`]: increment(1)
+                });
+                const countEl = document.getElementById(`productDownloadCount_${productId}`);
+                if (countEl) {
+                    const raw = countEl.textContent || '0';
+                    const normalized = raw.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+                    const current = Number(normalized.replace(/[^0-9.]/g, '')) || 0;
+                    countEl.textContent = (current + 1).toLocaleString('ar-EG');
+                }
+                triggerDirectDownload(fileUrl, title);
+            } catch (err) {
+                console.warn('تعذر تسجيل تحميل المنتج:', err);
+                // لا نمنع الزائر من تحميل المنتج المجاني إذا تعذر تسجيل العداد.
+                triggerDirectDownload(fileUrl, title);
+            }
+        };
+
+        window.rateProduct = async (productId) => {
+            if (!productId || String(productId).startsWith('def')) return;
+            const ratingKey = `product_rating_${productId}`;
+            try {
+                await ensureVisitorAuth();
+                const activeUid = auth.currentUser?.uid ?? null;
+                if (!activeUid) return;
+
+                const snap = await get(ref(db, `products/${productId}`));
+                const item = snap.val();
+                if (!item) return;
+
+                const previousFirebase = Number(item?.ratingsByUid?.[activeUid]);
+                const previousLocal = Number(localStorage.getItem(ratingKey));
+                const previous = Number.isFinite(previousFirebase) && previousFirebase >= 1 && previousFirebase <= 5
+                    ? previousFirebase : previousLocal;
+                const hasPrevious = Number.isFinite(previous) && previous >= 1 && previous <= 5;
+                const rating = prompt(
+                    hasPrevious ? `تقييمك الحالي ${previous} نجوم.\nعدّل تقييمك من 1 إلى 5 نجوم:` : 'ضع تقييمك للمنتج من 1 إلى 5 نجوم:',
+                    hasPrevious ? String(previous) : ''
+                );
+                if (rating === null) return;
+                const num = parseFloat(rating);
+                if (!(num >= 1 && num <= 5)) {
+                    alert('من فضلك اختر رقماً من 1 إلى 5. ⭐');
+                    return;
+                }
+
+                await update(ref(db), {
+                    [`products/${productId}/ratingsByUid/${activeUid}`]: num
+                });
+                localStorage.setItem(ratingKey, String(num));
+
+                const ratings = item.ratingsByUid && typeof item.ratingsByUid === 'object'
+                    ? Object.entries(item.ratingsByUid).filter(([uid]) => uid !== activeUid).map(([,v]) => Number(v)).filter(v => v >= 1 && v <= 5)
+                    : [];
+                ratings.push(num);
+                const count = ratings.length;
+                const avg = (ratings.reduce((sum,v) => sum + v, 0) / count).toFixed(1);
+
+                const cards = document.querySelectorAll('#productsGrid .custom-card');
+                cards.forEach(card => {
+                    const stars = card.querySelector('.rating-stars');
+                    if (!stars) return;
+                    const onclick = stars.getAttribute('onclick') || '';
+                    if (onclick.includes(`rateProduct('${String(productId).replace(/'/g, "\\'")}')`)) {
+                        const stats = card.querySelector('.book-stats');
+                        if (stats) {
+                            const spans = stats.querySelectorAll('span');
+                            const ratingSpan = spans[spans.length - 1];
+                            if (ratingSpan) ratingSpan.innerHTML = `⭐ ${avg} / 5 (${count} تقييم)`;
+                        }
+                    }
+                });
+
+                if (!hasPrevious && typeof trackAnalyticsEvent === 'function') {
+                    trackAnalyticsEvent('ratings');
+                }
+                alert(hasPrevious ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
+            } catch (err) {
+                console.warn('تعذر حفظ تقييم المنتج:', err);
+                alert('تعذر حفظ التقييم حالياً. حاول مرة أخرى.');
+            }
+        };
 
         document.getElementById('addProductForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -3872,7 +4085,7 @@ onAuthStateChanged(auth, async (user) => {
                             <div class="book-stats">
                                 <span>👁️ ${book.reads ?? 0} قراءة</span>
                                 <span>📥 ${book.downloads ?? 0} تحميل</span>
-                                <span>⭐ ${avgRating} / 5</span>
+                                <span>⭐ ${avgRating} / 5 (${Number(book.ratingCount || 0)} تقييم)</span>
                             </div>
 
                             <div class="rating-stars" onclick="rateBook('${escapeHtml(book.id)}')" title="اضغط هنا للتقييم أو تعديل تقييمك">
@@ -4227,6 +4440,116 @@ onAuthStateChanged(auth, async (user) => {
                 alert(hasPrevious ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
             } catch (err) {
                 console.error('تعذر حفظ/تعديل التقييم:', err);
+                alert(`تعذر حفظ التقييم: ${err.message}`);
+            }
+        };
+
+
+        // تقييم الفيديوهات والصوتيات بنفس نظام تقييم الكتب، مع السماح للزائر المجهول
+        // بتعديل تقييمه لاحقاً دون احتساب تقييم ثانٍ له.
+        window.rateMedia = async (mediaType, mediaId) => {
+            if (!mediaType || !mediaId) return;
+
+            const rootPath = mediaType === 'audio' ? 'audioItems' : mediaType === 'video' ? 'videos' : '';
+            if (!rootPath) return;
+
+            const ratingKey = `media_rating_${mediaType}_${mediaId}`;
+
+            if (String(mediaId).startsWith('def')) {
+                const oldLocal = parseFloat(localStorage.getItem(ratingKey) || '');
+                const promptText = oldLocal >= 1 && oldLocal <= 5
+                    ? `تقييمك الحالي ${oldLocal} نجوم.\nضع التقييم الجديد من 1 إلى 5 نجوم:`
+                    : 'ضع تقييمك من 1 إلى 5 نجوم:';
+                const rating = prompt(promptText, oldLocal >= 1 && oldLocal <= 5 ? String(oldLocal) : '');
+                if (rating === null) return;
+                const num = parseFloat(rating);
+                if (!(num >= 1 && num <= 5)) {
+                    alert('من فضلك اختر رقماً من 1 إلى 5. ⭐');
+                    return;
+                }
+                localStorage.setItem(ratingKey, String(num));
+                alert(oldLocal >= 1 && oldLocal <= 5 ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
+                return;
+            }
+
+            try {
+                await ensureVisitorAuth();
+                const activeUid = auth.currentUser?.uid ?? null;
+                if (!activeUid) {
+                    alert('تعذر تحديد صاحب التقييم حالياً. حاول مرة أخرى.');
+                    return;
+                }
+
+                const itemSnapshot = await get(ref(db, `${rootPath}/${mediaId}`));
+                const existingItem = itemSnapshot.val();
+                if (!existingItem) {
+                    alert('المحتوى غير موجود حالياً.');
+                    return;
+                }
+
+                const firebasePrevious = Number(existingItem?.ratingsByUid?.[activeUid]);
+                const localPrevious = Number(localStorage.getItem(ratingKey));
+                const previous = Number.isFinite(firebasePrevious) && firebasePrevious >= 1 && firebasePrevious <= 5
+                    ? firebasePrevious
+                    : localPrevious;
+                const hasPrevious = Number.isFinite(previous) && previous >= 1 && previous <= 5;
+
+                const promptText = hasPrevious
+                    ? `تقييمك الحالي ${previous} نجوم.\nعدّل تقييمك وضع الدرجة الجديدة من 1 إلى 5 نجوم:`
+                    : 'ضع تقييمك من 1 إلى 5 نجوم:';
+                const rating = prompt(promptText, hasPrevious ? String(previous) : '');
+                if (rating === null) return;
+
+                const num = parseFloat(rating);
+                if (!(num >= 1 && num <= 5)) {
+                    alert('من فضلك اختر رقماً من 1 إلى 5. ⭐');
+                    return;
+                }
+
+                // نحفظ تقييم الزائر فقط. متوسط التقييم وعدده يُحسبان من ratingsByUid
+                // لتجنب الحاجة لصلاحية كتابة ratingSum/ratingCount للمستخدم المجهول.
+                await update(ref(db), {
+                    [`${rootPath}/${mediaId}/ratingsByUid/${activeUid}`]: num
+                });
+
+                localStorage.setItem(ratingKey, String(num));
+
+                // تسجيل التقييم في لوحة الإحصائيات عند أول تقييم فقط؛ تعديل التقييم لا يضيف عداداً جديداً.
+                if (!hasPrevious) {
+                    await trackBookAnalytics(`${mediaType}_${mediaId}`, 'ratings');
+                }
+
+                // تحديث العرض فوراً بعد نجاح الحفظ دون إعادة تحميل الصفحة.
+                const allRatings = existingItem.ratingsByUid && typeof existingItem.ratingsByUid === 'object'
+                    ? Object.entries(existingItem.ratingsByUid)
+                        .filter(([uid]) => uid !== activeUid)
+                        .map(([, value]) => Number(value))
+                        .filter(v => v >= 1 && v <= 5)
+                    : [];
+                allRatings.push(num);
+                const updatedCount = allRatings.length;
+                const updatedSum = allRatings.reduce((sum, value) => sum + value, 0);
+                const updatedAvg = updatedCount ? (updatedSum / updatedCount).toFixed(1) : '0.0';
+
+                document.querySelectorAll('.media-rating-box').forEach(box => {
+                    const stars = box.querySelector('.rating-stars');
+                    if (!stars) return;
+                    const onclick = stars.getAttribute('onclick') || '';
+                    if (onclick.includes(`rateMedia('${mediaType}','${String(mediaId).replace(/'/g, "\\'")}')`)) {
+                        const stats = box.parentElement?.querySelector('.book-stats, .video-stats');
+                        if (stats) {
+                            const spans = stats.querySelectorAll('span');
+                            const ratingSpan = spans[spans.length - 1];
+                            if (ratingSpan) {
+                                ratingSpan.innerHTML = `⭐ <strong>${updatedAvg}</strong> / 5 (${updatedCount} تقييم)`;
+                            }
+                        }
+                    }
+                });
+
+                alert(hasPrevious ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
+            } catch (err) {
+                console.error('تعذر حفظ/تعديل تقييم المحتوى:', err);
                 alert(`تعذر حفظ التقييم: ${err.message}`);
             }
         };
