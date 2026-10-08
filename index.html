@@ -4259,7 +4259,16 @@ onAuthStateChanged(auth, async (user) => {
             }
 
             filtered.forEach(book => {
-                const avgRating = book.ratingCount ? (book.ratingSum / book.ratingCount).toFixed(1) : (book.rating ?? '5.0');
+                const bookRatings = book.ratingsByUid && typeof book.ratingsByUid === 'object'
+                    ? Object.values(book.ratingsByUid).map(Number).filter(v => v >= 1 && v <= 5)
+                    : [];
+                const displayedRatingCount = bookRatings.length || Number(book.ratingCount || 0);
+                const displayedRatingSum = bookRatings.length
+                    ? bookRatings.reduce((sum, value) => sum + value, 0)
+                    : Number(book.ratingSum || 0);
+                const avgRating = displayedRatingCount
+                    ? (displayedRatingSum / displayedRatingCount).toFixed(1)
+                    : (book.rating ?? '0.0');
                 const adminBtns = isAdmin ? `
                     <div style="display:flex; gap:8px; margin-top:10px; grid-column: 1 / -1;">
                         <button class="btn-edit" onclick="editBook('${book.id}')">تعديل ✏️</button>
@@ -4327,7 +4336,7 @@ onAuthStateChanged(auth, async (user) => {
                             <div class="book-stats">
                                 <span>👁️ ${book.reads ?? 0} قراءة</span>
                                 <span>📥 ${book.downloads ?? 0} تحميل</span>
-                                <span>⭐ ${avgRating} / 5 (${Number(book.ratingCount || 0)} تقييم)</span>
+                                <span>⭐ ${avgRating} / 5 (${displayedRatingCount} تقييم)</span>
                             </div>
 
                             <div class="rating-stars" onclick="rateBook('${escapeHtml(book.id)}')" title="اضغط هنا للتقييم أو تعديل تقييمك">
