@@ -644,6 +644,42 @@
         .btn-share { background: linear-gradient(135deg, #f39c12 0%, #d35400 100%); color: #fff; }
         .btn-reviews { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: #fff; }
 
+        /* تلميحات صغيرة للأزرار: تظهر بالماوس وبالتركيز بلوحة المفاتيح */
+        .count-tooltip { position: relative; }
+        .count-tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            z-index: 1000;
+            right: 50%;
+            bottom: calc(100% + 8px);
+            transform: translateX(50%) translateY(4px);
+            width: max-content;
+            max-width: min(250px, 80vw);
+            white-space: normal;
+            text-align: center;
+            direction: rtl;
+            background: #20242b;
+            color: #fff;
+            padding: 7px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.5;
+            box-shadow: 0 4px 14px rgba(0,0,0,.22);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity .15s ease, transform .15s ease;
+        }
+        .count-tooltip:hover::after,
+        .count-tooltip:focus-visible::after,
+        .count-tooltip:focus::after { opacity: 1; visibility: visible; transform: translateX(50%) translateY(0); }
+        /* أزرار المشاركة في بطاقات الكتب كانت تقصّ التلميح بسبب overflow:hidden */
+        .action-buttons-group .btn-share.count-tooltip { overflow: visible !important; position: relative; z-index: 2; }
+        .action-buttons-group .btn-share.count-tooltip:hover,
+        .action-buttons-group .btn-share.count-tooltip:focus-visible { z-index: 20; }
+
+
         /* مشاركة وتقييمات الكتب: نفس مقاس أزرار الصف بالضبط */
         .action-buttons-group .btn-share,
         .action-buttons-group .btn-reviews {
@@ -1298,34 +1334,11 @@
             </div>
         </div>
 
-
-        <!-- تسجيل الدخول المطلوب للتقييمات والمراجعات -->
-        <div id="ratingLoginModal" class="modal" style="z-index: 1200;">
-            <div class="modal-content" style="max-width: 480px;">
-                <span class="close-modal" id="closeRatingLoginBtn">&times;</span>
-                <h3 style="color: var(--accent-color); font-family: 'Amiri', serif; margin-bottom: 10px;">🔐 تسجيل الدخول</h3>
-                <p style="color: var(--text-muted); margin-bottom: 20px;">
-                    للحفاظ على أن التقييمات والآراء حقيقية ومرتبطة بصاحبها، اختر طريقة تسجيل الدخول:
-                </p>
-                <div style="display:grid; gap:10px;">
-                    <button type="button" id="googleRatingLoginBtn" class="btn-primary" style="width:100%;">🔴 الدخول بحساب Google</button>
-                    <button type="button" id="facebookRatingLoginBtn" class="btn-secondary" style="width:100%;">🔵 الدخول بحساب Facebook</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Admin Panel -->
         <section id="adminPanel" class="admin-panel">
+            <div id="adminNotificationsBox" style="margin:0 0 16px;position:relative"><button type="button" id="adminNotificationsBtn" class="btn-primary" style="width:auto;position:relative">🔔 الإشعارات <span id="adminNotificationsBadge" style="display:none;position:absolute;top:-7px;right:-7px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#d32f2f;color:#fff;font-size:12px;line-height:22px;font-weight:700">0</span></button><div id="adminNotificationsList" style="display:none;margin-top:10px;max-height:320px;overflow:auto;border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:8px;background:rgba(0,0,0,.15)"></div></div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="color: var(--accent-color); font-family: 'Amiri', serif;">🛠️ لوحة تحكم الكاتب الشاملة</h2>
-                <div id="adminNotificationsBox" style="margin:0 0 16px;position:relative">
-                    <button type="button" id="adminNotificationsBtn" class="btn-primary" style="width:auto;position:relative">
-                        🔔 الإشعارات
-                        <span id="adminNotificationsBadge" style="display:none;position:absolute;top:-7px;right:-7px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#d32f2f;color:#fff;font-size:12px;line-height:22px;font-weight:700">0</span>
-                    </button>
-                    <div id="adminNotificationsList" style="display:none;margin-top:10px;max-height:320px;overflow:auto;border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:8px;background:rgba(0,0,0,.15)"></div>
-                </div>
-
                 <button class="btn-danger" style="flex: none; padding: 6px 16px;" id="logoutBtn">تسجيل الخروج ✖</button>
             </div>
 
@@ -1531,7 +1544,7 @@
             </div>
 
             <div class="admin-section-box">
-                <h3 style="color: var(--text-color); margin-bottom: 10px; font-family: 'Amiri', serif;">🎬 التحكم في قسم الفيديوهات:</h3>
+                <h3 style="color: var(--text-color); margin-bottom: 10px; font-family: 'Amiri', serif;">🎬 التحكم في قسم الفيديوهات والحلقات التعليمية:</h3>
                 <form id="addVideoForm">
                     <input type="hidden" id="editVideoId" value="">
                     <div class="form-group"><label>عنوان الفيديو / الحلقة:</label><input type="text" id="videoTitle" placeholder="مثال: 🎬 الحلقة الأولى - إعلان رواية ظلال لا تنام" required></div>
@@ -1681,8 +1694,8 @@
                 <form id="addReviewForm" style="text-align: right;">
                     <h4 id="reviewFormTitle" style="color: var(--accent-color); font-size: 1.1rem; margin-bottom: 10px; font-family: 'Amiri', serif;">✍️ أضف رأيك في هذا العمل:</h4>
                     <input type="hidden" id="editingReviewKey" value="">
-                    <div style="background: rgba(212,175,55,.08); border: 1px dashed var(--border-color); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; color: var(--text-muted);">
-                        🔐 لإرسال أو تعديل الرأي، سجّل الدخول أولاً بحساب Google أو Facebook.
+                    <div class="form-group">
+                        <input type="text" id="reviewerName" placeholder="اسمك / لقبك" required>
                     </div>
                     <div class="form-group">
                         <textarea id="reviewerText" rows="3" placeholder="اكتب انطباعك ورأيك في الرواية هنا..." required></textarea>
@@ -1971,7 +1984,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
         import { getDatabase, ref, onValue, set, push, update, remove, runTransaction, increment, get } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, getIdTokenResult, signInAnonymously, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, linkWithPopup } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, getIdTokenResult, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyDGG6NxTUZl5lLqD7qPq_nE0h6c_jVbaNA",
@@ -2005,197 +2018,6 @@
             }
             return anonymousAuthPromise;
         }
-
-        // تسجيل الدخول الحقيقي المطلوب للتقييمات والمراجعات.
-        let pendingRatingAuthResolve = null;
-        let pendingRatingAuthReject = null;
-
-        function closeRatingLoginModal() {
-            const modal = document.getElementById('ratingLoginModal');
-            if (modal) modal.style.display = 'none';
-        }
-
-        function openRatingLoginModal() {
-            const modal = document.getElementById('ratingLoginModal');
-            if (modal) modal.style.display = 'flex';
-        }
-
-        async function loginForRating(providerType) {
-            try {
-                const provider = providerType === 'facebook'
-                    ? new FacebookAuthProvider()
-                    : new GoogleAuthProvider();
-
-                if (providerType !== 'facebook') {
-                    provider.setCustomParameters({ prompt: 'select_account' });
-                }
-
-                let result;
-                if (auth.currentUser?.isAnonymous) {
-                    try {
-                        result = await linkWithPopup(auth.currentUser, provider);
-                    } catch (linkError) {
-                        if (linkError?.code === 'auth/credential-already-in-use' ||
-                            linkError?.code === 'auth/provider-already-linked') {
-                            result = await signInWithPopup(auth, provider);
-                        } else {
-                            throw linkError;
-                        }
-                    }
-                } else {
-                    result = await signInWithPopup(auth, provider);
-                }
-
-                closeRatingLoginModal();
-                if (pendingRatingAuthResolve) pendingRatingAuthResolve(result.user);
-                pendingRatingAuthResolve = null;
-                pendingRatingAuthReject = null;
-                return result.user;
-            } catch (err) {
-                console.error('تعذر تسجيل الدخول للتقييم:', err);
-                if (pendingRatingAuthReject) pendingRatingAuthReject(err);
-                pendingRatingAuthResolve = null;
-                pendingRatingAuthReject = null;
-                alert(`تعذر تسجيل الدخول: ${err.message}`);
-                return null;
-            }
-        }
-
-        function ensureRatingAuth() {
-            const user = auth.currentUser;
-            if (user && !user.isAnonymous) return Promise.resolve(user);
-            openRatingLoginModal();
-            return new Promise((resolve, reject) => {
-                pendingRatingAuthResolve = resolve;
-                pendingRatingAuthReject = reject;
-            });
-        }
-
-        async function ensureReviewAuth() {
-            return ensureRatingAuth();
-        }
-
-        document.getElementById('closeRatingLoginBtn')?.addEventListener('click', closeRatingLoginModal);
-        document.getElementById('googleRatingLoginBtn')?.addEventListener('click', async () => {
-            const btn = document.getElementById('googleRatingLoginBtn');
-            if (btn) { btn.disabled = true; btn.textContent = 'جاري فتح Google... ⏳'; }
-            try { await loginForRating('google'); }
-            finally { if (btn) { btn.disabled = false; btn.textContent = '🔴 الدخول بحساب Google'; } }
-        });
-        document.getElementById('facebookRatingLoginBtn')?.addEventListener('click', async () => {
-            const btn = document.getElementById('facebookRatingLoginBtn');
-            if (btn) { btn.disabled = true; btn.textContent = 'جاري فتح Facebook... ⏳'; }
-            try { await loginForRating('facebook'); }
-            finally { if (btn) { btn.disabled = false; btn.textContent = '🔵 الدخول بحساب Facebook'; } }
-        });
-
-        // إشعارات الأدمن: التقييم/الرأي/طلب النشر.
-        let adminNotifications = {};
-        let adminNotificationsUnsubscribe = null;
-
-        function renderAdminNotifications() {
-            const list = document.getElementById('adminNotificationsList');
-            const badge = document.getElementById('adminNotificationsBadge');
-            if (!list || !badge) return;
-
-            const entries = Object.entries(adminNotifications || {})
-                .filter(([, item]) => item)
-                .sort((a, b) => Number(b[1]?.createdAt || 0) - Number(a[1]?.createdAt || 0));
-
-            const unread = entries.filter(([, item]) => item?.read !== true).length;
-            badge.textContent = String(unread);
-            badge.style.display = unread ? 'inline-block' : 'none';
-
-            if (!entries.length) {
-                list.innerHTML = '<div style="padding:12px;color:var(--text-muted);text-align:center;">لا توجد إشعارات حالياً.</div>';
-                return;
-            }
-
-            list.innerHTML = entries.map(([id, item]) => {
-                const date = item?.createdAt ? new Date(Number(item.createdAt)).toLocaleString('ar-EG') : '';
-                const typeLabel = item?.type === 'rating' ? '⭐ تقييم جديد'
-                    : item?.type === 'publish' ? '📩 طلب نشر جديد'
-                    : '✍️ رأي جديد';
-                const safeTitle = String(item?.title || 'إشعار').replace(/[&<>"']/g, ch => ({
-                    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
-                }[ch]));
-                const safeSender = String(item?.sender || '').replace(/[&<>"']/g, ch => ({
-                    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
-                }[ch]));
-                return `<div data-notification-id="${id}" style="padding:10px;margin-bottom:8px;border-radius:10px;border:1px solid var(--border-color);background:${item?.read ? 'transparent' : 'rgba(212,175,55,.08)'};">
-                    <div style="font-weight:700;color:var(--accent-color);">${typeLabel}</div>
-                    <div style="font-weight:700;">${safeTitle}</div>
-                    ${safeSender ? `<div style="color:var(--text-muted);font-size:.9rem;">${safeSender}</div>` : ''}
-                    <div style="color:var(--text-muted);font-size:.78rem;margin-top:4px;">${date}</div>
-                </div>`;
-            }).join('');
-        }
-
-        async function createAdminNotification(type, data = {}) {
-            try {
-                const user = auth.currentUser;
-                if (!user) return;
-                const id = push(ref(db, 'adminNotifications')).key;
-                if (!id) return;
-                await update(ref(db), {
-                    [`adminNotifications/${id}`]: {
-                        type: String(type || 'review').slice(0, 20),
-                        title: String(data.title || '').slice(0, 200),
-                        sender: String(data.sender || '').slice(0, 100),
-                        targetId: String(data.targetId || '').slice(0, 200),
-                        targetSection: String(data.targetSection || '').slice(0, 50),
-                        createdAt: Date.now(),
-                        read: false
-                    }
-                });
-            } catch (err) {
-                console.warn('تعذر إنشاء إشعار الأدمن:', err);
-            }
-        }
-
-        async function startAdminNotifications() {
-            if (!isAdmin) return;
-            if (adminNotificationsUnsubscribe) adminNotificationsUnsubscribe();
-            adminNotificationsUnsubscribe = onValue(
-                ref(db, 'adminNotifications'),
-                snapshot => {
-                    adminNotifications = snapshot.val() || {};
-                    renderAdminNotifications();
-                },
-                error => console.warn('تعذر قراءة إشعارات الأدمن:', error)
-            );
-        }
-
-        async function stopAdminNotifications() {
-            if (adminNotificationsUnsubscribe) {
-                adminNotificationsUnsubscribe();
-                adminNotificationsUnsubscribe = null;
-            }
-            adminNotifications = {};
-            renderAdminNotifications();
-        }
-
-        document.getElementById('adminNotificationsBtn')?.addEventListener('click', async () => {
-            const list = document.getElementById('adminNotificationsList');
-            if (!list) return;
-            list.style.display = list.style.display === 'none' ? 'block' : 'none';
-
-            if (list.style.display === 'block' && isAdmin && Object.keys(adminNotifications).length) {
-                const unreadIds = Object.entries(adminNotifications)
-                    .filter(([, item]) => item?.read !== true)
-                    .map(([id]) => id);
-                if (unreadIds.length) {
-                    const updates = {};
-                    unreadIds.forEach(id => { updates[`adminNotifications/${id}/read`] = true; });
-                    try {
-                        await update(ref(db), updates);
-                    } catch (err) {
-                        console.warn('تعذر تعليم الإشعارات كمقروءة:', err);
-                    }
-                }
-            }
-        });
-
 
         // دالة تحسين الصور تلقائياً لسرعة التحميل
         function optimizeCloudinaryUrl(url, width = 400) {
@@ -2466,13 +2288,14 @@ onAuthStateChanged(auth, async (user) => {
             isAdmin = !!user && !user.isAnonymous &&
                 String(user.email || '').trim().toLowerCase() === ADMIN_EMAIL;
 
+            if (isAdmin) startAdminNotificationsListener();
+            else stopAdminNotificationsListener();
+
             const adminPanel = document.getElementById('adminPanel');
             const adminToggleBtn = document.getElementById('adminToggleBtn');
             
             if (adminPanel) adminPanel.style.display = isAdmin ? 'block' : 'none';
             if (adminToggleBtn) adminToggleBtn.innerText = isAdmin ? '🛠️ لوحة التحكم' : '🔒 تسجيل الدخول';
-
-            if (!isAdmin) void stopAdminNotifications();
 
             void trackSiteVisits();
 
@@ -2486,7 +2309,6 @@ onAuthStateChanged(auth, async (user) => {
             // طلبات النشر حساسة؛ لا نقرأها من قاعدة البيانات إلا للأدمن.
             if (isAdmin) {
                 loadPublishRequests();
-                void startAdminNotifications();
 
                 // بعد اكتمال تسجيل دخول الأدمن نعيد بناء لوحة التحليلات.
                 // كانت اللوحة تُبنى سابقًا قبل تحديد isAdmin، فتظل بعض البطاقات
@@ -2956,12 +2778,7 @@ onAuthStateChanged(auth, async (user) => {
                 };
 
                 await push(ref(db, 'publishRequests'), requestData);
-                void createAdminNotification('publish', {
-                    title: `طلب نشر جديد: ${requestData.title || 'بدون عنوان'}`,
-                    sender: requestData.authorName || auth.currentUser?.email || 'كاتب',
-                    targetId: requestData.requesterUid || '',
-                    targetSection: 'publishRequests'
-                });
+                await window.notifyAdminNewPublish?.(requestData.title || 'عمل جديد', requestData.authorName || 'كاتب', '');
                 alert("تم رفع الملفات وإرسال طلب النشر بنجاح! سيتم مراجعته والرد عليك. ✨");
                 document.getElementById('authorPublishForm').reset();
                 document.getElementById('publishModal').style.display = 'none';
@@ -3318,13 +3135,13 @@ onAuthStateChanged(auth, async (user) => {
                 // تحسين preload="metadata" لسرعة الاستجابة ومنع التأخير
                 const audioPlayerHtml = (item.audioUrl && item.audioUrl.trim() !== '#' && item.audioUrl.trim() !== '') ? `
                     <div class="audio-player-container">
-                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${escapeHtml(item.id)}" src="${safeMediaUrl(item.audioUrl)}">
+                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player count-tooltip" title="عدد مرات الاستماع المسجل: ${Number(item.listens || 0).toLocaleString('ar-EG')}" data-tooltip="عدد مرات الاستماع المسجل: ${Number(item.listens || 0).toLocaleString('ar-EG')}" data-id="${escapeHtml(item.id)}" src="${safeMediaUrl(item.audioUrl)}">
                             عذراً، متصفحك لا يدعم تشغيل هذا الملف الصوتي.
                         </audio>
                     </div>` : `<p style="color:var(--text-muted); font-size:0.85rem; margin:8px 0;">الملف الصوتي غير متوفر حالياً.</p>`;
 
                 const downloadBtnHtml = (item.audioUrl && item.audioUrl.trim() !== '#' && item.audioUrl.trim() !== '') ? `
-                    <button class="btn-action btn-download" style="margin-top:8px;" onclick="downloadAudioFile('${escapeHtml(item.id)}', '${safeMediaUrl(item.audioUrl)}', '${escapeHtml(item.title)}', '${escapeHtml(item.price ?? 'مجاني')}')">${isFree ? '📥 تحميل مجاني' : '📲 شراء وتحميل الملف الصوتي'}</button>
+                    <button class="btn-action btn-download count-tooltip" style="margin-top:8px;" data-tooltip="إجمالي التحميلات المسجل: ${Number(item.downloads || 0).toLocaleString('ar-EG')}" aria-label="${isFree ? 'تحميل مجاني' : 'شراء وتحميل الملف الصوتي'}؛ إجمالي التحميلات ${Number(item.downloads || 0)}" onclick="downloadAudioFile('${escapeHtml(item.id)}', '${safeMediaUrl(item.audioUrl)}', '${escapeHtml(item.title)}', '${escapeHtml(item.price ?? 'مجاني')}')">${isFree ? '📥 تحميل مجاني' : '📲 شراء وتحميل الملف الصوتي'}</button>
                 ` : '';
 
                 const safeAudioId = String(item.id).replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -3485,8 +3302,8 @@ onAuthStateChanged(auth, async (user) => {
                 const videoAvgRating = videoRatingCount > 0 ? (videoRatingSum / videoRatingCount).toFixed(1) : '0.0';
 
                 const videoActionBtns = item.videoUrl ? `
-                    <a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(item.videoUrl)}" rel="noopener noreferrer" download>📥 تحميل</a>
-                    <button class="btn-primary course-action-btn" type="button" onclick='shareVideo(${escapeHtml(JSON.stringify(item.title))}, ${escapeHtml(JSON.stringify(item.id))})'>🔗 مشاركة</button>
+                    <a class="btn-secondary course-action-btn count-tooltip" data-tooltip="إجمالي التحميلات المسجل: ${Number(item.downloads || 0).toLocaleString('ar-EG')}" aria-label="تحميل الفيديو؛ إجمالي التحميلات ${Number(item.downloads || 0)}" href="${cloudinaryDownloadUrl(item.videoUrl)}" rel="noopener noreferrer" download>📥 تحميل</a>
+                    <button class="btn-primary course-action-btn count-tooltip" data-tooltip="${Number.isFinite(Number(item.shares ?? item.shareCount)) && (item.shares != null || item.shareCount != null) ? `عدد المشاركات المسجل: ${Number(item.shares ?? item.shareCount).toLocaleString('ar-EG')}` : 'عداد المشاركات المباشر يبدأ من الآن؛ الأرقام السابقة محفوظة في إحصائيات الإدارة'}" title="${Number.isFinite(Number(item.shares ?? item.shareCount)) && (item.shares != null || item.shareCount != null) ? `عدد المشاركات المسجل: ${Number(item.shares ?? item.shareCount).toLocaleString('ar-EG')}` : 'عداد المشاركات المباشر يبدأ من الآن؛ الأرقام السابقة محفوظة في إحصائيات الإدارة'}" aria-label="مشاركة الفيديو؛ ${Number.isFinite(Number(item.shares ?? item.shareCount)) && (item.shares != null || item.shareCount != null) ? `عدد المشاركات ${Number(item.shares ?? item.shareCount)}` : 'عداد المشاركات المباشر يبدأ من الآن'}" type="button" onclick='shareVideo(${escapeHtml(JSON.stringify(item.title))}, ${escapeHtml(JSON.stringify(item.id))})'>🔗 مشاركة</button>
                 ` : '';
 
                 const html = `
@@ -3588,11 +3405,17 @@ onAuthStateChanged(auth, async (user) => {
                     [`siteStats/daily/${date}/shares`]: increment(1)
                 };
 
-                // نستخدم bookEvents لكل أنواع المحتوى عمدًا؛ هذا المسار موجود ومسموح
-                // في قواعد Firebase الحالية، وبذلك لا تعتمد المشاركات على contentEvents
-                // الذي كان يتسبب في فشل لوحة التحليلات بالكامل عند رفض قراءته.
+                // نحافظ على سجل الإحصائيات الحالي للوحة الإدارة.
                 const statId = safeType === 'book' ? safeId : `${safeType}_${safeId}`;
                 updates[`siteStats/bookEvents/${statId}/shares`] = increment(1);
+
+                // نضيف عدادًا لكل عنصر داخل بياناته نفسها، حتى يمكن عرضه في بطاقة العمل.
+                // القواعد التجريبية تسمح فقط بزيادة العداد بمقدار واحد للمستخدم المسجّل.
+                if (safeType === 'book') {
+                    updates[`books/${contentId}/shares`] = increment(1);
+                } else if (safeType === 'video') {
+                    updates[`videos/${contentId}/shares`] = increment(1);
+                }
 
                 await update(ref(db), updates);
                 return true;
@@ -3601,6 +3424,94 @@ onAuthStateChanged(auth, async (user) => {
                 return false;
             }
         }
+
+        // إشعارات لوحة الكاتب: تعرض تقييمات القراء وطلبات النشر الجديدة.
+        let adminNotifications = {};
+        let stopAdminNotificationsSubscription = null;
+
+        function renderAdminNotifications() {
+            const list = document.getElementById('adminNotificationsList');
+            const badge = document.getElementById('adminNotificationsBadge');
+            if (!list || !badge) return;
+            const entries = Object.entries(adminNotifications || {})
+                .map(([id, item]) => ({ id, ...(item || {}) }))
+                .sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
+            const unread = entries.filter(item => !item.read).length;
+            badge.textContent = unread > 99 ? '99+' : String(unread);
+            badge.style.display = unread ? 'inline-block' : 'none';
+            if (!entries.length) {
+                list.innerHTML = '<div style="padding:12px;text-align:center">لا توجد إشعارات جديدة حاليًا.</div>';
+                return;
+            }
+            list.innerHTML = entries.map(item => {
+                const title = item.type === 'review'
+                    ? `⭐ تقييم جديد${item.title ? ` على «${item.title}»` : ''}`
+                    : item.type === 'publish'
+                        ? `✒️ طلب نشر جديد${item.title ? `: «${item.title}»` : ''}`
+                        : (item.title || 'إشعار جديد');
+                const date = item.createdAt ? new Date(item.createdAt).toLocaleString('ar-EG') : '';
+                return `<div class="admin-notification-item ${item.read ? '' : 'unread'}" data-notification-id="${item.id}" style="padding:10px;border-bottom:1px solid rgba(255,255,255,.12);cursor:pointer;${item.read ? '' : 'font-weight:700;'}"><strong>${escapeHtml(title)}</strong>${item.sender ? `<div>${escapeHtml(item.sender)}</div>` : ''}<div style="font-size:.82rem;opacity:.75;margin-top:4px">${escapeHtml(date)}${item.read ? ' • تمت القراءة' : ' • جديد'}</div></div>`;
+            }).join('');
+            list.querySelectorAll('.admin-notification-item').forEach(element => {
+                element.addEventListener('click', async () => {
+                    const id = element.dataset.notificationId;
+                    const item = adminNotifications[id];
+                    if (!item) return;
+                    if (!item.read) {
+                        try { await update(ref(db, `adminNotifications/${id}`), { read: true }); }
+                        catch (error) { console.warn('تعذر تحديث حالة الإشعار:', error); }
+                    }
+                    if (item.targetSection) {
+                        const target = document.getElementById(item.targetSection);
+                        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, { once: true });
+            });
+        }
+
+        function startAdminNotificationsListener() {
+            if (!isAdmin || !auth.currentUser || auth.currentUser.isAnonymous || stopAdminNotificationsSubscription) return;
+            stopAdminNotificationsSubscription = onValue(ref(db, 'adminNotifications'), snapshot => {
+                adminNotifications = snapshot.val() || {};
+                renderAdminNotifications();
+            }, error => console.warn('تعذر قراءة إشعارات الكاتب:', error));
+        }
+
+        function stopAdminNotificationsListener() {
+            if (stopAdminNotificationsSubscription) {
+                stopAdminNotificationsSubscription();
+                stopAdminNotificationsSubscription = null;
+            }
+            adminNotifications = {};
+            renderAdminNotifications();
+        }
+
+        async function createAdminNotification(type, data = {}) {
+            try {
+                if (!auth.currentUser || auth.currentUser.isAnonymous) return;
+                const notificationRef = push(ref(db, 'adminNotifications'));
+                await update(ref(db), {
+                    [`adminNotifications/${notificationRef.key}`]: {
+                        type,
+                        title: String(data.title || '').slice(0, 200),
+                        sender: String(data.sender || '').slice(0, 100),
+                        targetId: String(data.targetId || '').slice(0, 200),
+                        targetSection: String(data.targetSection || '').slice(0, 50),
+                        createdAt: Date.now(),
+                        read: false
+                    }
+                });
+            } catch (error) {
+                console.warn('تعذر إنشاء إشعار الكاتب:', error);
+            }
+        }
+
+        window.notifyAdminNewReview = (title, sender = '') => createAdminNotification('review', { title, sender });
+        window.notifyAdminNewPublish = (title, sender = '', targetId = '') => createAdminNotification('publish', { title, sender, targetId, targetSection: 'publish' });
+        document.getElementById('adminNotificationsBtn')?.addEventListener('click', () => {
+            const list = document.getElementById('adminNotificationsList');
+            if (list) list.style.display = list.style.display === 'none' ? 'block' : 'none';
+        });
 
         window.shareVideo = async (title, videoId) => {
             if (!videoId || String(videoId).startsWith('def')) {
@@ -3729,7 +3640,7 @@ onAuthStateChanged(auth, async (user) => {
                         ${item.videoUrl ? `<div class="course-video-meta"><span class="course-price-pill">💰 ${escapeHtml(item.price)}</span><span id="course-video-views-${safeCourseVideoId}">👁️ ${currentCourseViews.toLocaleString('ar-EG')} مشاهدة</span></div>` : `<div class="course-video-meta"><span class="course-price-pill">💰 ${escapeHtml(item.price)}</span></div>`}
                         <div class="course-video-actions">
                             ${fileBtn}
-                            <button class="btn-primary course-action-btn" type="button" onclick='shareCourse(${escapeHtml(JSON.stringify(item.title))}, ${escapeHtml(JSON.stringify(item.id))})'>🔗 مشاركة</button>
+                            <button class="btn-primary course-action-btn count-tooltip" data-tooltip="${Number.isFinite(Number(item.shares ?? item.shareCount)) && (item.shares != null || item.shareCount != null) ? `عدد المشاركات المسجل: ${Number(item.shares ?? item.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" title="${Number.isFinite(Number(item.shares ?? item.shareCount)) && (item.shares != null || item.shareCount != null) ? `عدد المشاركات المسجل: ${Number(item.shares ?? item.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" aria-label="مشاركة الدورة أو الورشة؛ ${Number.isFinite(Number(item.shares ?? item.shareCount)) && (item.shares != null || item.shareCount != null) ? `عدد المشاركات ${Number(item.shares ?? item.shareCount)}` : 'عداد المشاركات المباشر يبدأ من الآن'}" type="button" onclick='shareCourse(${escapeHtml(JSON.stringify(item.title))}, ${escapeHtml(JSON.stringify(item.id))})'>🔗 مشاركة</button>
                             ${adminBtns}
                         </div>
                     </div>
@@ -4009,10 +3920,6 @@ onAuthStateChanged(auth, async (user) => {
 
         window.rateProduct = async (productId) => {
             if (!productId || String(productId).startsWith('def')) return;
-
-            const ratingUser = await ensureRatingAuth().catch(() => null);
-            if (!ratingUser || ratingUser.isAnonymous) return;
-
             const ratingKey = `product_rating_${productId}`;
             try {
                 await ensureVisitorAuth();
@@ -4043,15 +3950,6 @@ onAuthStateChanged(auth, async (user) => {
                     [`products/${productId}/ratingsByUid/${activeUid}`]: num
                 });
                 localStorage.setItem(ratingKey, String(num));
-
-                if (!hasPrevious) {
-                    void createAdminNotification('rating', {
-                        title: `تقييم جديد على: ${item.title || 'منتج'}`,
-                        sender: auth.currentUser?.displayName || auth.currentUser?.email || 'زائر مسجل',
-                        targetId: productId,
-                        targetSection: 'products'
-                    });
-                }
 
                 const ratings = item.ratingsByUid && typeof item.ratingsByUid === 'object'
                     ? Object.entries(item.ratingsByUid).filter(([uid]) => uid !== activeUid).map(([,v]) => Number(v)).filter(v => v >= 1 && v <= 5)
@@ -4259,16 +4157,7 @@ onAuthStateChanged(auth, async (user) => {
             }
 
             filtered.forEach(book => {
-                const bookRatings = book.ratingsByUid && typeof book.ratingsByUid === 'object'
-                    ? Object.values(book.ratingsByUid).map(Number).filter(v => v >= 1 && v <= 5)
-                    : [];
-                const displayedRatingCount = bookRatings.length || Number(book.ratingCount || 0);
-                const displayedRatingSum = bookRatings.length
-                    ? bookRatings.reduce((sum, value) => sum + value, 0)
-                    : Number(book.ratingSum || 0);
-                const avgRating = displayedRatingCount
-                    ? (displayedRatingSum / displayedRatingCount).toFixed(1)
-                    : (book.rating ?? '0.0');
+                const avgRating = book.ratingCount ? (book.ratingSum / book.ratingCount).toFixed(1) : (book.rating ?? '5.0');
                 const adminBtns = isAdmin ? `
                     <div style="display:flex; gap:8px; margin-top:10px; grid-column: 1 / -1;">
                         <button class="btn-edit" onclick="editBook('${book.id}')">تعديل ✏️</button>
@@ -4279,7 +4168,7 @@ onAuthStateChanged(auth, async (user) => {
                 const audioPlayerHtml = safeBookAudioUrl ? `
                     <div class="audio-player-container" data-audio-container="${escapeHtml(book.id)}">
                         <span style="font-size:0.82rem; color:var(--accent-color); font-weight:bold; display:block; margin-bottom:4px;">🎧 الإلقاء الصوتي للرواية</span>
-                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player" data-id="${escapeHtml(book.id)}" src="${escapeHtml(safeBookAudioUrl)}"
+                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player count-tooltip" data-tooltip="عدد مرات الاستماع المسجل: ${Number(book.listens || 0).toLocaleString('ar-EG')}" title="عدد مرات الاستماع المسجل: ${Number(book.listens || 0).toLocaleString('ar-EG')}" data-id="${escapeHtml(book.id)}" src="${escapeHtml(safeBookAudioUrl)}"
                             onerror="this.style.display='none'; const m=this.parentElement.querySelector('.audio-error'); if(m)m.style.display='block';">
                             عذراً، متصفحك لا يدعم تشغيل هذا الملف الصوتي.
                         </audio>
@@ -4303,7 +4192,7 @@ onAuthStateChanged(auth, async (user) => {
                 const isFree = checkIsFree(book.price, book.category);
 
                 const downloadBtnHtml = (book.fileUrl && book.fileUrl !== '#') 
-                    ? `<button class="btn-action btn-download" onclick="downloadBook('${book.id}', '${safeMediaUrl(book.fileUrl)}', '${book.price}', '${book.category}')">${isFree ? '📥 تحميل مجاني' : '📄 تحميل الملف'}</button>`
+                    ? `<button class="btn-action btn-download count-tooltip" data-tooltip="إجمالي التحميلات المسجل: ${Number(book.downloads || 0).toLocaleString('ar-EG')}" aria-label="${isFree ? 'تحميل مجاني' : 'تحميل الملف'}، إجمالي التحميلات ${Number(book.downloads || 0)}" onclick="downloadBook('${book.id}', '${safeMediaUrl(book.fileUrl)}', '${book.price}', '${book.category}')">${isFree ? '📥 تحميل مجاني' : '📄 تحميل الملف'}</button>`
                     : `<button class="btn-action btn-download btn-disabled" disabled>📄 تحميل الملف</button>`;
 
                 const buySectionHtml = isFree 
@@ -4336,7 +4225,7 @@ onAuthStateChanged(auth, async (user) => {
                             <div class="book-stats">
                                 <span>👁️ ${book.reads ?? 0} قراءة</span>
                                 <span>📥 ${book.downloads ?? 0} تحميل</span>
-                                <span>⭐ ${avgRating} / 5 (${displayedRatingCount} تقييم)</span>
+                                <span>⭐ ${avgRating} / 5 (${Number(book.ratingCount || 0)} تقييم)</span>
                             </div>
 
                             <div class="rating-stars" onclick="rateBook('${escapeHtml(book.id)}')" title="اضغط هنا للتقييم أو تعديل تقييمك">
@@ -4355,7 +4244,7 @@ onAuthStateChanged(auth, async (user) => {
                             ${readBtnHtml}
                             ${downloadBtnHtml}
 
-                            <button class="btn-action btn-share" onclick='shareBook(${escapeHtml(JSON.stringify(book.id))}, ${escapeHtml(JSON.stringify(book.title))})'>🔗 مشاركة</button>
+                            <button class="btn-action btn-share count-tooltip" data-tooltip="${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات المسجل: ${Number(book.shares ?? book.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" title="${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات المسجل: ${Number(book.shares ?? book.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" aria-label="مشاركة؛ ${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات ${Number(book.shares ?? book.shareCount)}` : 'عدد المشاركات غير متاح'}" onclick='shareBook(${escapeHtml(JSON.stringify(book.id))}, ${escapeHtml(JSON.stringify(book.title))})'>🔗 مشاركة</button>
                             <button class="btn-action btn-reviews" onclick="openReviewsModal('${escapeHtml(book.id)}')">⭐ تقييمات القراء</button>
 
                             ${buySectionHtml}
@@ -4622,11 +4511,6 @@ onAuthStateChanged(auth, async (user) => {
         window.rateBook = async (bookId) => {
             if (!bookId) return;
 
-            if (!String(bookId).startsWith('def')) {
-                const ratingUser = await ensureRatingAuth().catch(() => null);
-                if (!ratingUser || ratingUser.isAnonymous) return;
-            }
-
             const ratingKey = `book_rating_${bookId}`;
 
             if (bookId.startsWith('def')) {
@@ -4694,12 +4578,7 @@ onAuthStateChanged(auth, async (user) => {
                 localStorage.setItem(ratingKey, String(num));
                 if (!hasPrevious) {
                     trackBookAnalytics(bookId, 'ratings');
-                    void createAdminNotification('rating', {
-                        title: `تقييم جديد على: ${existingBook.title || 'عمل أدبي'}`,
-                        sender: auth.currentUser?.displayName || auth.currentUser?.email || 'زائر مسجل',
-                        targetId: bookId,
-                        targetSection: 'books'
-                    });
+                    await window.notifyAdminNewReview?.(existingBook.title || 'عمل جديد', 'تقييم قارئ');
                 }
                 alert(hasPrevious ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
             } catch (err) {
@@ -4713,11 +4592,6 @@ onAuthStateChanged(auth, async (user) => {
         // بتعديل تقييمه لاحقاً دون احتساب تقييم ثانٍ له.
         window.rateMedia = async (mediaType, mediaId) => {
             if (!mediaType || !mediaId) return;
-
-            if (!String(mediaId).startsWith('def')) {
-                const ratingUser = await ensureRatingAuth().catch(() => null);
-                if (!ratingUser || ratingUser.isAnonymous) return;
-            }
 
             const rootPath = mediaType === 'audio' ? 'audioItems' : mediaType === 'video' ? 'videos' : '';
             if (!rootPath) return;
@@ -4786,12 +4660,6 @@ onAuthStateChanged(auth, async (user) => {
                 // تسجيل التقييم في لوحة الإحصائيات عند أول تقييم فقط؛ تعديل التقييم لا يضيف عداداً جديداً.
                 if (!hasPrevious) {
                     await trackBookAnalytics(`${mediaType}_${mediaId}`, 'ratings');
-                    void createAdminNotification('rating', {
-                        title: `تقييم جديد على: ${existingItem.title || 'محتوى'}`,
-                        sender: auth.currentUser?.displayName || auth.currentUser?.email || 'زائر مسجل',
-                        targetId: mediaId,
-                        targetSection: mediaType
-                    });
                 }
 
                 // تحديث العرض فوراً بعد نجاح الحفظ دون إعادة تحميل الصفحة.
@@ -4867,6 +4735,7 @@ onAuthStateChanged(auth, async (user) => {
 
                 selectedBookForReviews = bookId;
                 document.getElementById('editingReviewKey').value = reviewKey;
+                document.getElementById('reviewerName').value = review.name ?? '';
                 document.getElementById('reviewerText').value = review.text ?? '';
                 document.getElementById('reviewFormTitle').innerText = '✏️ تعديل رأيك في هذا العمل:';
                 document.getElementById('submitReviewBtn').innerText = 'حفظ التعديل 💾';
@@ -4879,6 +4748,7 @@ onAuthStateChanged(auth, async (user) => {
 
         function resetReviewForm() {
             document.getElementById('editingReviewKey').value = '';
+            document.getElementById('reviewerName').value = '';
             document.getElementById('reviewerText').value = '';
             document.getElementById('reviewFormTitle').innerText = '✍️ أضف رأيك في هذا العمل:';
             document.getElementById('submitReviewBtn').innerText = 'إرسال الرأي 🚀';
@@ -4989,25 +4859,21 @@ onAuthStateChanged(auth, async (user) => {
 
         document.getElementById('addReviewForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            if (!selectedBookForReviews) return;
-
-            const reviewUser = await ensureReviewAuth().catch(() => null);
-            if (!reviewUser || reviewUser.isAnonymous) return;
-
+            const name = document.getElementById('reviewerName').value.trim();
             const text = document.getElementById('reviewerText').value.trim();
             const editingReviewKey = document.getElementById('editingReviewKey').value.trim();
 
-            if (!text) {
-                alert('من فضلك اكتب رأيك أولاً.');
+            if (!selectedBookForReviews) return;
+            if (!name || !text) {
+                alert('من فضلك اكتب الاسم والرأي أولاً.');
                 return;
             }
 
-            const currentUid = reviewUser.uid;
-            const name =
-                String(reviewUser.displayName || '').trim() ||
-                String(reviewUser.email || '').trim() ||
-                'قارئ مسجل';
+            const currentUid = auth.currentUser?.uid ?? null;
+            if (!currentUid) {
+                alert('يجب تسجيل الدخول حتى تتمكن من نشر أو تعديل رأيك.');
+                return;
+            }
 
             try {
                 if (!selectedBookForReviews.startsWith('def')) {
@@ -5019,7 +4885,6 @@ onAuthStateChanged(auth, async (user) => {
                             alert('لا يمكنك تعديل هذه المراجعة.');
                             return;
                         }
-
                         await update(reviewRef, {
                             name,
                             text,
@@ -5035,24 +4900,15 @@ onAuthStateChanged(auth, async (user) => {
                             uid: currentUid,
                             date: new Date().toLocaleDateString('ar-EG')
                         };
-
                         await push(ref(db, `reviews/${selectedBookForReviews}`), reviewData);
                         trackBookAnalytics(selectedBookForReviews, 'reviews');
-
-                        void createAdminNotification('review', {
-                            title: `رأي جديد على: ${selectedBookForReviews}`,
-                            sender: name,
-                            targetId: selectedBookForReviews,
-                            targetSection: 'reviews'
-                        });
-
+                        await window.notifyAdminNewReview?.(allBooks.find(book => book.id === selectedBookForReviews)?.title || 'عمل جديد', name);
                         alert('تم إرسال رأيك بنجاح! ✨');
                     }
-
                     resetReviewForm();
                     openReviewsModal(selectedBookForReviews);
                 } else {
-                    alert('هذا العمل التجريبي لا يحفظ المراجعات على Firebase.');
+                    alert('تم إرسال رأيك بنجاح! ✨');
                     resetReviewForm();
                     document.getElementById('reviewsModal').style.display = 'none';
                 }
