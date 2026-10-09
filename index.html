@@ -4209,8 +4209,8 @@ onAuthStateChanged(auth, async (user) => {
                     ? `<button class="btn-action btn-download count-tooltip" data-tooltip="إجمالي التحميلات المسجل: ${Number(book.downloads || 0).toLocaleString('ar-EG')}" aria-label="${isFree ? 'تحميل مجاني' : 'تحميل الملف'}، إجمالي التحميلات ${Number(book.downloads || 0)}" onclick="downloadBook('${book.id}', '${safeMediaUrl(book.fileUrl)}', '${book.price}', '${book.category}')">${isFree ? '📥 تحميل مجاني' : '📄 تحميل الملف'}</button>`
                     : `<button class="btn-action btn-download btn-disabled" disabled>📄 تحميل الملف</button>`;
 
-                const buySectionHtml = isFree 
-                    ? `<button class="btn-action btn-buy-full" onclick="downloadBook('${book.id}', '${safeMediaUrl(book.fileUrl)}', '${book.price}', '${book.category}')">📥 تحميل النسخة المجانية المباشرة</button>`
+                const buySectionHtml = isFree
+                    ? `<button class="btn-action btn-buy-full btn-disabled" disabled aria-disabled="true" title="هذا الكتاب مجاني">🛒 شراء الكتاب الآن</button>`
                     : `<button class="btn-action btn-buy-full" onclick="toggleBuyDropdown('${book.id}')">🛒 شراء الكتاب الآن ▾</button>
                        <div id="buyDropdown_${book.id}" class="buy-dropdown-menu">
                            <button class="btn-buy-paper" onclick="openBuyModal('${book.id}', 'paper')">شراء نسخة ورقية 📦</button>
