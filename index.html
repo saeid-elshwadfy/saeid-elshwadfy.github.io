@@ -1695,14 +1695,24 @@
                     <h4 id="reviewFormTitle" style="color: var(--accent-color); font-size: 1.1rem; margin-bottom: 10px; font-family: 'Amiri', serif;">✍️ أضف رأيك في هذا العمل:</h4>
                     <input type="hidden" id="editingReviewKey" value="">
                     <div class="form-group">
-                        <input type="text" id="reviewerName" placeholder="اسمك / لقبك" required>
-                    </div>
-                    <div class="form-group">
                         <textarea id="reviewerText" rows="3" placeholder="اكتب انطباعك ورأيك في الرواية هنا..." required></textarea>
                     </div>
+                    <p style="margin:0 0 10px;color:var(--text-muted);font-size:.9rem;line-height:1.7;">🔐 التقييمات مرتبطة بالحساب؛ سجّل الدخول قبل إرسال رأيك.</p>
                     <button type="submit" id="submitReviewBtn" class="btn-primary" style="width: 100%;">إرسال الرأي 🚀</button>
                     <button type="button" id="cancelReviewEditBtn" class="btn-secondary" style="width: 100%; margin-top: 8px; display: none;">إلغاء التعديل</button>
                 </form>
+            </div>
+        </div>
+
+        <!-- Reader Login Modal: shown before submitting a review -->
+        <div id="readerLoginModal" class="modal" aria-hidden="true">
+            <div class="modal-content" style="max-width:480px;text-align:center;background:#260910;border:1px solid #d5aa20;border-radius:24px;box-shadow:0 0 30px rgba(213,170,32,.18);">
+                <span class="close-modal" id="closeReaderLoginBtn" aria-label="إغلاق">&times;</span>
+                <h3 style="color:var(--accent-color);font-family:'Amiri',serif;font-size:1.7rem;margin-bottom:14px;">تسجيل الدخول 🔒</h3>
+                <p style="color:var(--text-color);line-height:1.8;margin-bottom:18px;">للحفاظ على أن التقييمات والآراء حقيقية ومرتبطة بأصحابها، اختر طريقة تسجيل الدخول.</p>
+                <button type="button" id="reviewGoogleLoginBtn" class="btn-primary" style="width:100%;margin:0 0 10px;">تسجيل الدخول بحساب Google 🔴</button>
+                <button type="button" id="reviewFacebookLoginBtn" class="btn-primary" style="width:100%;margin:0;background:#080306;border:1px solid #503018;">تسجيل الدخول بحساب Facebook 🔵</button>
+                <small id="reviewLoginStatus" style="display:block;margin-top:12px;color:var(--text-muted);"></small>
             </div>
         </div>
 
@@ -1984,7 +1994,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
         import { getDatabase, ref, onValue, set, push, update, remove, runTransaction, increment, get } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, getIdTokenResult, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, getIdTokenResult, signInAnonymously, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyDGG6NxTUZl5lLqD7qPq_nE0h6c_jVbaNA",
@@ -2287,6 +2297,10 @@ onAuthStateChanged(auth, async (user) => {
             // حساب الإدارة المحدد للموقع هو بريد المالك فقط، بدون الحاجة إلى Custom Claim.
             isAdmin = !!user && !user.isAnonymous &&
                 String(user.email || '').trim().toLowerCase() === ADMIN_EMAIL;
+
+            // إظهار خيارات الدخول داخل نموذج التقييم للزائر المجهول فقط.
+            const reviewLoginBox = document.getElementById('reviewLoginRequired');
+            if (reviewLoginBox) reviewLoginBox.style.display = user && !user.isAnonymous ? 'none' : 'block';
 
             if (isAdmin) startAdminNotificationsListener();
             else stopAdminNotificationsListener();
@@ -4714,9 +4728,10 @@ onAuthStateChanged(auth, async (user) => {
 
         window.editReaderReview = async (bookId, reviewKey) => {
             if (!bookId || !reviewKey || String(bookId).startsWith('def')) return;
-            const currentUid = auth.currentUser?.uid ?? null;
-            if (!currentUid) {
-                alert('يجب تسجيل الدخول حتى تتمكن من تعديل رأيك.');
+            const currentUser = auth.currentUser;
+            const currentUid = currentUser?.uid ?? null;
+            if (!currentUid || currentUser.isAnonymous) {
+                alert('لازم تسجّل الدخول بجوجل أو فيسبوك قبل تعديل رأيك.');
                 return;
             }
 
@@ -4735,7 +4750,6 @@ onAuthStateChanged(auth, async (user) => {
 
                 selectedBookForReviews = bookId;
                 document.getElementById('editingReviewKey').value = reviewKey;
-                document.getElementById('reviewerName').value = review.name ?? '';
                 document.getElementById('reviewerText').value = review.text ?? '';
                 document.getElementById('reviewFormTitle').innerText = '✏️ تعديل رأيك في هذا العمل:';
                 document.getElementById('submitReviewBtn').innerText = 'حفظ التعديل 💾';
@@ -4748,7 +4762,6 @@ onAuthStateChanged(auth, async (user) => {
 
         function resetReviewForm() {
             document.getElementById('editingReviewKey').value = '';
-            document.getElementById('reviewerName').value = '';
             document.getElementById('reviewerText').value = '';
             document.getElementById('reviewFormTitle').innerText = '✍️ أضف رأيك في هذا العمل:';
             document.getElementById('submitReviewBtn').innerText = 'إرسال الرأي 🚀';
@@ -4857,23 +4870,61 @@ onAuthStateChanged(auth, async (user) => {
             document.getElementById('reviewsModal').style.display = 'none';
         });
 
+        // نافذة تسجيل الدخول الموحدة للتقييمات.
+        function openReaderLoginModal() {
+            const modal = document.getElementById('readerLoginModal');
+            if (modal) { modal.style.display = 'flex'; modal.setAttribute('aria-hidden', 'false'); }
+        }
+        document.getElementById('closeReaderLoginBtn')?.addEventListener('click', () => {
+            const modal = document.getElementById('readerLoginModal');
+            if (modal) { modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true'); }
+        });
+
+        // تسجيل دخول القراء مطلوب قبل نشر/تعديل التقييم؛ لا نعتبر الجلسة المجهولة تسجيل دخول حقيقياً.
+        async function signInReaderForReview(providerName) {
+            const status = document.getElementById('reviewLoginStatus');
+            const googleBtn = document.getElementById('reviewGoogleLoginBtn');
+            const facebookBtn = document.getElementById('reviewFacebookLoginBtn');
+            if (googleBtn) googleBtn.disabled = true;
+            if (facebookBtn) facebookBtn.disabled = true;
+            if (status) status.textContent = 'جاري فتح نافذة تسجيل الدخول...';
+            try {
+                const provider = providerName === 'google' ? new GoogleAuthProvider() : new FacebookAuthProvider();
+                provider.setCustomParameters?.({ prompt: 'select_account' });
+                await signInWithPopup(auth, provider);
+                if (status) status.textContent = 'تم تسجيل الدخول بنجاح ❤️ يمكنك الآن إرسال تقييمك.';
+                const loginModal = document.getElementById('readerLoginModal');
+                if (loginModal) loginModal.style.display = 'none';
+            } catch (err) {
+                console.error('تعذر تسجيل دخول القارئ:', err);
+                if (status) status.textContent = `تعذر تسجيل الدخول: ${err.message || 'يرجى المحاولة مرة أخرى.'}`;
+                alert(`تعذر تسجيل الدخول: ${err.message || 'يرجى المحاولة مرة أخرى.'}`);
+            } finally {
+                if (googleBtn) googleBtn.disabled = false;
+                if (facebookBtn) facebookBtn.disabled = false;
+            }
+        }
+        document.getElementById('reviewGoogleLoginBtn')?.addEventListener('click', () => signInReaderForReview('google'));
+        document.getElementById('reviewFacebookLoginBtn')?.addEventListener('click', () => signInReaderForReview('facebook'));
+
         document.getElementById('addReviewForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('reviewerName').value.trim();
             const text = document.getElementById('reviewerText').value.trim();
             const editingReviewKey = document.getElementById('editingReviewKey').value.trim();
 
             if (!selectedBookForReviews) return;
-            if (!name || !text) {
-                alert('من فضلك اكتب الاسم والرأي أولاً.');
+            if (!text) {
+                alert('من فضلك اكتب رأيك أولاً.');
                 return;
             }
 
-            const currentUid = auth.currentUser?.uid ?? null;
-            if (!currentUid) {
-                alert('يجب تسجيل الدخول حتى تتمكن من نشر أو تعديل رأيك.');
+            const currentUser = auth.currentUser;
+            const currentUid = currentUser?.uid ?? null;
+            if (!currentUid || currentUser.isAnonymous) {
+                openReaderLoginModal();
                 return;
             }
+            const name = currentUser.displayName || currentUser.providerData?.find(p => p.displayName)?.displayName || currentUser.email?.split('@')[0] || 'قارئ مسجّل';
 
             try {
                 if (!selectedBookForReviews.startsWith('def')) {
