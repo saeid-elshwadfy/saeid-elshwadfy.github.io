@@ -3933,6 +3933,10 @@ onAuthStateChanged(auth, async (user) => {
 
         window.rateProduct = async (productId) => {
             if (!productId || String(productId).startsWith('def')) return;
+            if (!auth.currentUser || auth.currentUser.isAnonymous) {
+                openReaderLoginModal();
+                return;
+            }
             const ratingKey = `product_rating_${productId}`;
             try {
                 await ensureVisitorAuth();
@@ -3963,6 +3967,10 @@ onAuthStateChanged(auth, async (user) => {
                     [`products/${productId}/ratingsByUid/${activeUid}`]: num
                 });
                 localStorage.setItem(ratingKey, String(num));
+                if (!hasPrevious) {
+                    const senderName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'قارئ مسجّل';
+                    await window.notifyAdminNewReview?.(item.title || item.name || 'منتج', senderName);
+                }
 
                 const ratings = item.ratingsByUid && typeof item.ratingsByUid === 'object'
                     ? Object.entries(item.ratingsByUid).filter(([uid]) => uid !== activeUid).map(([,v]) => Number(v)).filter(v => v >= 1 && v <= 5)
@@ -4523,6 +4531,11 @@ onAuthStateChanged(auth, async (user) => {
         // بالعملية بدون فتح صلاحية الكتاب بالكامل للزائر.
         window.rateBook = async (bookId) => {
             if (!bookId) return;
+            // توحيد شرط الدخول: النجوم مثل الرأي المكتوب تتطلب حساب Google/Facebook.
+            if (!auth.currentUser || auth.currentUser.isAnonymous) {
+                openReaderLoginModal();
+                return;
+            }
 
             const ratingKey = `book_rating_${bookId}`;
 
@@ -4605,6 +4618,11 @@ onAuthStateChanged(auth, async (user) => {
         // بتعديل تقييمه لاحقاً دون احتساب تقييم ثانٍ له.
         window.rateMedia = async (mediaType, mediaId) => {
             if (!mediaType || !mediaId) return;
+            // توحيد شرط الدخول: النجوم مثل الرأي المكتوب تتطلب حساب Google/Facebook.
+            if (!auth.currentUser || auth.currentUser.isAnonymous) {
+                openReaderLoginModal();
+                return;
+            }
 
             const rootPath = mediaType === 'audio' ? 'audioItems' : mediaType === 'video' ? 'videos' : '';
             if (!rootPath) return;
@@ -4673,6 +4691,9 @@ onAuthStateChanged(auth, async (user) => {
                 // تسجيل التقييم في لوحة الإحصائيات عند أول تقييم فقط؛ تعديل التقييم لا يضيف عداداً جديداً.
                 if (!hasPrevious) {
                     await trackBookAnalytics(`${mediaType}_${mediaId}`, 'ratings');
+                    const mediaTitle = existingItem.title || existingItem.name || (mediaType === 'audio' ? 'مقطع صوتي' : 'فيديو');
+                    const senderName = auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'قارئ مسجّل';
+                    await window.notifyAdminNewReview?.(mediaTitle, senderName);
                 }
 
                 // تحديث العرض فوراً بعد نجاح الحفظ دون إعادة تحميل الصفحة.
