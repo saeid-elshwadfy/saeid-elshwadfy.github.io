@@ -4582,11 +4582,11 @@ onAuthStateChanged(auth, async (user) => {
                     : currentSum + num;
                 const nextCount = hasPrevious ? currentCount : currentCount + 1;
 
-                // تحديث فروع التقييم داخل سجل الكتاب نفسه، مع الحفاظ على التحديث الذري.
-                await update(ref(db, `books/${bookId}`), {
-                    ratingSum: nextSum,
-                    ratingCount: nextCount,
-                    [`ratingsByUid/${activeUid}`]: num
+                // تحديث الفروع الثلاثة فقط؛ لا نكتب على books/{bookId} بالكامل.
+                await update(ref(db), {
+                    [`books/${bookId}/ratingSum`]: nextSum,
+                    [`books/${bookId}/ratingCount`]: nextCount,
+                    [`books/${bookId}/ratingsByUid/${activeUid}`]: num
                 });
 
                 localStorage.setItem(ratingKey, String(num));
@@ -4665,9 +4665,8 @@ onAuthStateChanged(auth, async (user) => {
 
                 // نحفظ تقييم الزائر فقط. متوسط التقييم وعدده يُحسبان من ratingsByUid
                 // لتجنب الحاجة لصلاحية كتابة ratingSum/ratingCount للمستخدم المجهول.
-                await update(ref(db, `${rootPath}/${mediaId}`), {
-                    [`ratingsByUid/${activeUid}`]: num
-                });
+                // اختبار صلاحية الزائر: الكتابة مباشرةً لمسار تقييمه الشخصي فقط.
+                await set(ref(db, `${rootPath}/${mediaId}/ratingsByUid/${activeUid}`), num);
 
                 localStorage.setItem(ratingKey, String(num));
 
