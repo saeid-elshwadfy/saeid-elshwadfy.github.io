@@ -3219,8 +3219,7 @@ onAuthStateChanged(auth, async (user) => {
                     await update(ref(db, `audioItems/${editId}`), data);
                     alert("تم تحديث المقطع الصوتي بنجاح! 🎉");
                 } else {
-                    data.listens = 0;
-                    data.downloads = 0;
+                    // لا نهيئ عدّادي الاستماع والتحميل بصفر؛ قواعد Firebase تشترط قيمة تبدأ من 1.
                     data.ratingSum = 0;
                     data.ratingCount = 0;
                     await push(ref(db, 'audioItems'), data);
@@ -4665,8 +4664,9 @@ onAuthStateChanged(auth, async (user) => {
 
                 // نحفظ تقييم الزائر فقط. متوسط التقييم وعدده يُحسبان من ratingsByUid
                 // لتجنب الحاجة لصلاحية كتابة ratingSum/ratingCount للمستخدم المجهول.
-                // اختبار صلاحية الزائر: الكتابة مباشرةً لمسار تقييمه الشخصي فقط.
-                await set(ref(db, `${rootPath}/${mediaId}/ratingsByUid/${activeUid}`), num);
+                await update(ref(db), {
+                    [`${rootPath}/${mediaId}/ratingsByUid/${activeUid}`]: num
+                });
 
                 localStorage.setItem(ratingKey, String(num));
 
