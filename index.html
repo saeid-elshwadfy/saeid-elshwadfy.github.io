@@ -3219,7 +3219,8 @@ onAuthStateChanged(auth, async (user) => {
                     await update(ref(db, `audioItems/${editId}`), data);
                     alert("تم تحديث المقطع الصوتي بنجاح! 🎉");
                 } else {
-                    // لا نهيئ عدّادي الاستماع والتحميل بصفر؛ قواعد Firebase تشترط قيمة تبدأ من 1.
+                    data.listens = 0;
+                    data.downloads = 0;
                     data.ratingSum = 0;
                     data.ratingCount = 0;
                     await push(ref(db, 'audioItems'), data);
@@ -4581,11 +4582,11 @@ onAuthStateChanged(auth, async (user) => {
                     : currentSum + num;
                 const nextCount = hasPrevious ? currentCount : currentCount + 1;
 
-                // تحديث الفروع الثلاثة فقط؛ لا نكتب على books/{bookId} بالكامل.
-                await update(ref(db), {
-                    [`books/${bookId}/ratingSum`]: nextSum,
-                    [`books/${bookId}/ratingCount`]: nextCount,
-                    [`books/${bookId}/ratingsByUid/${activeUid}`]: num
+                // تحديث فروع التقييم داخل سجل الكتاب نفسه، مع الحفاظ على التحديث الذري.
+                await update(ref(db, `books/${bookId}`), {
+                    ratingSum: nextSum,
+                    ratingCount: nextCount,
+                    [`ratingsByUid/${activeUid}`]: num
                 });
 
                 localStorage.setItem(ratingKey, String(num));
@@ -4664,8 +4665,8 @@ onAuthStateChanged(auth, async (user) => {
 
                 // نحفظ تقييم الزائر فقط. متوسط التقييم وعدده يُحسبان من ratingsByUid
                 // لتجنب الحاجة لصلاحية كتابة ratingSum/ratingCount للمستخدم المجهول.
-                await update(ref(db), {
-                    [`${rootPath}/${mediaId}/ratingsByUid/${activeUid}`]: num
+                await update(ref(db, `${rootPath}/${mediaId}`), {
+                    [`ratingsByUid/${activeUid}`]: num
                 });
 
                 localStorage.setItem(ratingKey, String(num));
