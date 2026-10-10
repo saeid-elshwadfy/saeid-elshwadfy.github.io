@@ -4604,7 +4604,13 @@ onAuthStateChanged(auth, async (user) => {
                 localStorage.setItem(ratingKey, String(num));
                 if (!hasPrevious) {
                     trackBookAnalytics(bookId, 'ratings');
-                    await window.notifyAdminNewReview?.(existingBook.title || 'عمل جديد', 'تقييم قارئ');
+                    // إظهار اسم صاحب تقييم النجوم في إشعار لوحة التحكم مثل الرأي المكتوب.
+                    const ratingUser = auth.currentUser;
+                    const ratingSenderName = ratingUser?.displayName
+                        || ratingUser?.providerData?.find(provider => provider?.displayName)?.displayName
+                        || ratingUser?.email?.split('@')[0]
+                        || 'قارئ مسجّل';
+                    await window.notifyAdminNewReview?.(existingBook.title || 'عمل جديد', ratingSenderName);
                 }
                 alert(hasPrevious ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
             } catch (err) {
