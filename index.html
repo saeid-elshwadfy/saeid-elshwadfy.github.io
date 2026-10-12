@@ -4178,7 +4178,17 @@ onAuthStateChanged(auth, async (user) => {
             }
 
             filtered.forEach(book => {
-                const avgRating = book.ratingCount ? (book.ratingSum / book.ratingCount).toFixed(1) : (book.rating ?? '5.0');
+                // احسب عدد التقييمات من سجلات التقييم الفعلية أولاً، ثم استخدم العدّاد القديم كبديل.
+                const bookRatings = book.ratingsByUid && typeof book.ratingsByUid === 'object'
+                    ? Object.values(book.ratingsByUid).map(Number).filter(v => Number.isFinite(v) && v >= 1 && v <= 5)
+                    : [];
+                const bookRatingCount = bookRatings.length || Number(book.ratingCount || 0);
+                const bookRatingSum = bookRatings.length
+                    ? bookRatings.reduce((sum, v) => sum + v, 0)
+                    : Number(book.ratingSum || 0);
+                const avgRating = bookRatingCount > 0
+                    ? (bookRatingSum / bookRatingCount).toFixed(1)
+                    : (book.rating ?? '0.0');
                 const adminBtns = isAdmin ? `
                     <div style="display:flex; gap:8px; margin-top:10px; grid-column: 1 / -1;">
                         <button class="btn-edit" onclick="editBook('${book.id}')">تعديل ✏️</button>
@@ -4246,10 +4256,10 @@ onAuthStateChanged(auth, async (user) => {
                             <div class="book-stats">
                                 <span>👁️ ${book.reads ?? 0} قراءة</span>
                                 <span>📥 ${book.downloads ?? 0} تحميل</span>
-                                <span>⭐ ${avgRating} / 5 (${Number(book.ratingCount || 0)} تقييم)</span>
+                                <span>⭐ ${avgRating} / 5 (${bookRatingCount} تقييم)</span>
                             </div>
 
-                            <div class="rating-stars" onclick="rateBook('${escapeHtml(book.id)}')" title="اضغط هنا للتقييم أو تعديل تقييمك">
+                            <div class="rating-stars count-tooltip" data-tooltip="عدد التقييمات المسجلة: ${bookRatingCount.toLocaleString('ar-EG')}" onclick="rateBook('${escapeHtml(book.id)}')" title="عدد التقييمات المسجلة: ${bookRatingCount.toLocaleString('ar-EG')} — اضغط للتقييم أو تعديل تقييمك">
                                 <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
                                 <small style="font-size:0.75rem; color:var(--text-muted);">(اضغط للتقييم أو تعديل تقييمك)</small>
                             </div>
@@ -5168,10 +5178,14 @@ onAuthStateChanged(auth, async (user) => {
                         let label = '', count = null;
                         if (el.matches('audio')) {
                             label = 'الاستماع'; count = statValue(card, /استماع/);
-                        } else if (cl.contains('rating-stars') || /اضغط للتقييم/.test(el.getAttribute('title') || '')) {
+                        } else if (cl.contains('rating-stars') || /اضغط للتقييم|عدد التقييمات/.test(el.getAttribute('title') || '')) {
                             label = 'التقييمات';
-                            const m = (card.querySelector('.book-stats, .media-rating-box')?.parentElement?.textContent || card.textContent).match(/\(?\s*([\d٠-٩۰-۹,٬]+)\s*تقييم/);
-                            if (m) { const raw = m[1].replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[,٬]/g,''); count = Number(raw); }
+                            // اعتمد على عدد التقييمات المكتوب في عنصر النجوم نفسه إن توفر، لتجنب التقاط رقم آخر من البطاقة.
+                            count = existingCount(el, /تقييم/);
+                            if (count === null) {
+                                const m = (card.querySelector('.book-stats, .media-rating-box')?.parentElement?.textContent || card.textContent).match(/\(?\s*([\d٠-٩۰-۹,٬]+)\s*تقييم/);
+                                if (m) { const raw = m[1].replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[,٬]/g,''); count = Number(raw); }
+                            }
                         } else if (cl.contains('btn-share') || /مشاركة/.test(t)) {
                             label = 'المشاركة'; count = existingCount(el, /مشارك/);
                             if (count === null) count = existingCount(card.querySelector('.btn-share'), /مشارك/);
