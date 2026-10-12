@@ -5287,10 +5287,12 @@ onAuthStateChanged(auth, async (user) => {
                             watchWrittenReviews(bookId, el);
                             // This button counts written reviews, not star ratings.
                             return;
-                        } else if (/تعديل/.test(t)) {
-                            label = 'التعديل';
-                        } else if (/حذف/.test(t)) {
-                            label = 'الحذف';
+                        } else if (/تعديل|حذف/.test(t)) {
+                            // إزالة أي تلميح/رسالة من أزرار التعديل والحذف.
+                            el.classList.remove('count-tooltip');
+                            el.removeAttribute('data-tooltip');
+                            el.removeAttribute('title');
+                            return;
                         } else if (/أطلب الخدمة/.test(t)) {
                             label = 'طلبات الخدمة';
                         } else if (/مشاهدة/.test(t) || el.id.includes('video-views-') || el.classList.contains('video-player')) {
