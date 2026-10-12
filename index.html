@@ -5117,6 +5117,100 @@ onAuthStateChanged(auth, async (user) => {
             });
         }
 
+        // Experimental: each action gets only its own counter, never the whole card's stats.
+        (function initPerButtonCounters() {
+            const fmt = value => Number(value || 0).toLocaleString('ar-EG');
+            const setTip = (el, message) => {
+                if (!el || !message) return;
+                el.classList.add('count-tooltip');
+                el.setAttribute('data-tooltip', message);
+                el.setAttribute('title', message);
+            };
+            const textOf = el => (el?.textContent || '').replace(/\s+/g, ' ').trim();
+            const statValue = (card, pattern) => {
+                for (const el of card.querySelectorAll('.book-stats span, .course-video-meta span, .book-badge-reads, [id*="video-views-"]')) {
+                    const t = textOf(el);
+                    if (pattern.test(t)) {
+                        const strong = el.querySelector('strong');
+                        const raw = strong ? textOf(strong) : (t.match(/[\d٠-٩۰-۹,٬.]+/) || [])[0];
+                        if (raw != null) {
+                            const normalized = raw.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[,٬\s]/g, '');
+                            const n = Number(normalized);
+                            if (Number.isFinite(n)) return n;
+                        }
+                    }
+                }
+                return null;
+            };
+            const existingCount = (el, words) => {
+                const old = el.getAttribute('data-tooltip') || el.getAttribute('title') || '';
+                if (!words.test(old)) return null;
+                const m = old.match(/[\d٠-٩۰-۹,٬.]+/);
+                if (!m) return null;
+                const normalized = m[0].replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[,٬\s]/g, '');
+                const n = Number(normalized);
+                return Number.isFinite(n) ? n : null;
+            };
+            const apply = () => {
+                const groups = [
+                    ['#booksGrid .book-card', 'book'], ['#audioGrid .custom-card', 'audio'],
+                    ['#videosGrid .custom-card', 'video'], ['#coursesGrid .custom-card', 'course'],
+                    ['#productsGrid .custom-card', 'product'], ['#servicesGrid .custom-card', 'service']
+                ];
+                for (const [selector, kind] of groups) document.querySelectorAll(selector).forEach(card => {
+                    const buttons = card.querySelectorAll('button, a, audio, .rating-stars, .book-cover img, .book-cover span');
+                    buttons.forEach(el => {
+                        const t = textOf(el);
+                        const cl = el.classList;
+                        let label = '', count = null;
+                        if (el.matches('audio')) {
+                            label = 'الاستماع'; count = statValue(card, /استماع/);
+                        } else if (cl.contains('rating-stars') || /اضغط للتقييم/.test(el.getAttribute('title') || '')) {
+                            label = 'التقييمات';
+                            const m = (card.querySelector('.book-stats, .media-rating-box')?.parentElement?.textContent || card.textContent).match(/\(?\s*([\d٠-٩۰-۹,٬]+)\s*تقييم/);
+                            if (m) { const raw = m[1].replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[,٬]/g,''); count = Number(raw); }
+                        } else if (cl.contains('btn-share') || /مشاركة/.test(t)) {
+                            label = 'المشاركة'; count = existingCount(el, /مشارك/);
+                            if (count === null) count = existingCount(card.querySelector('.btn-share'), /مشارك/);
+                        } else if (cl.contains('btn-download') || /تحميل/.test(t)) {
+                            label = 'التحميل'; count = statValue(card, /تحميل/);
+                            if (count === null) count = existingCount(el, /تحميل/);
+                        } else if (cl.contains('btn-read') || /اقرأ مباشر/.test(t) || /openReader/.test(el.getAttribute('onclick') || '')) {
+                            label = 'القراءة'; count = statValue(card, /قراءة|👁/);
+                        } else if (/شراء|أمازون|جوجل بلاي|شراء نسخة/.test(t)) {
+                            label = 'الشراء';
+                        } else if (/تقييمات القراء/.test(t)) {
+                            label = 'عرض التقييمات';
+                        } else if (/تعديل/.test(t)) {
+                            label = 'التعديل';
+                        } else if (/حذف/.test(t)) {
+                            label = 'الحذف';
+                        } else if (/أطلب الخدمة/.test(t)) {
+                            label = 'طلبات الخدمة';
+                        } else if (/مشاهدة/.test(t) || el.id.includes('video-views-') || el.classList.contains('video-player')) {
+                            label = 'المشاهدة'; count = statValue(card, /مشاهدة/);
+                        } else if (kind === 'video' && (el.matches('video') || el.querySelector?.('video'))) {
+                            label = 'المشاهدة'; count = statValue(card, /مشاهدة/);
+                        } else if (kind === 'course' && /شراء|احجز/.test(t)) {
+                            label = 'الشراء/الحجز';
+                        } else if (kind === 'product' && /تحميل مجاني/.test(t)) {
+                            label = 'التحميل'; count = statValue(card, /تحميل/);
+                        } else if (el.matches('img') && el.closest('.book-cover')) {
+                            label = 'القراءة'; count = statValue(card, /قراءة|👁/);
+                        }
+                        if (!label) return;
+                        const message = count === null
+                            ? `عداد ${label} غير متاح لهذا الزر حالياً؛ لم يُعثر على رقم مسجل خاص به.`
+                            : `عدد مرات ${label} المسجلة: ${fmt(count)}`;
+                        setTip(el, message);
+                    });
+                });
+            };
+            apply();
+            const observer = new MutationObserver(() => apply());
+            observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+        })();
+
         renderBooks();
     </script>
 </body>
