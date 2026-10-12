@@ -84,7 +84,9 @@
             box-sizing: border-box; 
             margin: 0; 
             padding: 0; 
-            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; 
+        }
+        button, a, .book-card, .custom-card, .about-badge, .payment-item, .social-btn, .tab-btn, .theme-btn {
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         html { scroll-behavior: smooth; }
@@ -1712,6 +1714,7 @@
                 <p style="color:var(--text-color);line-height:1.8;margin-bottom:18px;">للحفاظ على أن التقييمات والآراء حقيقية ومرتبطة بأصحابها، اختر طريقة تسجيل الدخول.</p>
                 <button type="button" id="reviewGoogleLoginBtn" class="btn-primary" style="width:100%;margin:0 0 10px;">تسجيل الدخول بحساب Google 🔴</button>
                 <button type="button" id="reviewFacebookLoginBtn" class="btn-primary" style="width:100%;margin:0;background:#080306;border:1px solid #503018;">تسجيل الدخول بحساب Facebook 🔵</button>
+                <button type="button" id="reviewHotmailLoginBtn" class="btn-primary" style="width:100%;margin:10px 0 0;background:#0078d4;border:1px solid #005a9e;">تسجيل الدخول بحساب Hotmail / Outlook ✉️</button>
                 <small id="reviewLoginStatus" style="display:block;margin-top:12px;color:var(--text-muted);"></small>
             </div>
         </div>
@@ -1994,7 +1997,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
         import { getDatabase, ref, onValue, set, push, update, remove, runTransaction, increment, get } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, getIdTokenResult, signInAnonymously, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updatePassword, getIdTokenResult, signInAnonymously, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyDGG6NxTUZl5lLqD7qPq_nE0h6c_jVbaNA",
@@ -4921,11 +4924,22 @@ onAuthStateChanged(auth, async (user) => {
             const status = document.getElementById('reviewLoginStatus');
             const googleBtn = document.getElementById('reviewGoogleLoginBtn');
             const facebookBtn = document.getElementById('reviewFacebookLoginBtn');
+            const hotmailBtn = document.getElementById('reviewHotmailLoginBtn');
             if (googleBtn) googleBtn.disabled = true;
             if (facebookBtn) facebookBtn.disabled = true;
+            if (hotmailBtn) hotmailBtn.disabled = true;
             if (status) status.textContent = 'جاري فتح نافذة تسجيل الدخول...';
             try {
-                const provider = providerName === 'google' ? new GoogleAuthProvider() : new FacebookAuthProvider();
+                let provider;
+                if (providerName === 'google') {
+                    provider = new GoogleAuthProvider();
+                } else if (providerName === 'facebook') {
+                    provider = new FacebookAuthProvider();
+                } else {
+                    // Hotmail/Outlook uses Microsoft's OAuth provider in Firebase Authentication.
+                    provider = new OAuthProvider('microsoft.com');
+                    provider.setCustomParameters({ prompt: 'select_account' });
+                }
                 provider.setCustomParameters?.({ prompt: 'select_account' });
                 await signInWithPopup(auth, provider);
                 if (status) status.textContent = 'تم تسجيل الدخول بنجاح ❤️ يمكنك الآن إرسال تقييمك.';
@@ -4938,10 +4952,12 @@ onAuthStateChanged(auth, async (user) => {
             } finally {
                 if (googleBtn) googleBtn.disabled = false;
                 if (facebookBtn) facebookBtn.disabled = false;
+                if (hotmailBtn) hotmailBtn.disabled = false;
             }
         }
         document.getElementById('reviewGoogleLoginBtn')?.addEventListener('click', () => signInReaderForReview('google'));
         document.getElementById('reviewFacebookLoginBtn')?.addEventListener('click', () => signInReaderForReview('facebook'));
+        document.getElementById('reviewHotmailLoginBtn')?.addEventListener('click', () => signInReaderForReview('hotmail'));
 
         document.getElementById('addReviewForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -5261,7 +5277,11 @@ onAuthStateChanged(auth, async (user) => {
                         } else if (cl.contains('btn-read') || /اقرأ مباشر/.test(t) || /openReader/.test(el.getAttribute('onclick') || '')) {
                             label = 'القراءة'; count = statValue(card, /قراءة|👁/);
                         } else if (/شراء|أمازون|جوجل بلاي|شراء نسخة/.test(t)) {
-                            label = 'الشراء';
+                            // لا نضيف تلميح/رسالة عدّاد إلى أزرار الشراء.
+                            el.classList.remove('count-tooltip');
+                            el.removeAttribute('data-tooltip');
+                            el.removeAttribute('title');
+                            return;
                         } else if (cl.contains('btn-reviews') || /مراجعات القراء/.test(t)) {
                             const bookId = reviewButtonBookId(el);
                             watchWrittenReviews(bookId, el);
