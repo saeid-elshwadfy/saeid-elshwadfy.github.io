@@ -4982,8 +4982,11 @@ onAuthStateChanged(auth, async (user) => {
                         await window.notifyAdminNewReview?.(allBooks.find(book => book.id === selectedBookForReviews)?.title || 'عمل جديد', name);
                         alert('تم إرسال رأيك بنجاح! ✨');
                     }
+                    // حدّث معاينة أحدث الآراء داخل بطاقة الكتاب فور نجاح الإرسال أو التعديل.
+                    const reviewedBookId = selectedBookForReviews;
                     resetReviewForm();
-                    openReviewsModal(selectedBookForReviews);
+                    loadLatestReviewPreview(reviewedBookId);
+                    openReviewsModal(reviewedBookId);
                 } else {
                     alert('تم إرسال رأيك بنجاح! ✨');
                     resetReviewForm();
