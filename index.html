@@ -4276,7 +4276,7 @@ onAuthStateChanged(auth, async (user) => {
                             ${downloadBtnHtml}
 
                             <button class="btn-action btn-share count-tooltip" data-tooltip="${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات المسجل: ${Number(book.shares ?? book.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" title="${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات المسجل: ${Number(book.shares ?? book.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" aria-label="مشاركة؛ ${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات ${Number(book.shares ?? book.shareCount)}` : 'عدد المشاركات غير متاح'}" onclick='shareBook(${escapeHtml(JSON.stringify(book.id))}, ${escapeHtml(JSON.stringify(book.title))})'>🔗 مشاركة</button>
-                            <button class="btn-action btn-reviews" onclick="openReviewsModal('${escapeHtml(book.id)}')">⭐ تقييمات القراء</button>
+                            <button class="btn-action btn-reviews" onclick="openReviewsModal('${escapeHtml(book.id)}')">💬 مراجعات القراء</button>
 
                             ${buySectionHtml}
 
@@ -5196,8 +5196,8 @@ onAuthStateChanged(auth, async (user) => {
                             label = 'القراءة'; count = statValue(card, /قراءة|👁/);
                         } else if (/شراء|أمازون|جوجل بلاي|شراء نسخة/.test(t)) {
                             label = 'الشراء';
-                        } else if (/تقييمات القراء/.test(t)) {
-                            label = 'عرض التقييمات';
+                        } else if (/مراجعات القراء/.test(t)) {
+                            label = 'عرض مراجعات القراء';
                         } else if (/تعديل/.test(t)) {
                             label = 'التعديل';
                         } else if (/حذف/.test(t)) {
