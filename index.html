@@ -5133,6 +5133,72 @@ onAuthStateChanged(auth, async (user) => {
         // Experimental: each action gets only its own counter, never the whole card's stats.
         (function initPerButtonCounters() {
             const fmt = value => Number(value || 0).toLocaleString('ar-EG');
+            // Written reviews are separate from star ratings. Cache their live counts by book ID.
+            const reviewCounts = new Map();
+            const reviewListenersStarted = new Set();
+            // Read the same per-work share counter used by the admin analytics dashboard.
+            const shareCounts = new Map();
+            const shareListenersStarted = new Set();
+            const shareIdentity = (el, kind) => {
+                const onclick = el.getAttribute('onclick') || '';
+                let id = null;
+                let type = kind;
+                let m = onclick.match(/shareBook\((?:'|\")([^'\"]+)/);
+                if (m) { id = m[1]; type = 'book'; }
+                if (!id) {
+                    m = onclick.match(/shareVideo\([\s\S]*?,\s*(['\"])(.*?)\1\s*\)/);
+                    if (m) { id = m[2]; type = 'video'; }
+                }
+                if (!id) {
+                    m = onclick.match(/shareCourse\([\s\S]*?,\s*(['\"])(.*?)\1\s*\)/);
+                    if (m) { id = m[2]; type = 'course'; }
+                }
+                if (!id) return null;
+                const safeId = String(id).replace(/[^a-zA-Z0-9_-]/g, '_');
+                return { id, statId: type === 'book' ? safeId : `${type}_${safeId}` };
+            };
+            const watchShareCount = (el, kind) => {
+                const identity = shareIdentity(el, kind);
+                if (!identity || String(identity.id).startsWith('def')) return;
+                const { statId } = identity;
+                if (!shareListenersStarted.has(statId)) {
+                    shareListenersStarted.add(statId);
+                    onValue(ref(db, `siteStats/bookEvents/${statId}/shares`), snapshot => {
+                        const raw = snapshot.val();
+                        const count = Number.isFinite(Number(raw)) ? Number(raw) : 0;
+                        shareCounts.set(statId, count);
+                        document.querySelectorAll('.btn-share, button[onclick*="shareVideo"], button[onclick*="shareCourse"]').forEach(btn => {
+                            const btnIdentity = shareIdentity(btn, kind);
+                            if (btnIdentity?.statId === statId) setTip(btn, `عدد المشاركات المسجلة: ${fmt(count)}`);
+                        });
+                    }, error => console.warn('تعذر تحميل عدد المشاركات من إحصائيات العمل:', error));
+                }
+                const count = shareCounts.get(statId);
+                setTip(el, count === undefined ? 'جارٍ تحميل عدد المشاركات المسجلة…' : `عدد المشاركات المسجلة: ${fmt(count)}`);
+            };
+            const reviewButtonBookId = el => {
+                const match = (el.getAttribute('onclick') || '').match(/openReviewsModal\('([^']+)'\)/);
+                return match ? match[1] : null;
+            };
+            const watchWrittenReviews = (bookId, button) => {
+                if (!bookId || bookId.startsWith('def')) return;
+                if (!reviewListenersStarted.has(bookId)) {
+                    reviewListenersStarted.add(bookId);
+                    onValue(ref(db, `reviews/${bookId}`), snapshot => {
+                        const data = snapshot.val();
+                        const count = data && typeof data === 'object'
+                            ? Object.values(data).filter(review => review && typeof review === 'object' && String(review.text || '').trim()).length
+                            : 0;
+                        reviewCounts.set(bookId, count);
+                        document.querySelectorAll('#booksGrid .btn-reviews').forEach(btn => {
+                            if (reviewButtonBookId(btn) === bookId) setTip(btn, `عدد مراجعات القراء المكتوبة: ${fmt(count)}`);
+                        });
+                    }, error => console.warn('تعذر تحميل عدد مراجعات القراء:', error));
+                }
+                const count = reviewCounts.get(bookId);
+                if (count !== undefined) setTip(button, `عدد مراجعات القراء المكتوبة: ${fmt(count)}`);
+                else setTip(button, 'جارٍ تحميل عدد مراجعات القراء المكتوبة…');
+            };
             const setTip = (el, message) => {
                 if (!el || !message) return;
                 el.classList.add('count-tooltip');
@@ -5187,8 +5253,8 @@ onAuthStateChanged(auth, async (user) => {
                                 if (m) { const raw = m[1].replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[,٬]/g,''); count = Number(raw); }
                             }
                         } else if (cl.contains('btn-share') || /مشاركة/.test(t)) {
-                            label = 'المشاركة'; count = existingCount(el, /مشارك/);
-                            if (count === null) count = existingCount(card.querySelector('.btn-share'), /مشارك/);
+                            watchShareCount(el, kind);
+                            return;
                         } else if (cl.contains('btn-download') || /تحميل/.test(t)) {
                             label = 'التحميل'; count = statValue(card, /تحميل/);
                             if (count === null) count = existingCount(el, /تحميل/);
@@ -5196,8 +5262,11 @@ onAuthStateChanged(auth, async (user) => {
                             label = 'القراءة'; count = statValue(card, /قراءة|👁/);
                         } else if (/شراء|أمازون|جوجل بلاي|شراء نسخة/.test(t)) {
                             label = 'الشراء';
-                        } else if (/مراجعات القراء/.test(t)) {
-                            label = 'عرض مراجعات القراء';
+                        } else if (cl.contains('btn-reviews') || /مراجعات القراء/.test(t)) {
+                            const bookId = reviewButtonBookId(el);
+                            watchWrittenReviews(bookId, el);
+                            // This button counts written reviews, not star ratings.
+                            return;
                         } else if (/تعديل/.test(t)) {
                             label = 'التعديل';
                         } else if (/حذف/.test(t)) {
