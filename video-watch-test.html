@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <title>مشاهدة الفيديو | موقع الكاتب سعيد الشوادفي</title>
+  <meta name="description" content="صفحة مشاهدة فيديو من الموقع الرسمي للكاتب سعيد الشوادفي.">
+  <link rel="canonical" id="canonicalLink" href="https://saeid-elshwadfy.github.io/video-watch-test.html">
+  <meta property="og:type" content="video.other">
+  <meta property="og:site_name" content="موقع الكاتب الروائي | سعيد الشوادفي">
+  <meta property="og:title" id="ogTitle" content="مشاهدة الفيديو | سعيد الشوادفي">
+  <meta property="og:description" id="ogDescription" content="شاهد الفيديو على الموقع الرسمي للكاتب سعيد الشوادفي.">
+  <meta property="og:url" id="ogUrl" content="https://saeid-elshwadfy.github.io/video-watch-test.html">
+  <meta property="og:image" id="ogImage" content="https://res.cloudinary.com/uha8a6rd/image/upload/v1790121942/ieq5er6fzf6xyfhmtgcw.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" id="twitterTitle" content="مشاهدة الفيديو | سعيد الشوادفي">
+  <meta name="twitter:description" id="twitterDescription" content="شاهد الفيديو على الموقع الرسمي للكاتب سعيد الشوادفي.">
+  <meta name="twitter:image" id="twitterImage" content="https://res.cloudinary.com/uha8a6rd/image/upload/v1790121942/ieq5er6fzf6xyfhmtgcw.jpg">
+  <style>
+    :root{color-scheme:dark;--bg:#111827;--panel:#1f2937;--gold:#d6b36a;--muted:#cbd5e1}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f8fafc;font-family:Tahoma,Arial,sans-serif;line-height:1.8}
+    main{width:min(920px,calc(100% - 28px));margin:32px auto}a{color:var(--gold)}.brand{color:var(--gold);font-weight:bold;text-decoration:none}
+    article{background:var(--panel);padding:clamp(16px,3vw,32px);border-radius:16px;box-shadow:0 8px 28px #0003}h1{line-height:1.5;font-size:clamp(1.5rem,4vw,2.2rem);margin:8px 0;color:var(--gold)}.desc{color:var(--muted)}
+    .player{margin:22px 0;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center}.player video,.player iframe{width:100%;height:100%;border:0;display:block}.notice{padding:18px;text-align:center;color:var(--muted)}.back{display:inline-block;margin-top:18px}
+  </style>
+</head>
+<body>
+<main>
+  <a class="brand" href="https://saeid-elshwadfy.github.io/">موقع الكاتب الروائي | سعيد الشوادفي</a>
+  <article>
+    <div id="status" class="notice">جارٍ تحميل بيانات الفيديو…</div>
+    <div id="content" hidden>
+      <h1 id="videoTitle"></h1>
+      <p id="videoDescription" class="desc"></p>
+      <div id="player" class="player"></div>
+      <a class="back" href="https://saeid-elshwadfy.github.io/">العودة إلى الموقع الرئيسي</a>
+    </div>
+  </article>
+</main>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+  import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js';
+  const firebaseConfig = {
+          apiKey: "AIzaSyDGG6NxTUZl5lLqD7qPq_nE0h6c_jVbaNA",
+          authDomain: "saeid-elshwadfy.firebaseapp.com",
+          databaseURL: "https://saeid-elshwadfy-default-rtdb.firebaseio.com",
+          projectId: "saeid-elshwadfy",
+          storageBucket: "saeid-elshwadfy.firebasestorage.app",
+          messagingSenderId: "369531285459",
+          appId: "1:369531285459:web:c2ff96822a96162a804926",
+          measurementId: "G-ET702105DC"
+        };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const params = new URLSearchParams(location.search);
+  const videoId = params.get('id');
+  const status = document.getElementById('status');
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const safeUrl = value => { try { const u = new URL(String(value || '')); return ['https:','http:'].includes(u.protocol) ? u.href : ''; } catch { return ''; } };
+  const ytId = url => { const m = String(url || '').match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/); return m?.[1] || ''; };
+  function setMeta(id, content){ const el=document.getElementById(id); if(el) el.setAttribute('content',content); }
+  try {
+    // وضع اختبار محلي: إذا فُتحت الصفحة دون معرّف، اعرض فيديو الورشة التجريبي مباشرة.
+    let item;
+    if (!videoId) {
+      item = { title: 'فيديو الورشة — اختبار تشغيل', desc: 'صفحة تجريبية لاختبار تشغيل فيديو Cloudinary قبل النشر.', videoUrl: 'https://res.cloudinary.com/uha8a6rd/video/upload/v1791017881/aswcjusljimiviewksph.mp4' };
+    } else {
+      const snap = await get(ref(db, 'videos/' + videoId));
+      if (!snap.exists()) throw new Error('لم يتم العثور على الفيديو. تأكد من معرّف الفيديو وأن قواعد القراءة تسمح بعرضه.');
+      item = snap.val();
+    }
+    const title = String(item.title || 'فيديو من موقع سعيد الشوادفي');
+    const desc = String(item.desc || 'شاهد هذا الفيديو على الموقع الرسمي للكاتب سعيد الشوادفي.');
+    const videoUrl = safeUrl(item.videoUrl);
+    const thumb = safeUrl(item.thumbnailUrl || item.thumbnail || item.imageUrl || item.poster) || 'https://res.cloudinary.com/uha8a6rd/image/upload/v1790121942/ieq5er6fzf6xyfhmtgcw.jpg';
+    if (!videoUrl) throw new Error('رابط الفيديو غير موجود أو غير صالح.');
+    const pageUrl = videoId ? (location.origin + location.pathname + '?id=' + encodeURIComponent(videoId)) : (location.origin + location.pathname);
+    document.title = title + ' | سعيد الشوادفي';
+    document.getElementById('canonicalLink').href = pageUrl;
+    setMeta('ogTitle', title); setMeta('ogDescription', desc); setMeta('ogUrl', pageUrl); setMeta('ogImage', thumb);
+    setMeta('twitterTitle', title); setMeta('twitterDescription', desc); setMeta('twitterImage', thumb);
+    document.getElementById('videoTitle').textContent = title;
+    document.getElementById('videoDescription').textContent = desc;
+    const player = document.getElementById('player');
+    const youtubeId = ytId(videoUrl);
+    if (youtubeId) {
+      const iframe = document.createElement('iframe'); iframe.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(youtubeId); iframe.title=title; iframe.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'; iframe.allowFullscreen=true; iframe.loading='eager'; player.appendChild(iframe);
+    } else {
+      const video = document.createElement('video'); video.controls=true; video.preload='metadata'; video.playsInline=true; video.poster=thumb;
+      const source=document.createElement('source'); source.src=videoUrl; source.type=videoUrl.toLowerCase().includes('.m3u8')?'application/x-mpegURL':'video/mp4'; video.appendChild(source); video.appendChild(document.createTextNode('متصفحك لا يدعم تشغيل هذا الفيديو.')); player.appendChild(video);
+    }
+    const ld = { '@context':'https://schema.org', '@type':'VideoObject', name:title, description:desc, thumbnailUrl:[thumb], uploadDate: item.uploadDate || (item.createdAt ? new Date(item.createdAt).toISOString() : undefined), contentUrl:youtubeId ? undefined : videoUrl, embedUrl:youtubeId ? 'https://www.youtube.com/embed/'+youtubeId : undefined, mainEntityOfPage:pageUrl, publisher:{'@type':'Organization',name:'موقع الكاتب الروائي | سعيد الشوادفي',url:'https://saeid-elshwadfy.github.io/'} };
+    Object.keys(ld).forEach(k=>ld[k]===undefined&&delete ld[k]);
+    const script=document.createElement('script'); script.type='application/ld+json'; script.textContent=JSON.stringify(ld); document.head.appendChild(script);
+    document.getElementById('content').hidden=false; status.hidden=true;
+  } catch (err) { status.textContent = err.message || 'تعذر تحميل الفيديو.'; status.setAttribute('role','alert'); }
+</script>
+</body>
+</html>
