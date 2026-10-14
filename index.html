@@ -1286,7 +1286,39 @@
         <header>
             <div class="header-brand-group">
                 <div class="logo-container">
-                    <img src="https://i.ibb.co/MDstFfTz/6.jpg" id="siteLogoImg" class="logo-img" alt="موقع الكاتب الروائي | سعيد الشوادفي">
+                    <img id="siteLogoImg" class="logo-img" alt="موقع الكاتب الروائي | سعيد الشوادفي" decoding="async" style="visibility:hidden">
+                    <script>
+                    // استرجاع آخر لوجو معروف قبل انتظار Firebase لتجنب ظهور اللوجو القديم.
+                    (function () {
+                        const img = document.getElementById('siteLogoImg');
+                        const fallback = 'https://i.ibb.co/MDstFfTz/6.jpg';
+                        const cacheKey = 'siteLogoUrlCache';
+                        img.addEventListener('load', () => { img.style.visibility = 'visible'; });
+                        img.addEventListener('error', () => {
+                            if (img.dataset.fallbackTried !== '1' && img.src !== fallback) {
+                                img.dataset.fallbackTried = '1';
+                                img.src = fallback;
+                            } else {
+                                img.style.visibility = 'visible';
+                            }
+                        });
+                        try {
+                            const cachedUrl = localStorage.getItem(cacheKey);
+                            img.src = cachedUrl || fallback;
+                        } catch (_) { img.src = fallback; }
+                        window.setSiteLogoImage = function (url) {
+                            if (!url) return;
+                            const current = img.getAttribute('src');
+                            if (current !== url) {
+                                img.dataset.fallbackTried = '0';
+                                img.style.visibility = 'hidden';
+                                img.src = url;
+                            }
+                            if (img.complete && img.naturalWidth > 0) img.style.visibility = 'visible';
+                            try { localStorage.setItem(cacheKey, url); } catch (_) {}
+                        };
+                    })();
+                    </script>
                     <div class="logo" id="siteLogo">موقع الكاتب الروائي | سعيد الشوادفي</div>
                 </div>
                 <button class="mobile-menu-btn" id="openDrawerBtn" aria-label="فتح القائمة">☰ القائمة</button>
@@ -3006,9 +3038,9 @@ onAuthStateChanged(auth, async (user) => {
                     document.getElementById('adminSiteLogo').value = data.logo;
                 }
                 if (data.logoImg) {
-                    const imgEl = document.getElementById('siteLogoImg');
-                    imgEl.src = optimizeCloudinaryUrl(data.logoImg, 200);
-                    imgEl.style.display = 'block';
+                    const logoUrl = optimizeCloudinaryUrl(data.logoImg, 200);
+                    if (window.setSiteLogoImage) window.setSiteLogoImage(logoUrl);
+                    else document.getElementById('siteLogoImg').src = logoUrl;
                     document.getElementById('adminSiteLogoImg').value = data.logoImg;
                 }
                 if (data.heroTitle) {
@@ -3058,9 +3090,21 @@ onAuthStateChanged(auth, async (user) => {
                 aboutText: document.getElementById('adminAboutText').value
             };
 
-            await set(ref(db, 'siteContent'), siteContent);
-            alert("تم تحديث نصوص الواجهة واللوجو بنجاح! 🎉");
-            btn.innerText = "تحديث نصوص الواجهة واللوجو 💾";
+            try {
+                await set(ref(db, 'siteContent'), siteContent);
+                // حدّث اللوجو في نفس الصفحة فور تأكيد الحفظ، واحفظ آخر رابط للاستخدام عند فتح الموقع.
+                const displayLogoUrl = logoImg ? optimizeCloudinaryUrl(logoImg, 200) : '';
+                if (displayLogoUrl && window.setSiteLogoImage) {
+                    window.setSiteLogoImage(displayLogoUrl);
+                    document.getElementById('adminSiteLogoImg').value = logoImg;
+                }
+                document.getElementById('siteLogo').innerText = siteContent.logo;
+                alert("تم تحديث نصوص الواجهة واللوجو بنجاح! 🎉");
+            } catch (err) {
+                alert(`تعذر حفظ نصوص الواجهة واللوجو: ${err.message || err}`);
+            } finally {
+                btn.innerText = "تحديث نصوص الواجهة واللوجو 💾";
+            }
         });
 
         /* --- 1. الخدمات الأدبية --- */
