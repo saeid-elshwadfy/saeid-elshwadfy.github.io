@@ -1248,13 +1248,77 @@
 
     <div id="mainWebsite">
         <div class="site-cover-container">
-            <img src="https://i.ibb.co/Gf3Mt7r6/2.jpg" id="siteCoverImg" class="site-cover-img" alt="غلاف المنصة الأدبية الرسمية" fetchpriority="high">
+            <img id="siteCoverImg" class="site-cover-img" alt="غلاف المنصة الأدبية الرسمية" fetchpriority="high" decoding="async" style="visibility:hidden">
+            <script>
+                // اعرض آخر غلاف معروف فورًا، بدل ظهور الغلاف الافتراضي أثناء انتظار Firebase.
+                (function () {
+                    const img = document.getElementById('siteCoverImg');
+                    const fallback = 'https://i.ibb.co/Gf3Mt7r6/2.jpg';
+                    const cacheKey = 'siteCoverUrlCache';
+                    img.addEventListener('load', () => { img.style.visibility = 'visible'; });
+                    img.addEventListener('error', () => {
+                        if (img.dataset.fallbackTried !== '1' && img.src !== fallback) {
+                            img.dataset.fallbackTried = '1';
+                            img.src = fallback;
+                        } else {
+                            img.style.visibility = 'visible';
+                        }
+                    });
+                    try {
+                        const cachedUrl = localStorage.getItem(cacheKey);
+                        if (cachedUrl) img.src = cachedUrl;
+                    } catch (_) {}
+                    window.setSiteCoverImage = function (url) {
+                        if (!url) return;
+                        const current = img.getAttribute('src');
+                        if (current !== url) {
+                            img.dataset.fallbackTried = '0';
+                            img.src = url;
+                        }
+                        // إن كانت الصورة محمّلة مسبقًا، أظهرها فورًا.
+                        if (img.complete && img.naturalWidth > 0) img.style.visibility = 'visible';
+                        try { localStorage.setItem(cacheKey, url); } catch (_) {}
+                    };
+                })();
+            </script>
         </div>
 
         <header>
             <div class="header-brand-group">
                 <div class="logo-container">
-                    <img src="https://i.ibb.co/MDstFfTz/6.jpg" id="siteLogoImg" class="logo-img" alt="موقع الكاتب الروائي | سعيد الشوادفي">
+                    <img id="siteLogoImg" class="logo-img" alt="موقع الكاتب الروائي | سعيد الشوادفي" decoding="async" style="visibility:hidden">
+                    <script>
+                    // استرجاع آخر لوجو معروف قبل انتظار Firebase لتجنب ظهور اللوجو القديم.
+                    (function () {
+                        const img = document.getElementById('siteLogoImg');
+                        const fallback = 'https://i.ibb.co/MDstFfTz/6.jpg';
+                        const cacheKey = 'siteLogoUrlCache';
+                        img.addEventListener('load', () => { img.style.visibility = 'visible'; });
+                        img.addEventListener('error', () => {
+                            if (img.dataset.fallbackTried !== '1' && img.src !== fallback) {
+                                img.dataset.fallbackTried = '1';
+                                img.src = fallback;
+                            } else {
+                                img.style.visibility = 'visible';
+                            }
+                        });
+                        try {
+                            const cachedUrl = localStorage.getItem(cacheKey);
+                            img.src = cachedUrl || fallback;
+                        } catch (_) { img.src = fallback; }
+                        window.setSiteLogoImage = function (url) {
+                            if (!url) return;
+                            const current = img.getAttribute('src');
+                            if (current !== url) {
+                                img.dataset.fallbackTried = '0';
+                                img.style.visibility = 'hidden';
+                                img.src = url;
+                            }
+                            if (img.complete && img.naturalWidth > 0) img.style.visibility = 'visible';
+                            try { localStorage.setItem(cacheKey, url); } catch (_) {}
+                        };
+                    })();
+                    </script>
                     <div class="logo" id="siteLogo">موقع الكاتب الروائي | سعيد الشوادفي</div>
                 </div>
                 <button class="mobile-menu-btn" id="openDrawerBtn" aria-label="فتح القائمة">☰ القائمة</button>
@@ -2903,6 +2967,23 @@ onAuthStateChanged(auth, async (user) => {
                 }
             }
 
+            // جهّز الغلاف الجديد قبل الحفظ حتى لا نعرض الغلاف القديم بعد نجاح الحفظ.
+            const displayCoverUrl = coverUrl ? optimizeCloudinaryUrl(coverUrl, 1200) : '';
+            if (displayCoverUrl) {
+                try {
+                    await new Promise((resolve, reject) => {
+                        const preloadedCover = new Image();
+                        preloadedCover.onload = resolve;
+                        preloadedCover.onerror = () => reject(new Error('تعذر تحميل صورة الغلاف الجديدة. تحقق من رابط الصورة ثم حاول مرة أخرى.'));
+                        preloadedCover.src = displayCoverUrl;
+                        if (preloadedCover.complete && preloadedCover.naturalWidth > 0) resolve();
+                    });
+                } catch (err) {
+                    alert(err.message || 'تعذر تحميل صورة الغلاف الجديدة.');
+                    return;
+                }
+            }
+
             const customData = {
                 coverUrl: coverUrl,
                 accent: document.getElementById('accentColorInput').value,
@@ -2910,18 +2991,31 @@ onAuthStateChanged(auth, async (user) => {
                 lightBg: document.getElementById('lightBgInput').value
             };
 
-            await set(ref(db, 'siteCustomization'), customData);
-            alert("تم حفظ التعديلات والألوان والغلاف بنجاح! 🎉");
+            try {
+                await set(ref(db, 'siteCustomization'), customData);
+                // حدّث الغلاف في نفس الصفحة فور تأكيد الحفظ، ولا تنتظر مستمع Firebase.
+                if (displayCoverUrl && window.setSiteCoverImage) {
+                    window.setSiteCoverImage(displayCoverUrl);
+                    document.getElementById('adminCoverUrl').value = coverUrl;
+                }
+                alert("تم حفظ التعديلات والألوان والغلاف بنجاح! 🎉");
+            } catch (err) {
+                alert(`تعذر حفظ التعديلات: ${err.message || err}`);
+            }
         });
 
         onValue(ref(db, 'siteCustomization'), (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 if (data.coverUrl) {
-                    document.getElementById('siteCoverImg').src = optimizeCloudinaryUrl(data.coverUrl, 1200);
+                    const coverUrl = optimizeCloudinaryUrl(data.coverUrl, 1200);
+                    if (window.setSiteCoverImage) window.setSiteCoverImage(coverUrl);
+                    else document.getElementById('siteCoverImg').src = coverUrl;
                     document.getElementById('adminCoverUrl').value = data.coverUrl;
                 } else {
-                    document.getElementById('siteCoverImg').src = "https://i.ibb.co/Gf3Mt7r6/2.jpg";
+                    const fallbackCover = "https://i.ibb.co/Gf3Mt7r6/2.jpg";
+                    if (window.setSiteCoverImage) window.setSiteCoverImage(fallbackCover);
+                    else document.getElementById('siteCoverImg').src = fallbackCover;
                 }
                 if (data.accent) {
                     document.documentElement.style.setProperty('--accent-color', data.accent);
@@ -2930,7 +3024,9 @@ onAuthStateChanged(auth, async (user) => {
                 if (data.darkBg) document.getElementById('darkBgInput').value = data.darkBg;
                 if (data.lightBg) document.getElementById('lightBgInput').value = data.lightBg;
             } else {
-                document.getElementById('siteCoverImg').src = "https://i.ibb.co/Gf3Mt7r6/2.jpg";
+                const fallbackCover = "https://i.ibb.co/Gf3Mt7r6/2.jpg";
+                if (window.setSiteCoverImage) window.setSiteCoverImage(fallbackCover);
+                else document.getElementById('siteCoverImg').src = fallbackCover;
             }
         });
 
@@ -2942,9 +3038,9 @@ onAuthStateChanged(auth, async (user) => {
                     document.getElementById('adminSiteLogo').value = data.logo;
                 }
                 if (data.logoImg) {
-                    const imgEl = document.getElementById('siteLogoImg');
-                    imgEl.src = optimizeCloudinaryUrl(data.logoImg, 200);
-                    imgEl.style.display = 'block';
+                    const logoUrl = optimizeCloudinaryUrl(data.logoImg, 200);
+                    if (window.setSiteLogoImage) window.setSiteLogoImage(logoUrl);
+                    else document.getElementById('siteLogoImg').src = logoUrl;
                     document.getElementById('adminSiteLogoImg').value = data.logoImg;
                 }
                 if (data.heroTitle) {
@@ -2994,9 +3090,21 @@ onAuthStateChanged(auth, async (user) => {
                 aboutText: document.getElementById('adminAboutText').value
             };
 
-            await set(ref(db, 'siteContent'), siteContent);
-            alert("تم تحديث نصوص الواجهة واللوجو بنجاح! 🎉");
-            btn.innerText = "تحديث نصوص الواجهة واللوجو 💾";
+            try {
+                await set(ref(db, 'siteContent'), siteContent);
+                // حدّث اللوجو في نفس الصفحة فور تأكيد الحفظ، واحفظ آخر رابط للاستخدام عند فتح الموقع.
+                const displayLogoUrl = logoImg ? optimizeCloudinaryUrl(logoImg, 200) : '';
+                if (displayLogoUrl && window.setSiteLogoImage) {
+                    window.setSiteLogoImage(displayLogoUrl);
+                    document.getElementById('adminSiteLogoImg').value = logoImg;
+                }
+                document.getElementById('siteLogo').innerText = siteContent.logo;
+                alert("تم تحديث نصوص الواجهة واللوجو بنجاح! 🎉");
+            } catch (err) {
+                alert(`تعذر حفظ نصوص الواجهة واللوجو: ${err.message || err}`);
+            } finally {
+                btn.innerText = "تحديث نصوص الواجهة واللوجو 💾";
+            }
         });
 
         /* --- 1. الخدمات الأدبية --- */
