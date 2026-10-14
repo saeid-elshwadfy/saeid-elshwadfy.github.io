@@ -4652,7 +4652,7 @@ onAuthStateChanged(auth, async (user) => {
         // بالعملية بدون فتح صلاحية الكتاب بالكامل للزائر.
         window.rateBook = async (bookId) => {
             if (!bookId) return;
-            // توحيد شرط الدخول: النجوم مثل الرأي المكتوب تتطلب حساب Google أو Facebook أو Microsoft.
+            // توحيد شرط الدخول: النجوم مثل الرأي المكتوب تتطلب حساب Google/Facebook.
             if (!auth.currentUser || auth.currentUser.isAnonymous) {
                 openReaderLoginModal();
                 return;
@@ -4745,7 +4745,7 @@ onAuthStateChanged(auth, async (user) => {
         // بتعديل تقييمه لاحقاً دون احتساب تقييم ثانٍ له.
         window.rateMedia = async (mediaType, mediaId) => {
             if (!mediaType || !mediaId) return;
-            // توحيد شرط الدخول: النجوم مثل الرأي المكتوب تتطلب حساب Google أو Facebook أو Microsoft.
+            // توحيد شرط الدخول: النجوم مثل الرأي المكتوب تتطلب حساب Google/Facebook.
             if (!auth.currentUser || auth.currentUser.isAnonymous) {
                 openReaderLoginModal();
                 return;
