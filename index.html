@@ -1757,13 +1757,22 @@
                 <hr style="border: 0; border-top: 1px dashed var(--border-color); margin: 18px 0;">
 
                 <form id="addReviewForm" style="text-align: right;">
-                    <h4 id="reviewFormTitle" style="color: var(--accent-color); font-size: 1.1rem; margin-bottom: 10px; font-family: 'Amiri', serif;">✍️ أضف رأيك في هذا العمل:</h4>
+                    <h4 id="reviewFormTitle" style="color: var(--accent-color); font-size: 1.1rem; margin-bottom: 10px; font-family: 'Amiri', serif;">⭐ تقييم ومراجعة</h4>
+                    <div id="reviewModalStars" role="radiogroup" aria-label="تقييم من نجمة إلى خمس نجوم" style="display:flex;justify-content:center;gap:9px;direction:rtl;margin:12px 0 6px;">
+                        <button type="button" class="review-star-choice" data-rating="1" aria-label="نجمة واحدة" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
+                        <button type="button" class="review-star-choice" data-rating="2" aria-label="نجمتان" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
+                        <button type="button" class="review-star-choice" data-rating="3" aria-label="ثلاث نجوم" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
+                        <button type="button" class="review-star-choice" data-rating="4" aria-label="أربع نجوم" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
+                        <button type="button" class="review-star-choice" data-rating="5" aria-label="خمس نجوم" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
+                    </div>
+                    <p id="reviewRatingHint" style="text-align:center;color:var(--text-muted);font-size:.82rem;margin-bottom:14px;">اختيار النجوم إجباري</p>
+                    <input type="hidden" id="selectedReviewRating" value="">
                     <input type="hidden" id="editingReviewKey" value="">
                     <div class="form-group">
-                        <textarea id="reviewerText" rows="3" placeholder="اكتب انطباعك ورأيك في الرواية هنا..." required></textarea>
+                        <textarea id="reviewerText" rows="3" placeholder="وصف تجربتك (اختياري)" ></textarea>
                     </div>
                     <p style="margin:0 0 10px;color:var(--text-muted);font-size:.9rem;line-height:1.7;">🔐 التقييمات مرتبطة بالحساب؛ سجّل الدخول قبل إرسال رأيك.</p>
-                    <button type="submit" id="submitReviewBtn" class="btn-primary" style="width: 100%;">إرسال الرأي 🚀</button>
+                    <button type="submit" id="submitReviewBtn" class="btn-primary" style="width: 100%; opacity:.5; cursor:not-allowed;" disabled aria-disabled="true">إرسال التقييم ⭐</button>
                     <button type="button" id="cancelReviewEditBtn" class="btn-secondary" style="width: 100%; margin-top: 8px; display: none;">إلغاء التعديل</button>
                 </form>
             </div>
@@ -2192,6 +2201,30 @@
         let selectedBookForBuy = null;
         let selectedOrderType = 'digital';
         let selectedBookForReviews = null;
+        let selectedReviewRating = 0;
+        function setReviewModalRating(value) {
+            selectedReviewRating = Number(value) || 0;
+            const hidden = document.getElementById('selectedReviewRating');
+            if (hidden) hidden.value = selectedReviewRating ? String(selectedReviewRating) : '';
+            document.querySelectorAll('#reviewModalStars .review-star-choice').forEach(button => {
+                const active = Number(button.dataset.rating) <= selectedReviewRating;
+                button.style.color = active ? '#f59e0b' : '#9ca3af';
+                button.setAttribute('aria-checked', Number(button.dataset.rating) === selectedReviewRating ? 'true' : 'false');
+            });
+            const hint = document.getElementById('reviewRatingHint');
+            if (hint) hint.textContent = selectedReviewRating ? `تقييمك: ${selectedReviewRating} من 5 نجوم` : 'اختيار النجوم إجباري';
+            const submitButton = document.getElementById('submitReviewBtn');
+            if (submitButton) {
+                const enabled = selectedReviewRating >= 1 && selectedReviewRating <= 5;
+                submitButton.disabled = !enabled;
+                submitButton.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+                submitButton.style.opacity = enabled ? '1' : '.5';
+                submitButton.style.cursor = enabled ? 'pointer' : 'not-allowed';
+            }
+        }
+        document.querySelectorAll('#reviewModalStars .review-star-choice').forEach(button => {
+            button.addEventListener('click', () => setReviewModalRating(button.dataset.rating));
+        });
         let currentReaderBook = null;
         let currentReaderPage = 0;
         let initialDirectBookOpened = false;
@@ -4070,7 +4103,7 @@ onAuthStateChanged(auth, async (user) => {
                 const num = parseFloat(rating);
                 if (!(num >= 1 && num <= 5)) {
                     alert('من فضلك اختر رقماً من 1 إلى 5. ⭐');
-                    return;
+                    return false;
                 }
 
                 await update(ref(db), {
@@ -4107,7 +4140,8 @@ onAuthStateChanged(auth, async (user) => {
                 if (!hasPrevious && typeof trackAnalyticsEvent === 'function') {
                     trackAnalyticsEvent('ratings');
                 }
-                alert(hasPrevious ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
+                if (selectedRating == null) alert(hasPrevious ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
+                return true;
             } catch (err) {
                 console.warn('تعذر حفظ تقييم المنتج:', err);
                 alert('تعذر حفظ التقييم حالياً. حاول مرة أخرى.');
@@ -4369,11 +4403,6 @@ onAuthStateChanged(auth, async (user) => {
                                 <span>⭐ ${avgRating} / 5 (${bookRatingCount} تقييم)</span>
                             </div>
 
-                            <div class="rating-stars count-tooltip" data-tooltip="عدد التقييمات المسجلة: ${bookRatingCount.toLocaleString('ar-EG')}" onclick="rateBook('${escapeHtml(book.id)}')" title="عدد التقييمات المسجلة: ${bookRatingCount.toLocaleString('ar-EG')} — اضغط للتقييم أو تعديل تقييمك">
-                                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                                <small style="font-size:0.75rem; color:var(--text-muted);">(اضغط للتقييم أو تعديل تقييمك)</small>
-                            </div>
-
                             <div class="book-price">
                                 <span>الرقمية: ${escapeHtml(book.price ?? 'مجاني')}</span> | <span>الورقية: ${escapeHtml(book.paperPrice ?? 'غير متاحة')}</span>
                             </div>
@@ -4386,7 +4415,7 @@ onAuthStateChanged(auth, async (user) => {
                             ${downloadBtnHtml}
 
                             <button class="btn-action btn-share count-tooltip" data-tooltip="${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات المسجل: ${Number(book.shares ?? book.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" title="${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات المسجل: ${Number(book.shares ?? book.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" aria-label="مشاركة؛ ${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات ${Number(book.shares ?? book.shareCount)}` : 'عدد المشاركات غير متاح'}" onclick='shareBook(${escapeHtml(JSON.stringify(book.id))}, ${escapeHtml(JSON.stringify(book.title))})'>🔗 مشاركة</button>
-                            <button class="btn-action btn-reviews" onclick="openReviewsModal('${escapeHtml(book.id)}')">💬 مراجعات القراء</button>
+                            <button class="btn-action btn-reviews" onclick="openReviewsModal('${escapeHtml(book.id)}')">⭐ تقييم ومراجعة</button>
 
                             ${buySectionHtml}
 
@@ -4649,7 +4678,7 @@ onAuthStateChanged(auth, async (user) => {
         // تقييم قابل للتعديل: يُحفظ تقييم كل زائر في ratingsByUid،
         // بينما تُحدّث قيمتا المجموع والعدد في مساراتهما فقط حتى تسمح Firebase Rules
         // بالعملية بدون فتح صلاحية الكتاب بالكامل للزائر.
-        window.rateBook = async (bookId) => {
+        window.rateBook = async (bookId, selectedRating = null, suppressNotify = false) => {
             if (!bookId) return;
             // توحيد شرط الدخول: النجوم مثل الرأي المكتوب تتطلب حساب Google/Facebook.
             if (!auth.currentUser || auth.currentUser.isAnonymous) {
@@ -4664,13 +4693,13 @@ onAuthStateChanged(auth, async (user) => {
                 const promptText = oldLocal >= 1 && oldLocal <= 5
                     ? `تقييمك الحالي ${oldLocal} نجوم.\nضع التقييم الجديد من 1 إلى 5 نجوم:`
                     : 'ضع تقييمك للعمل من 1 إلى 5 نجوم:';
-                const rating = prompt(promptText, oldLocal >= 1 && oldLocal <= 5 ? String(oldLocal) : '');
-                if (rating === null) return;
+                const rating = selectedRating == null ? prompt(promptText, oldLocal >= 1 && oldLocal <= 5 ? String(oldLocal) : '') : String(selectedRating);
+                if (rating === null) return false;
                 const num = parseFloat(rating);
-                if (!(num >= 1 && num <= 5)) { alert('من فضلك اختر رقماً من 1 إلى 5. ⭐'); return; }
+                if (!(num >= 1 && num <= 5)) { alert('من فضلك اختر رقماً من 1 إلى 5. ⭐'); return false; }
                 localStorage.setItem(ratingKey, String(num));
-                alert(oldLocal >= 1 && oldLocal <= 5 ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
-                return;
+                if (selectedRating == null) alert(oldLocal >= 1 && oldLocal <= 5 ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
+                return true;
             }
 
             try {
@@ -4698,8 +4727,8 @@ onAuthStateChanged(auth, async (user) => {
                 const promptText = hasPrevious
                     ? `تقييمك الحالي ${previous} نجوم.\nعدّل تقييمك وضع الدرجة الجديدة من 1 إلى 5 نجوم:`
                     : 'ضع تقييمك للعمل من 1 إلى 5 نجوم:';
-                const rating = prompt(promptText, hasPrevious ? String(previous) : '');
-                if (rating === null) return;
+                const rating = selectedRating == null ? prompt(promptText, hasPrevious ? String(previous) : '') : String(selectedRating);
+                if (rating === null) return false;
 
                 const num = parseFloat(rating);
                 if (!(num >= 1 && num <= 5)) {
@@ -4730,12 +4759,13 @@ onAuthStateChanged(auth, async (user) => {
                         || ratingUser?.providerData?.find(provider => provider?.displayName)?.displayName
                         || ratingUser?.email?.split('@')[0]
                         || 'قارئ مسجّل';
-                    await window.notifyAdminNewReview?.(existingBook.title || 'عمل جديد', ratingSenderName);
+                    if (!suppressNotify) await window.notifyAdminNewReview?.(existingBook.title || 'عمل جديد', ratingSenderName);
                 }
                 alert(hasPrevious ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
             } catch (err) {
                 console.error('تعذر حفظ/تعديل التقييم:', err);
                 alert(`تعذر حفظ التقييم: ${err.message}`);
+                return false;
             }
         };
 
@@ -4909,8 +4939,9 @@ onAuthStateChanged(auth, async (user) => {
         function resetReviewForm() {
             document.getElementById('editingReviewKey').value = '';
             document.getElementById('reviewerText').value = '';
-            document.getElementById('reviewFormTitle').innerText = '✍️ أضف رأيك في هذا العمل:';
-            document.getElementById('submitReviewBtn').innerText = 'إرسال الرأي 🚀';
+            setReviewModalRating(0);
+            document.getElementById('reviewFormTitle').innerText = '⭐ تقييم ومراجعة';
+            document.getElementById('submitReviewBtn').innerText = 'إرسال التقييم ⭐';
             document.getElementById('cancelReviewEditBtn').style.display = 'none';
         }
 
@@ -4975,6 +5006,12 @@ onAuthStateChanged(auth, async (user) => {
 
         window.openReviewsModal = (bookId) => {
             selectedBookForReviews = bookId;
+            setReviewModalRating(0);
+            document.getElementById('reviewerText').value = '';
+            document.getElementById('editingReviewKey').value = '';
+            document.getElementById('reviewFormTitle').innerText = '⭐ تقييم ومراجعة';
+            document.getElementById('submitReviewBtn').innerText = 'إرسال التقييم ⭐';
+            document.getElementById('cancelReviewEditBtn').style.display = 'none';
             const book = allBooks.find(b => b.id === bookId);
             document.getElementById('reviewsModalTitle').innerText = `💬 آراء وانطباعات القراء: ${book ? book.title : ''}`;
 
@@ -5072,8 +5109,8 @@ onAuthStateChanged(auth, async (user) => {
             const editingReviewKey = document.getElementById('editingReviewKey').value.trim();
 
             if (!selectedBookForReviews) return;
-            if (!text) {
-                alert('من فضلك اكتب رأيك أولاً.');
+            if (!(selectedReviewRating >= 1 && selectedReviewRating <= 5)) {
+                alert('من فضلك اختر تقييمك بالنجوم أولاً. ⭐');
                 return;
             }
 
@@ -5086,6 +5123,18 @@ onAuthStateChanged(auth, async (user) => {
             const name = currentUser.displayName || currentUser.providerData?.find(p => p.displayName)?.displayName || currentUser.email?.split('@')[0] || 'قارئ مسجّل';
 
             try {
+                const ratingSaved = await window.rateBook(selectedBookForReviews, selectedReviewRating, Boolean(text));
+                if (!ratingSaved) return;
+                if (!text && !editingReviewKey) {
+                    alert('شكراً لتقييمك بالنجوم! ⭐');
+                    document.getElementById('reviewsModal').style.display = 'none';
+                    setReviewModalRating(0);
+                    return;
+                }
+                if (!text) {
+                    alert('اكتب تعليقاً لتعديل المراجعة، أو أرسل تقييماً جديداً بالنجوم فقط.');
+                    return;
+                }
                 if (!selectedBookForReviews.startsWith('def')) {
                     if (editingReviewKey) {
                         const reviewRef = ref(db, `reviews/${selectedBookForReviews}/${editingReviewKey}`);
