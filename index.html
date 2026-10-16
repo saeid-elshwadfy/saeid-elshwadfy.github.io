@@ -4750,7 +4750,7 @@ onAuthStateChanged(auth, async (user) => {
                 const num = parseFloat(rating);
                 if (!(num >= 1 && num <= 5)) {
                     alert('من فضلك اختر رقماً من 1 إلى 5. ⭐');
-                    return;
+                    return false;
                 }
 
                 const currentSum = Number(existingBook.ratingSum ?? 0);
@@ -4779,6 +4779,9 @@ onAuthStateChanged(auth, async (user) => {
                     if (!suppressNotify) await window.notifyAdminNewReview?.(existingBook.title || 'عمل جديد', ratingSenderName);
                 }
                 alert(hasPrevious ? 'تم تعديل تقييمك بنجاح! ⭐' : 'شكراً لتقييمك! ⭐');
+                // إرجاع نجاح صريح حتى يكمل نموذج «تقييم ومراجعة» تحديث البطاقة
+                // وحفظ المراجعة النصية وإرسال إشعار الإدارة عند الحاجة.
+                return true;
             } catch (err) {
                 console.error('تعذر حفظ/تعديل التقييم:', err);
                 alert(`تعذر حفظ التقييم: ${err.message}`);
