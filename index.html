@@ -2784,10 +2784,11 @@ onAuthStateChanged(auth, async (user) => {
             btn.disabled = true;
 
             try {
-                await signInWithEmailAndPassword(auth, email, pass);
+                // استخدم المستخدم الذي أعادته عملية تسجيل الدخول مباشرةً، بدل الاعتماد على auth.currentUser فورًا.
+                const credential = await signInWithEmailAndPassword(auth, String(email || '').trim(), pass);
 
                 // حساب الإدارة المحدد للموقع هو بريد المالك فقط.
-                const signedInEmail = String(auth.currentUser?.email || '').trim().toLowerCase();
+                const signedInEmail = String(credential.user?.email || '').trim().toLowerCase();
                 if (signedInEmail !== ADMIN_EMAIL) {
                     await signOut(auth);
                     throw new Error("هذا الحساب مسجل دخول، لكنه لا يملك صلاحيات الإدارة.");
