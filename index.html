@@ -2761,7 +2761,18 @@ onAuthStateChanged(auth, async (user) => {
             }
 
             if (!isAdmin) {
-                alert("هذا الحساب مسجل دخول، لكنه لا يملك صلاحيات الإدارة.");
+                const diagnosticUser = auth.currentUser;
+                const actualEmail = String(diagnosticUser?.email || '(لا يوجد بريد في جلسة الموقع)').trim().toLowerCase();
+                const expectedEmail = String(ADMIN_EMAIL || '').trim().toLowerCase();
+                const providers = (diagnosticUser?.providerData || []).map(p => p.providerId).join(', ') || '(غير متاح)';
+                alert(
+                    "تشخيص مؤقت لصلاحية الإدارة\n" +
+                    "البريد الذي يراه الموقع: " + actualEmail + "\n" +
+                    "البريد المحدد كمدير في الملف: " + expectedEmail + "\n" +
+                    "isAnonymous: " + String(!!diagnosticUser?.isAnonymous) + "\n" +
+                    "isAdmin: " + String(!!isAdmin) + "\n" +
+                    "طريقة الدخول: " + providers
+                );
                 return;
             }
 
@@ -2784,11 +2795,10 @@ onAuthStateChanged(auth, async (user) => {
             btn.disabled = true;
 
             try {
-                // استخدم المستخدم الذي أعادته عملية تسجيل الدخول مباشرةً، بدل الاعتماد على auth.currentUser فورًا.
-                const credential = await signInWithEmailAndPassword(auth, String(email || '').trim(), pass);
+                await signInWithEmailAndPassword(auth, email, pass);
 
                 // حساب الإدارة المحدد للموقع هو بريد المالك فقط.
-                const signedInEmail = String(credential.user?.email || '').trim().toLowerCase();
+                const signedInEmail = String(auth.currentUser?.email || '').trim().toLowerCase();
                 if (signedInEmail !== ADMIN_EMAIL) {
                     await signOut(auth);
                     throw new Error("هذا الحساب مسجل دخول، لكنه لا يملك صلاحيات الإدارة.");
