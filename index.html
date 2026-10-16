@@ -1063,12 +1063,15 @@
             cursor: default;
         }
 
-        .reviews-list { max-height: 280px; overflow-y: auto; text-align: right; margin: 15px 0; padding-left: 5px; display: flex; flex-direction: column; gap: 12px; }
-        .review-card { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 14px 18px; }
-        .review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .review-author { font-weight: 700; color: var(--accent-color); font-size: 0.98rem; }
+        .reviews-list { max-height: 420px; overflow-y: auto; text-align: right; margin: 15px 0; padding: 2px 3px 2px 5px; display: flex; flex-direction: column; gap: 14px; }
+        .review-card { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px 18px; box-shadow: 0 4px 14px var(--shadow-color); }
+        .review-header { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 10px; }
+        .review-author { font-weight: 800; color: var(--text-color); font-size: 1rem; }
+        .review-meta { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+        .review-stars { color: #f59e0b; font-size: 1.05rem; letter-spacing: 1px; direction: ltr; }
+        .review-stars .empty-star { color: #9ca3af; }
         .review-date { font-size: 0.78rem; color: var(--text-muted); }
-        .review-text { font-size: 0.95rem; color: var(--text-color); line-height: 1.6; white-space: pre-line; }
+        .review-text { font-size: 0.98rem; color: var(--text-color); line-height: 1.85; white-space: pre-line; overflow-wrap: anywhere; }
 
         .payment-methods-list { text-align: right; margin: 18px 0; display: flex; flex-direction: column; gap: 12px; }
         .payment-item { background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; cursor: pointer; transition: all 0.3s ease; }
@@ -4294,9 +4297,12 @@ onAuthStateChanged(auth, async (user) => {
                             <div style="padding:9px 0; ${index < latestReviews.length - 1 ? 'border-bottom:1px solid var(--border-color);' : ''}">
                                 <div style="font-size:0.9rem; line-height:1.65;">
                                     <strong>👤 ${escapeHtml(review.name ?? 'قارئ')}</strong>
-                                    <span style="color:var(--text-muted); font-size:0.78rem; margin-right:6px;">${escapeHtml(review.date ?? '')}</span>
                                 </div>
-                                <div style="color:var(--text-muted); font-size:0.88rem; line-height:1.65; margin-top:3px;">${escapeHtml(review.text ?? '')}</div>
+                                <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:2px 0 5px;">
+                                    <span style="color:#f59e0b;direction:ltr;letter-spacing:1px;" aria-label="${Math.max(0, Math.min(5, Number(review.rating) || 0))} من 5 نجوم">${'★'.repeat(Math.max(0, Math.min(5, Number(review.rating) || 0)))}<span style="color:#9ca3af;">${'★'.repeat(5 - Math.max(0, Math.min(5, Number(review.rating) || 0)))}</span></span>
+                                    <span style="color:var(--text-muted);font-size:0.78rem;">📅 ${escapeHtml(review.date ?? '')}</span>
+                                </div>
+                                <div style="color:var(--text-color); font-size:0.9rem; line-height:1.8; margin-top:3px;">${escapeHtml(review.text ?? '')}</div>
                                 ${review.reply?.text ? `<div style="margin-top:9px; margin-right:12px; padding:8px 10px; border-right:3px solid var(--accent-color); background:rgba(127,127,127,.06); border-radius:8px;"><div style="font-weight:bold; color:var(--accent-color); font-size:.82rem;">↳ ✍️ رد الكاتب سعيد الشوادفي</div><div style="color:var(--text-muted); font-size:.84rem; line-height:1.65; margin-top:3px;">${escapeHtml(review.reply.text)}</div><div style="color:var(--text-muted); font-size:.72rem; margin-top:3px;">${escapeHtml(review.reply.date ?? '')}</div>${isAdmin ? `<div style="margin-top:6px; display:flex; gap:6px;"><button type="button" onclick="editReaderReply('${escapeHtml(bookId)}','${escapeHtml(review.key)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:7px; padding:4px 8px; cursor:pointer; font-size:.72rem;">✏️ تعديل الرد</button><button type="button" onclick="deleteReaderReply('${escapeHtml(bookId)}','${escapeHtml(review.key)}')" style="border:1px solid #d9534f; background:transparent; color:#d9534f; border-radius:7px; padding:4px 8px; cursor:pointer; font-size:.72rem;">🗑️ حذف الرد</button></div>` : ''}</div>` : (isAdmin ? `<div style="margin-top:8px;"><button type="button" onclick="addReaderReply('${escapeHtml(bookId)}','${escapeHtml(review.key)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:8px; padding:5px 9px; cursor:pointer; font-size:.78rem;">↳ ✍️ الرد على التعليق</button></div>` : '')}
                                 ${((isAdmin || (auth.currentUser?.uid && review.uid && review.uid === auth.currentUser.uid))) ? `<div style="margin-top:8px; display:flex; gap:7px; justify-content:flex-start; flex-wrap:wrap;">${auth.currentUser?.uid && review.uid && review.uid === auth.currentUser.uid ? `<button type="button" onclick="editReaderReview('${escapeHtml(bookId)}','${escapeHtml(review.key)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:8px; padding:5px 9px; cursor:pointer; font-size:.78rem;">✏️ تعديل</button>` : ''}${isAdmin ? `<button type="button" onclick="deleteReaderReview('${escapeHtml(bookId)}','${escapeHtml(review.key)}')" style="border:1px solid #d9534f; background:transparent; color:#d9534f; border-radius:8px; padding:5px 9px; cursor:pointer; font-size:.78rem;">🗑️ حذف</button>` : ''}</div>` : ''}
                             </div>
@@ -4927,6 +4933,7 @@ onAuthStateChanged(auth, async (user) => {
                 selectedBookForReviews = bookId;
                 document.getElementById('editingReviewKey').value = reviewKey;
                 document.getElementById('reviewerText').value = review.text ?? '';
+                setReviewModalRating(Number(review.rating) || 0);
                 document.getElementById('reviewFormTitle').innerText = '✏️ تعديل رأيك في هذا العمل:';
                 document.getElementById('submitReviewBtn').innerText = 'حفظ التعديل 💾';
                 document.getElementById('cancelReviewEditBtn').style.display = 'block';
@@ -5027,10 +5034,13 @@ onAuthStateChanged(auth, async (user) => {
                             const revHtml = `
                                 <div class="review-card">
                                     <div class="review-header">
-                                        <span class="review-author">👤 ${escapeHtml(rev.name)}</span>
-                                        <span class="review-date">${escapeHtml(rev.date ?? '')}</span>
+                                        <span class="review-author">👤 ${escapeHtml(rev.name ?? 'قارئ')}</span>
+                                        <div class="review-meta">
+                                            <span class="review-stars" aria-label="${Math.max(0, Math.min(5, Number(rev.rating) || 0))} من 5 نجوم">${'★'.repeat(Math.max(0, Math.min(5, Number(rev.rating) || 0)))}<span class="empty-star">${'★'.repeat(5 - Math.max(0, Math.min(5, Number(rev.rating) || 0)))}</span></span>
+                                            <span class="review-date">📅 ${escapeHtml(rev.date ?? '')}</span>
+                                        </div>
                                     </div>
-                                    <div class="review-text">${escapeHtml(rev.text)}</div>
+                                    <div class="review-text">${escapeHtml(rev.text ?? '')}</div>
                                     ${rev.reply?.text ? `<div style="margin-top:10px; margin-right:12px; padding:9px 11px; border-right:3px solid var(--accent-color); background:rgba(127,127,127,.06); border-radius:9px;"><div style="font-weight:bold; color:var(--accent-color); font-size:.86rem;">↳ ✍️ رد الكاتب سعيد الشوادفي</div><div style="color:var(--text-muted); font-size:.88rem; line-height:1.7; margin-top:3px;">${escapeHtml(rev.reply.text)}</div><div style="color:var(--text-muted); font-size:.74rem; margin-top:3px;">${escapeHtml(rev.reply.date ?? '')}</div></div>` : ''}
                                     ${isAdmin ? `<div style="margin-top:9px; display:flex; gap:7px; justify-content:flex-start; flex-wrap:wrap;">${rev.reply?.text ? `<button type="button" onclick="editReaderReply('${escapeHtml(bookId)}','${escapeHtml(reviewKey)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:8px; padding:6px 10px; cursor:pointer;">✏️ ${rev.reply?.text ? 'تعديل الرد' : 'الرد'}</button><button type="button" onclick="deleteReaderReply('${escapeHtml(bookId)}','${escapeHtml(reviewKey)}')" style="border:1px solid #d9534f; background:transparent; color:#d9534f; border-radius:8px; padding:6px 10px; cursor:pointer;">🗑️ حذف الرد</button>` : `<button type="button" onclick="addReaderReply('${escapeHtml(bookId)}','${escapeHtml(reviewKey)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:8px; padding:6px 10px; cursor:pointer;">↳ ✍️ الرد على التعليق</button>`}</div>` : ''}
                                     ${(isAdmin || (auth.currentUser?.uid && rev.uid && rev.uid === auth.currentUser.uid)) ? `<div style="margin-top:10px; display:flex; gap:7px; justify-content:flex-start; flex-wrap:wrap;">${auth.currentUser?.uid && rev.uid && rev.uid === auth.currentUser.uid ? `<button type="button" onclick="editReaderReview('${escapeHtml(bookId)}','${escapeHtml(reviewKey)}')" style="border:1px solid var(--accent-color); background:transparent; color:var(--accent-color); border-radius:8px; padding:6px 10px; cursor:pointer;">✏️ تعديل</button>` : ''}${isAdmin ? `<button type="button" onclick="deleteReaderReview('${escapeHtml(bookId)}','${escapeHtml(reviewKey)}')" style="border:1px solid #d9534f; background:transparent; color:#d9534f; border-radius:8px; padding:6px 10px; cursor:pointer;">🗑️ حذف المراجعة</button>` : ''}</div>` : ''}
@@ -5147,6 +5157,7 @@ onAuthStateChanged(auth, async (user) => {
                         await update(reviewRef, {
                             name,
                             text,
+                            rating: selectedReviewRating,
                             uid: currentUid,
                             date: existing.date ?? new Date().toLocaleDateString('ar-EG'),
                             updatedAt: new Date().toISOString()
@@ -5156,6 +5167,7 @@ onAuthStateChanged(auth, async (user) => {
                         const reviewData = {
                             name,
                             text,
+                            rating: selectedReviewRating,
                             uid: currentUid,
                             date: new Date().toLocaleDateString('ar-EG')
                         };
