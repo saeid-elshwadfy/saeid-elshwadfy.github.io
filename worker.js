@@ -20,7 +20,7 @@ export default {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(SITE_NAME)}</title>
-<meta name="description" content="موقع الكاتب الروائي سعيد الشوادفي: روايات وقصص ورسائل وشعر وخواطر ومواد أدبية.">
+<meta name="description" content="موقع الكاتب الروائي سعيد الشوادفي: روايات وقصص ورسائل وشعر وخواطر.">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="${WORKER_URL}/">
 </head>
