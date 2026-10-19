@@ -5330,8 +5330,9 @@ onAuthStateChanged(auth, async (user) => {
                     await update(ref(db, `books/${editId}`), bookData);
                     alert("تم تعديل العمل وإعادة رفع الملفات بنجاح! 🎉");
                 } else {
-                    bookData.reads = 0;
-                    bookData.downloads = 0;
+                    // لا ترسل عدّادات القراءة والتنزيل بقيمة 0 عند الإنشاء؛
+                    // قواعد Firebase المنشورة قد ترفض هذه القيم. تُنشأ العدّادات
+                    // عند أول قراءة/تنزيل وفق قواعد الأمان الحالية.
                     bookData.rating = 5.0;
                     bookData.ratingSum = 5;
                     bookData.ratingCount = 1;
