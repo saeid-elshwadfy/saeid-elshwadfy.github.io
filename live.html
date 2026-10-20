@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1a0307">
+<meta name="description" content="البث المباشر للكاتب والروائي سعيد الشوادفي مع دردشة مباشرة للقراء.">
+<title>البث المباشر | سعيد الشوادفي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Amiri:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#1a0307;--card:#2d0a12;--gold:#d4af37;--text:#f1f5f9;--muted:#cbd5e1;--line:rgba(212,175,55,.3);--danger:#ff7777;--ok:#65d6a2}*{box-sizing:border-box}body{margin:0;padding:18px;background-color:var(--bg);background-image:radial-gradient(rgba(212,175,55,.13) .8px,transparent .8px);background-size:28px 28px;color:var(--text);font-family:Tajawal,system-ui,sans-serif;line-height:1.6}.wrap{max-width:1150px;margin:auto}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 20px;border:1px solid var(--line);border-radius:18px;background:rgba(45,10,18,.94);margin-bottom:20px}.brand{font-family:Amiri,serif;color:var(--gold);font-size:1.5rem;font-weight:bold}.top a{color:var(--gold);text-decoration:none}.intro{text-align:center;margin:18px 0 24px}.intro h1{font-family:Amiri,serif;color:var(--gold);font-size:clamp(1.8rem,4vw,2.6rem);margin:0}.intro p{color:var(--muted);margin:6px 0}.layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,.9fr);gap:18px}.panel{background:rgba(45,10,18,.94);border:1px solid var(--line);border-radius:18px;padding:16px;min-width:0}.video-wrap{position:relative;background:#090306;border-radius:13px;overflow:hidden;min-height:260px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center}.video-wrap video{width:100%;height:100%;position:absolute;inset:0;object-fit:contain;background:#090306}.placeholder{z-index:1;text-align:center;color:var(--muted);padding:24px}.placeholder strong{display:block;color:var(--gold);font-size:1.2rem;margin-bottom:8px}.status{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.95rem;margin:12px 0}.dot{width:9px;height:9px;border-radius:50%;background:#999;display:inline-block}.dot.on{background:var(--ok);box-shadow:0 0 10px var(--ok)}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.btn{border:1px solid var(--line);border-radius:11px;padding:10px 15px;background:#3a111a;color:var(--text);font:700 1rem Tajawal,sans-serif;cursor:pointer}.btn.primary{background:linear-gradient(135deg,#d4af37,#a87808);color:#1a0307;border:0}.btn:disabled{opacity:.55;cursor:not-allowed}.btn:hover:not(:disabled){filter:brightness(1.12)}.note{font-size:.9rem;color:var(--muted);margin:10px 0 0}.chat-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.chat-head h2{font-size:1.2rem;margin:0;color:var(--gold)}.count{font-size:.9rem;color:var(--muted)}.messages{height:340px;overflow:auto;margin:12px 0;padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(12,2,5,.55)}.msg{padding:8px 10px;border-bottom:1px solid rgba(212,175,55,.12);overflow-wrap:anywhere}.msg:last-child{border-bottom:0}.msg b{color:var(--gold);margin-left:5px}.system{color:var(--muted);font-size:.9rem;text-align:center;padding:8px}.chat-form{display:flex;gap:8px}.chat-form input,.field input{width:100%;min-width:0;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:#120205;color:var(--text);font:1rem Tajawal,sans-serif;outline:none}.chat-form input:focus,.field input:focus{border-color:var(--gold)}.chat-form .btn{flex-shrink:0}.host-box{margin-top:18px}.host-box summary{color:var(--gold);font-weight:700;cursor:pointer}.host-form{display:grid;gap:10px;margin-top:12px}.field label{display:block;margin-bottom:4px;color:var(--muted);font-size:.92rem}.error{color:var(--danger);min-height:1.4em;font-size:.92rem}.footer{text-align:center;color:var(--muted);font-size:.9rem;margin:20px 0 4px}.hidden{display:none!important}@media(max-width:800px){body{padding:10px}.layout{grid-template-columns:1fr}.messages{height:260px}.panel{padding:12px}.top{padding:12px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><div class="brand">سعيد الشوادفي</div><a href="/">العودة إلى الموقع الرئيسي ←</a></header>
+  <section class="intro"><h1>البث المباشر</h1><p>لقاءات الكاتب والروائي سعيد الشوادفي مع القراء</p></section>
+  <main class="layout">
+    <section class="panel">
+      <div class="video-wrap" id="videoWrap"><div class="placeholder" id="placeholder"><strong>أهلًا بكم في البث المباشر</strong><span id="videoHint">اتصل بالغرفة لمشاهدة البث عند بدءه.</span></div></div>
+      <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">غير متصل</span><span style="margin-right:auto" id="viewerCount">المتصلون: 0</span></div>
+      <div class="actions"><button class="btn primary" id="joinBtn">دخول المشاهدة</button><button class="btn hidden" id="leaveBtn">مغادرة البث</button></div>
+      <details class="host-box">
+        <summary>دخول المذيع (خاص)</summary>
+        <form class="host-form" id="hostForm">
+          <div class="field"><label for="hostName">اسم المذيع</label><input id="hostName" maxlength="50" value="سعيد الشوادفي" autocomplete="name" required></div>
+          <div class="field"><label for="hostPassword">كلمة مرور المذيع</label><input id="hostPassword" type="password" autocomplete="current-password" required></div>
+          <div class="actions"><button class="btn primary" id="hostBtn" type="submit">بدء البث بالكاميرا والميكروفون</button><button class="btn hidden" id="stopBtn" type="button">إيقاف الكاميرا والميكروفون</button></div>
+        </form>
+      </details>
+      <p class="note">قد يطلب المتصفح إذن استخدام الكاميرا والميكروفون. استخدم اتصالًا آمنًا (HTTPS).</p>
+    </section>
+    <aside class="panel">
+      <div class="chat-head"><h2>الدردشة المباشرة</h2><span class="count" id="chatStatus">غير متصل</span></div>
+      <div class="messages" id="messages" aria-live="polite"><div class="system">ادخل المشاهدة للمشاركة في الدردشة.</div></div>
+      <form class="chat-form" id="chatForm"><input id="chatInput" maxlength="400" placeholder="اكتب رسالتك..." aria-label="رسالتك" disabled required><button class="btn primary" id="sendBtn" disabled>إرسال</button></form>
+      <p class="note">الدردشة متاحة للمشاركين المتصلين. تجنب مشاركة بياناتك الشخصية.</p>
+    </aside>
+  </main>
+  <div class="footer">© سعيد الشوادفي — البث المباشر</div>
+</div>
+<script>
+(() => {
+  'use strict';
+  const API = 'https://saeid-live-api.saeidelshwadfy.workers.dev';
+  const $ = id => document.getElementById(id);
+  const state = { room: null, role: null, identity: null, localTracks: [], connected: false };
+  const encoder = new TextEncoder();
+  const setStatus = (text, on=false) => { $('statusText').textContent=text; $('statusDot').classList.toggle('on',on); };
+  const showError = message => { $('videoHint').textContent=message; $('placeholder').classList.remove('hidden'); };
+  const addMessage = (name, message, system=false) => {
+    const el=document.createElement('div'); el.className=system?'system':'msg';
+    if(system){el.textContent=message;}else{const b=document.createElement('b');b.textContent=name+':';const span=document.createElement('span');span.textContent=message;el.append(b,span);}
+    $('messages').appendChild(el); $('messages').scrollTop=$('messages').scrollHeight;
+  };
+  function attachTrack(track) {
+    if(track.kind !== 'video' && track.kind !== 'audio') return;
+    const el=track.attach();
+    if(track.kind==='video'){
+      el.autoplay=true;el.playsInline=true;el.controls=false;el.style.cssText='width:100%;height:100%;position:absolute;inset:0;object-fit:contain;background:#090306';
+      const old=$('videoWrap').querySelector('video'); if(old) old.remove();
+      $('videoWrap').appendChild(el); $('placeholder').classList.add('hidden');
+    } else { el.autoplay=true;el.style.display='none';$('videoWrap').appendChild(el); }
+  }
+  async function connect(role, name, password='') {
+    if(state.connected) await disconnect(false);
+    if(!window.LivekitClient){throw new Error('تعذر تحميل مكتبة البث. حدّث الصفحة وحاول مرة أخرى.');}
+    const res=await fetch(API+'/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role,name,password})});
+    let data={};try{data=await res.json()}catch{}
+    if(!res.ok) throw new Error(data.error==='Invalid host password'?'كلمة مرور المذيع غير صحيحة.':(data.error||'تعذر الحصول على تصريح الدخول.'));
+    const room=new LivekitClient.Room({adaptiveStream:true,dynacast:true});
+    state.room=room;state.role=role;state.identity=data.identity;
+    room.on(LivekitClient.RoomEvent.TrackSubscribed, track=>attachTrack(track));
+    room.on(LivekitClient.RoomEvent.TrackUnsubscribed, track=>{track.detach().forEach(el=>el.remove());});
+    room.on(LivekitClient.RoomEvent.ParticipantConnected,()=>updateCount());
+    room.on(LivekitClient.RoomEvent.ParticipantDisconnected,()=>updateCount());
+    room.on(LivekitClient.RoomEvent.DataReceived,(payload, participant)=>{
+      try{const msg=JSON.parse(new TextDecoder().decode(payload));if(msg&&msg.type==='chat'&&typeof msg.text==='string')addMessage(String(msg.name||'مشاهد').slice(0,50),msg.text.slice(0,400));}catch{}
+    });
+    room.on(LivekitClient.RoomEvent.Disconnected,()=>{state.connected=false;setStatus('انقطع الاتصال');$('chatStatus').textContent='غير متصل';$('chatInput').disabled=true;$('sendBtn').disabled=true;});
+    await room.connect(data.url,data.token);
+    state.connected=true;
+    for(const p of room.remoteParticipants.values()) for(const pub of p.trackPublications.values()) if(pub.track) attachTrack(pub.track);
+    $('joinBtn').classList.add('hidden');$('leaveBtn').classList.remove('hidden');$('chatInput').disabled=false;$('sendBtn').disabled=false;
+    $('chatStatus').textContent='متصل';setStatus(role==='host'?'متصل — المذيع':'متصل — في انتظار البث',true);updateCount();
+    addMessage('',role==='host'?'بدأ اتصال المذيع.':'تم الاتصال بغرفة البث.',true);
+    if(role==='host'){
+      await room.localParticipant.setCameraEnabled(true);
+      await room.localParticipant.setMicrophoneEnabled(true);
+      const pubs=room.localParticipant.trackPublications;
+      for(const pub of pubs.values()) if(pub.track) attachTrack(pub.track);
+      $('hostBtn').classList.add('hidden');$('stopBtn').classList.remove('hidden');$('hostPassword').value='';
+      setStatus('أنت متصل كمذيع',true);$('videoHint').textContent='البث بدأ. يمكنك التحدث الآن.';
+    }
+  }
+  function updateCount(){if(!state.room)return;$('viewerCount').textContent='المتصلون: '+(state.room.remoteParticipants.size+1);}
+  async function disconnect(show=true){
+    if(state.room){try{if(state.role==='host'){await state.room.localParticipant.setCameraEnabled(false);await state.room.localParticipant.setMicrophoneEnabled(false);}await state.room.disconnect();}catch{}state.room=null;}
+    state.connected=false;state.role=null;state.localTracks=[];
+    $('videoWrap').querySelectorAll('video,audio').forEach(el=>el.remove());$('placeholder').classList.remove('hidden');$('videoHint').textContent='اتصل بالغرفة لمشاهدة البث عند بدءه.';
+    $('joinBtn').classList.remove('hidden');$('leaveBtn').classList.add('hidden');$('hostBtn').classList.remove('hidden');$('stopBtn').classList.add('hidden');$('chatInput').disabled=true;$('sendBtn').disabled=true;$('chatStatus').textContent='غير متصل';$('viewerCount').textContent='المتصلون: 0';setStatus('غير متصل');
+    if(show)addMessage('','تم قطع الاتصال.',true);
+  }
+  $('joinBtn').addEventListener('click',async()=>{ $('joinBtn').disabled=true;try{await connect('viewer','مشاهد');}catch(e){showError(e.message||'حدث خطأ أثناء الاتصال.');setStatus('تعذر الاتصال');addMessage('',e.message||'تعذر الاتصال.',true);}finally{$('joinBtn').disabled=false;}});
+  $('leaveBtn').addEventListener('click',()=>disconnect());
+  $('hostForm').addEventListener('submit',async e=>{e.preventDefault();const name=$('hostName').value.trim();const password=$('hostPassword').value;if(!password)return;$('hostBtn').disabled=true;try{await connect('host',name,password);}catch(err){showError(err.message||'تعذر بدء البث.');addMessage('',err.message||'تعذر بدء البث.',true);setStatus('تعذر بدء البث');}finally{$('hostBtn').disabled=false;}});
+  $('stopBtn').addEventListener('click',()=>disconnect());
+  $('chatForm').addEventListener('submit',async e=>{e.preventDefault();const text=$('chatInput').value.trim();if(!text||!state.room||!state.connected)return;try{const payload=encoder.encode(JSON.stringify({type:'chat',name:state.role==='host'?'سعيد الشوادفي':'مشاهد',text:text.slice(0,400),at:Date.now()}));await state.room.localParticipant.publishData(payload,{reliable:true});addMessage(state.role==='host'?'سعيد الشوادفي':'أنت',text);$('chatInput').value='';}catch{addMessage('','تعذر إرسال الرسالة. حاول مرة أخرى.',true);}});
+  window.addEventListener('beforeunload',()=>{if(state.room)state.room.disconnect();});
+})();
+</script>
+</body>
+</html>
