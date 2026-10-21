@@ -5577,7 +5577,7 @@ onAuthStateChanged(auth, async (user) => {
       @media(max-width:600px){#siteLiveLauncher{padding:8px 10px;font-size:12px}.header-actions{gap:6px}}
       #siteLiveModal[hidden]{display:none!important} #siteLiveModal{position:fixed;inset:0;z-index:99999;background:#10131bea;display:flex;align-items:center;justify-content:center;padding:12px;direction:rtl}
       #siteLivePanel{background:var(--card-bg,#fff);color:var(--text-color,#222);width:min(980px,100%);max-height:94vh;overflow:auto;border-radius:18px;padding:16px;box-shadow:0 20px 70px #0008}
-      #siteLivePanel button{cursor:pointer;border:0;border-radius:9px;padding:9px 13px;font-weight:700} .live-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+      #siteLivePanel button{cursor:pointer;border:0;border-radius:9px;padding:9px 13px;font-weight:700} #siteLivePanel button[hidden]{display:none!important} .live-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
       #siteLiveVideo{display:block;width:100%;max-height:55vh;aspect-ratio:16/9;background:#050505;border-radius:12px;object-fit:contain}
       #siteLiveStatus{padding:8px 10px;background:#eee;color:#222;border-radius:8px;margin:8px 0;font-size:.92rem}
       #siteLiveChatLog{height:170px;overflow:auto;border:1px solid #bbb;border-radius:10px;padding:8px;margin:8px 0;background:#fff;color:#222}
@@ -5628,7 +5628,19 @@ onAuthStateChanged(auth, async (user) => {
         row.append(who, body); liveChatLog.appendChild(row); liveChatLog.scrollTop = liveChatLog.scrollHeight;
         while (liveChatLog.children.length > 100) liveChatLog.firstElementChild.remove();
       }
-      document.getElementById('siteLiveLauncher').addEventListener('click', () => { liveModal.hidden = false; });
+      // إظهار أدوات المضيف لمدير الموقع فقط؛ ويظل Worker مسؤولًا عن التحقق الأمني النهائي.
+      const liveStartButton = document.getElementById('siteLiveStart');
+      function syncLiveHostControls() {
+        const adminButtonText = document.getElementById('adminToggleBtn')?.textContent || '';
+        const isSiteAdmin = adminButtonText.includes('لوحة التحكم');
+        liveStartButton.hidden = !isSiteAdmin;
+      }
+      syncLiveHostControls();
+      const adminButtonForLive = document.getElementById('adminToggleBtn');
+      if (adminButtonForLive && 'MutationObserver' in window) {
+        new MutationObserver(syncLiveHostControls).observe(adminButtonForLive, { childList: true, characterData: true, subtree: true });
+      }
+      document.getElementById('siteLiveLauncher').addEventListener('click', () => { syncLiveHostControls(); liveModal.hidden = false; });
       document.getElementById('siteLiveClose').addEventListener('click', () => { liveModal.hidden = true; });
       liveModal.addEventListener('click', e => { if (e.target === liveModal) liveModal.hidden = true; });
       document.addEventListener('keydown', e => { if (e.key === 'Escape' && !liveModal.hidden) liveModal.hidden = true; });
