@@ -5580,145 +5580,45 @@ onAuthStateChanged(auth, async (user) => {
       #siteLivePanel button{cursor:pointer;border:0;border-radius:9px;padding:9px 13px;font-weight:700} #siteLivePanel button[hidden]{display:none!important} .live-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
       #siteLiveVideo{display:block;width:100%;max-height:55vh;aspect-ratio:16/9;background:#050505;border-radius:12px;object-fit:contain}
       #siteLiveStatus{padding:8px 10px;background:#eee;color:#222;border-radius:8px;margin:8px 0;font-size:.92rem}
-      #siteLiveChatLog{height:170px;overflow:auto;border:1px solid #bbb;border-radius:10px;padding:8px;margin:8px 0;background:#fff;color:#222}
-      .site-live-message{padding:5px 3px;border-bottom:1px solid #eee;overflow-wrap:anywhere}.site-live-message b{color:#9f1239}
-      #siteLiveChatForm{display:flex;gap:8px} #siteLiveChatText{min-width:0;flex:1;padding:10px;border:1px solid #aaa;border-radius:9px}
-      #siteLiveClose{float:left;background:#e5e7eb;color:#111} #siteLiveStart{background:#b91c1c;color:white} #siteLiveJoin{background:#166534;color:white} #siteLiveStop{background:#444;color:white}
-      @media(max-width:600px){#siteLiveLauncher{bottom:12px;left:10px;padding:10px 13px}#siteLivePanel{padding:10px}#siteLiveChatLog{height:135px}}
+      #siteLiveClose{float:left;background:#e5e7eb;color:#111}
+      #siteLiveRefresh{background:#b91c1c;color:white}
+      @media(max-width:600px){#siteLiveLauncher{bottom:12px;left:10px;padding:10px 13px}#siteLivePanel{padding:10px}}
     </style>
     
     <div id="siteLiveModal" hidden>
       <section id="siteLivePanel" role="dialog" aria-modal="true" aria-labelledby="siteLiveTitle">
         <button id="siteLiveClose" type="button">إغلاق ✕</button>
         <h2 id="siteLiveTitle">البث المباشر — سعيد الشوادفي</h2>
-        <p>شاهد البث أو ابدأ البث من الكاميرا والميكروفون مباشرة من المتصفح.</p>
-        <video id="siteLiveVideo" autoplay playsinline controls></video>
-        <div id="siteLiveStatus" role="status">جاهز للاتصال. اسمح للمتصفح باستخدام الكاميرا والميكروفون عند بدء البث.</div>
-        <div class="live-actions">
-          <button id="siteLiveStart" type="button">ابدأ البث (للمضيف)</button>
-          <button id="siteLiveJoin" type="button">مشاهدة البث</button>
-          <button id="siteLiveStop" type="button">إنهاء الاتصال</button>
+        <p>شاهد البث المباشر من قناة سعيد الشوادفي على يوتيوب. يبدأ العرض تلقائيًا عند توفر بث عام مباشر.</p>
+        <div id="siteLiveYoutubeWrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#050505;border-radius:12px;overflow:hidden;">
+          <iframe id="siteLiveYoutubeFrame" title="البث المباشر — سعيد الشوادفي" src="https://www.youtube.com/embed/live_stream?channel=UCkUKQ7d5jenNMpE862obw5w&autoplay=1" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
-        <h3>الدردشة المباشرة</h3>
-        <div id="siteLiveChatLog" aria-live="polite"><div>ستظهر الرسائل أثناء الاتصال بالبث.</div></div>
-        <form id="siteLiveChatForm">
-          <input id="siteLiveChatText" maxlength="300" autocomplete="off" placeholder="اكتب تعليقك..." aria-label="رسالة الدردشة" required>
-          <button type="submit">إرسال</button>
-        </form>
-        <small>الدردشة مؤقتة أثناء الجلسة وليست أرشيفًا دائمًا. لا تكتب معلومات شخصية حساسة.</small>
+        <div id="siteLiveStatus" role="status" style="margin:12px 0;">إذا كان البث العام جاريًا فسيظهر هنا. إن لم يبدأ بعد، ابدأ البث من YouTube Studio ثم حدّث المشغل.</div>
+        <div class="live-actions">
+          <button id="siteLiveRefresh" type="button">تحديث البث</button>
+          <a href="https://www.youtube.com/@saeid_elshwadfy/live" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:8px;background:#b91c1c;color:#fff;text-decoration:none;">فتح البث على يوتيوب</a>
+        </div>
+        <small>إذا لم يظهر البث، تأكد من بدء البث وجعله عامًا على يوتيوب، ثم اضغط «تحديث البث».</small>
       </section>
     </div>
-    <script type="module">
-      const LIVE_TOKEN_ENDPOINT = 'https://saeid-live-api.saeidelshwadfy.workers.dev/token';
-      const liveModal = document.getElementById('siteLiveModal');
-      const liveVideo = document.getElementById('siteLiveVideo');
-      const liveStatus = document.getElementById('siteLiveStatus');
-      const liveChatLog = document.getElementById('siteLiveChatLog');
-      const liveChatForm = document.getElementById('siteLiveChatForm');
-      const liveChatText = document.getElementById('siteLiveChatText');
-      let liveRoom = null;
-      let liveLocalTracks = [];
-      let liveRole = 'viewer';
-      let liveConnecting = false;
-      const setLiveStatus = (text) => { liveStatus.textContent = text; };
-      function addLiveChat(name, message) {
-        const row = document.createElement('div'); row.className = 'site-live-message';
-        const who = document.createElement('b'); who.textContent = (String(name || 'مشاهد').slice(0,50)) + ': ';
-        const body = document.createElement('span'); body.textContent = String(message || '').slice(0,300);
-        row.append(who, body); liveChatLog.appendChild(row); liveChatLog.scrollTop = liveChatLog.scrollHeight;
-        while (liveChatLog.children.length > 100) liveChatLog.firstElementChild.remove();
-      }
-      // إظهار أدوات المضيف لمدير الموقع فقط؛ ويظل Worker مسؤولًا عن التحقق الأمني النهائي.
-      const liveStartButton = document.getElementById('siteLiveStart');
-      function syncLiveHostControls() {
-        const adminButtonText = document.getElementById('adminToggleBtn')?.textContent || '';
-        const isSiteAdmin = adminButtonText.includes('لوحة التحكم');
-        liveStartButton.hidden = !isSiteAdmin;
-      }
-      syncLiveHostControls();
-      const adminButtonForLive = document.getElementById('adminToggleBtn');
-      if (adminButtonForLive && 'MutationObserver' in window) {
-        new MutationObserver(syncLiveHostControls).observe(adminButtonForLive, { childList: true, characterData: true, subtree: true });
-      }
-      document.getElementById('siteLiveLauncher').addEventListener('click', () => { syncLiveHostControls(); liveModal.hidden = false; });
-      document.getElementById('siteLiveClose').addEventListener('click', () => { liveModal.hidden = true; });
-      liveModal.addEventListener('click', e => { if (e.target === liveModal) liveModal.hidden = true; });
-      document.addEventListener('keydown', e => { if (e.key === 'Escape' && !liveModal.hidden) liveModal.hidden = true; });
-
-      async function disconnectLive(showMessage = true) {
-        if (liveRoom) { try { await liveRoom.disconnect(); } catch {} liveRoom = null; }
-        liveLocalTracks.forEach(track => { try { track.stop(); } catch {} }); liveLocalTracks = [];
-        liveVideo.srcObject = null; liveVideo.removeAttribute('src'); liveVideo.load();
-        document.getElementById('siteLiveAttachedMedia')?.remove();
-        document.querySelectorAll('#siteLivePanel audio').forEach(el => el.remove());
-        liveVideo.style.display = 'block';
-        liveConnecting = false;
-        if (showMessage) setLiveStatus('تم إنهاء الاتصال.');
-      }
-      function attachLiveTrack(track) {
-        const element = track.attach();
-        if (track.kind === 'video') {
-          liveVideo.srcObject = null;
-          // LiveKit's attached media element is used so audio and video remain synchronized.
-          const parent = liveVideo.parentElement;
-          element.id = 'siteLiveAttachedMedia'; element.autoplay = true; element.playsInline = true; element.controls = true;
-          element.style.cssText = 'display:block;width:100%;max-height:55vh;aspect-ratio:16/9;background:#050505;border-radius:12px;object-fit:contain';
-          liveVideo.style.display = 'none';
-          const old = document.getElementById('siteLiveAttachedMedia'); if (old) old.remove();
-          parent.insertBefore(element, liveVideo.nextSibling);
-        } else if (track.kind === 'audio') {
-          element.autoplay = true; element.style.display = 'none'; document.getElementById('siteLivePanel').appendChild(element);
-        }
-      }
-      async function connectLive(role) {
-        if (liveConnecting) return;
-        liveConnecting = true;
-        try {
-          await disconnectLive(false);
-          liveConnecting = true;
-          const name = (prompt('اكتب الاسم الذي سيظهر في البث والدردشة:', role === 'host' ? 'سعيد الشوادفي' : 'مشاهد') || '').trim().slice(0,50);
-          if (!name) { setLiveStatus('أُلغي الاتصال لأن الاسم مطلوب.'); return; }
-          let password = '';
-          if (role === 'host') { password = prompt('أدخل كلمة مرور المضيف التي ضُبطت في إعدادات Worker:') || ''; if (!password) { setLiveStatus('لم يتم إدخال كلمة مرور المضيف.'); return; } }
-          setLiveStatus('جاري الاتصال بخدمة البث...');
-          const tokenResponse = await fetch(LIVE_TOKEN_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({role,name,password}) });
-          const tokenData = await tokenResponse.json().catch(() => ({}));
-          if (!tokenResponse.ok || !tokenData.token || !tokenData.url) throw new Error(tokenData.error || 'تعذر الحصول على رمز الاتصال. تحقق من إعدادات Worker وLiveKit.');
-          const { Room, RoomEvent, Track, createLocalTracks } = await import('https://esm.sh/livekit-client@2.15.6');
-          const room = new Room({ adaptiveStream:true, dynacast:true }); liveRoom = room; liveRole = role;
-          room.on(RoomEvent.TrackSubscribed, (track) => attachLiveTrack(track));
-          room.on(RoomEvent.TrackUnsubscribed, (track) => { try { track.detach().forEach(el => el.remove()); } catch {} });
-          room.on(RoomEvent.DataReceived, (payload, participant) => {
-            try { const msg = JSON.parse(new TextDecoder().decode(payload)); if (msg && msg.type === 'chat' && typeof msg.text === 'string') addLiveChat(msg.name || participant?.name || 'مشاهد', msg.text); } catch {}
-          });
-          room.on(RoomEvent.Disconnected, () => { setLiveStatus('انقطع الاتصال بالبث. يمكنك إعادة المحاولة.'); });
-          await room.connect(tokenData.url, tokenData.token);
-          if (role === 'host') {
-            const tracks = await createLocalTracks({ audio:true, video:true }); liveLocalTracks = tracks;
-            for (const track of tracks) { await room.localParticipant.publishTrack(track); if (track.kind === Track.Kind.Video) attachLiveTrack(track); else if (track.kind === Track.Kind.Audio) attachLiveTrack(track); }
-            setLiveStatus('أنت متصل كمضيف. أصبح البث متاحًا للمشاهدين المتصلين بالغرفة.');
-          } else {
-            setLiveStatus('اتصلت بالغرفة. انتظر بدء المضيف للبث.');
-          }
-          liveChatLog.replaceChildren(); addLiveChat('النظام', role === 'host' ? 'بدأ المضيف الاتصال.' : 'انضممت إلى البث.');
-        } catch (err) {
-          await disconnectLive(false);
-          setLiveStatus('تعذر الاتصال: ' + (err?.message || 'خطأ غير معروف'));
-        } finally { liveConnecting = false; }
-      }
-      document.getElementById('siteLiveStart').addEventListener('click', () => connectLive('host'));
-      document.getElementById('siteLiveJoin').addEventListener('click', () => connectLive('viewer'));
-      document.getElementById('siteLiveStop').addEventListener('click', () => disconnectLive());
-      liveChatForm.addEventListener('submit', async e => {
-        e.preventDefault(); const text = liveChatText.value.trim();
-        if (!text) return;
-        if (!liveRoom || liveRoom.state !== 'connected') { setLiveStatus('اتصل بالبث أولًا قبل إرسال تعليق.'); return; }
-        try {
-          const payload = new TextEncoder().encode(JSON.stringify({type:'chat', name:liveRoom.localParticipant.name || (liveRole === 'host' ? 'المضيف' : 'مشاهد'), text:text.slice(0,300)}));
-          await liveRoom.localParticipant.publishData(payload, { reliable:true });
-          addLiveChat(liveRoom.localParticipant.name || 'أنا', text); liveChatText.value = '';
-        } catch { setLiveStatus('تعذر إرسال الرسالة. حاول مرة أخرى.'); }
-      });
+    <script>
+      (() => {
+        const liveModal = document.getElementById('siteLiveModal');
+        const liveFrame = document.getElementById('siteLiveYoutubeFrame');
+        const liveStatus = document.getElementById('siteLiveStatus');
+        const liveUrl = 'https://www.youtube.com/embed/live_stream?channel=UCkUKQ7d5jenNMpE862obw5w&autoplay=1';
+        document.getElementById('siteLiveLauncher')?.addEventListener('click', () => {
+          liveModal.hidden = false;
+          if (liveFrame && !liveFrame.src) liveFrame.src = liveUrl;
+        });
+        document.getElementById('siteLiveClose')?.addEventListener('click', () => { liveModal.hidden = true; });
+        liveModal?.addEventListener('click', e => { if (e.target === liveModal) liveModal.hidden = true; });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && liveModal && !liveModal.hidden) liveModal.hidden = true; });
+        document.getElementById('siteLiveRefresh')?.addEventListener('click', () => {
+          if (liveFrame) { liveFrame.src = 'about:blank'; requestAnimationFrame(() => { liveFrame.src = liveUrl; }); }
+          if (liveStatus) liveStatus.textContent = 'تم تحديث المشغل. إذا كان البث العام جاريًا فسيظهر هنا.';
+        });
+      })();
     </script>
 
 </body>
