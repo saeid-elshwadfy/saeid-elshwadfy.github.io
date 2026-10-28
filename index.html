@@ -1701,11 +1701,25 @@
             </details>
         </section>
 
-        <section id="how-to-explore-library" aria-labelledby="libraryGuideTitle" style="max-width:1000px;margin:18px auto 24px;padding:18px 20px;border:1px solid var(--border-color);border-radius:14px;text-align:right;line-height:1.95;">
-            <h2 id="libraryGuideTitle" style="font-family:'Amiri',serif;color:var(--accent-color);margin:0 0 8px;">دليل استكشاف المكتبة الأدبية</h2>
-            <p>تجمع هذه الصفحة الأعمال الأدبية المنشورة للكاتب سعيد الشوادفي، مع أقسام منفصلة للمواد الصوتية والمرئية والخدمات المرتبطة بالكتابة والنشر. اختر نوع العمل من التصنيفات، ثم افتح بطاقة العمل لقراءة النبذة ومراجعة خيارات القراءة أو الاستماع أو الحصول على نسخة، بحسب ما هو متاح لكل مادة.</p>
-            <p>تختلف تفاصيل الإتاحة والأسعار من عمل إلى آخر؛ لذلك يُرجى الرجوع إلى المعلومات المعروضة في بطاقة كل مادة قبل تقديم طلب. وإذا لم يظهر محتوى أحد الأقسام، فقد تكون بياناته غير متاحة مؤقتًا؛ يمكن استخدام وسيلة التواصل أسفل الصفحة للاستفسار.</p>
-            <p>يرجى احترام حقوق الملكية الفكرية وعدم إعادة نشر النصوص أو الملفات دون إذن من صاحب الحقوق. وللتفاصيل المتعلقة بالبيانات الشخصية وطريقة استخدام الموقع، راجع سياسة الخصوصية وشروط الاستخدام في أسفل الصفحة.</p>
+        <section id="reading-guide" aria-labelledby="readingGuideTitle" style="max-width:1000px;margin:18px auto 24px;padding:20px 22px;border:1px solid var(--border-color);border-radius:14px;text-align:right;line-height:2;background:var(--card-bg);">
+            <h2 id="readingGuideTitle" style="font-family:'Amiri',serif;color:var(--accent-color);margin:0 0 10px;">دليل عملي لاختيار العمل والنسخة المناسبة</h2>
+            <p>تضم المكتبة أعمالًا أدبية للكاتب سعيد الشوادفي، وتُعرض معلومات كل عمل في بطاقته داخل قسم الأعمال الأدبية. قبل اختيار كتاب، ابدأ بقراءة النبذة للتأكد من أن موضوعه يناسب اهتمامك، ثم راجع نوع العمل وسعر النسخة الرقمية أو الورقية وخيارات القراءة المتاحة.</p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:14px;">
+                <article style="padding:14px;border:1px solid var(--border-color);border-radius:12px;">
+                    <h3 style="color:var(--accent-color);margin:0 0 7px;">قبل اختيار الكتاب</h3>
+                    <p style="margin:0;">استخدم تصنيفات الروايات والقصص والشعر والخواطر لتضييق الاختيارات. اقرأ وصف العمل نفسه بدل الاعتماد على العنوان فقط، وتحقق من توفر صفحات للقراءة المباشرة إذا كانت متاحة.</p>
+                </article>
+                <article style="padding:14px;border:1px solid var(--border-color);border-radius:12px;">
+                    <h3 style="color:var(--accent-color);margin:0 0 7px;">النسخة الرقمية والورقية</h3>
+                    <p style="margin:0;">قد تختلف الأسعار والتوفر بين النسختين من كتاب إلى آخر. راجع السعر وطريقة الحصول على النسخة في بطاقة العمل، واستفسر عن أي تفاصيل غير واضحة قبل إرسال الطلب أو الدفع.</p>
+                </article>
+                <article style="padding:14px;border:1px solid var(--border-color);border-radius:12px;">
+                    <h3 style="color:var(--accent-color);margin:0 0 7px;">الصوتيات والخدمات</h3>
+                    <p style="margin:0;">إذا كنت تفضّل الاستماع، فتصفح المكتبة الصوتية وتحقق من وصف المقطع وإتاحته. أما الخدمات والدورات، فاقرأ نطاق الخدمة ومخرجاتها وسعرها المعلن قبل التواصل لطلبها.</p>
+                </article>
+            </div>
+            <p style="margin:14px 0 0;">تتضمن الأعمال التي يذكرها الكاتب في تعريفه روايتي «ظلال لا تنام» و«ابن الغزال». يمكن استكشاف العناوين المتاحة حاليًا من قسم الأعمال الأدبية، إذ تعتمد البطاقات المعروضة على المحتوى المنشور في المكتبة.</p>
+            <a href="#books" style="display:inline-block;margin-top:8px;color:var(--accent-color);font-weight:700;">انتقل إلى فهرس الأعمال الأدبية ←</a>
         </section>
 
         <h2 id="books" class="section-title">✨ الأعمال الأدبية والمعرض ✨</h2>
@@ -1723,6 +1737,7 @@
         <div class="books-grid" id="booksGrid"></div>
 
         <h2 id="audio" class="section-title">🎙️ المكتبة الصوتية 🎙️</h2>
+        <p class="section-intro" style="max-width:1000px;margin:-8px auto 16px;color:var(--text-muted);line-height:1.9;text-align:right;">تضم هذه المكتبة المقاطع الصوتية المنشورة المرتبطة بالأعمال الأدبية. افتح تفاصيل المقطع لمراجعة وصفه ومعرفة ما إذا كان مجانيًا أو مدفوعًا، ثم استخدم خيار الاستماع أو التنزيل المتاح له.</p>
         
         <div class="category-tabs" id="audioCategoryTabs">
             <button class="tab-btn active" data-audiocat="all">الكل</button>
@@ -1733,6 +1748,7 @@
         <div class="grid-container" id="audioGrid"></div>
 
         <h2 id="videos" class="section-title">🎬 المكتبة المرئية 🎬</h2>
+        <p class="section-intro" style="max-width:1000px;margin:-8px auto 16px;color:var(--text-muted);line-height:1.9;text-align:right;">تُعرض هنا الفيديوهات والمواد المرئية المنشورة على المنصة، بما فيها المواد التعريفية المرتبطة بالأعمال والأنشطة الأدبية. راجع عنوان كل مادة ووصفها قبل فتحها.</p>
         <div class="grid-container" id="videosGrid"></div>
 
         <h2 id="services" class="section-title">✨ الخدمات الأدبية ✨</h2>
@@ -1743,9 +1759,11 @@
         <div class="grid-container" id="servicesGrid"></div>
 
         <h2 id="courses" class="section-title">🎓 الدورات وورش العمل 🎓</h2>
+        <p class="section-intro" style="max-width:1000px;margin:-8px auto 16px;color:var(--text-muted);line-height:1.9;text-align:right;">يعرض هذا القسم الدورات وورش العمل المتاحة في موضوعات الكتابة وصناعة المحتوى الأدبي. راجع وصف كل دورة لمعرفة موضوعها ومتطلباتها وسعرها وطريقة الحصول على موادها قبل الاشتراك.</p>
         <div class="grid-container" id="coursesGrid"></div>
 
         <h2 id="store" class="section-title">🛍️ متجر المنتجات الرقمية 🛍️</h2>
+        <p class="section-intro" style="max-width:1000px;margin:-8px auto 16px;color:var(--text-muted);line-height:1.9;text-align:right;">يحتوي المتجر على المنتجات الرقمية التي تُنشر عبر المنصة. تختلف الملفات وشروط الإتاحة من منتج لآخر؛ لذا اقرأ الوصف والسعر وطريقة التسليم الموضحة في بطاقة المنتج قبل الطلب.</p>
         <div class="category-tabs" id="productCategoryTabs">
             <button class="tab-btn active" data-productcat="all">الكل</button>
             <button class="tab-btn" data-productcat="free">🆓 المنتجات المجانية</button>
