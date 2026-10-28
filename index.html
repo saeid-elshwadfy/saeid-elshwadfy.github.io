@@ -4495,7 +4495,6 @@ onAuthStateChanged(auth, async (user) => {
                             ${readBtnHtml}
                             ${downloadBtnHtml}
 
-                            <a class="btn-action btn-read" href="https://tight-firefly-b99c.saeidelshwadfy.workers.dev/book/${encodeURIComponent(book.id)}" target="_blank" rel="noopener noreferrer" aria-label="فتح الصفحة المستقلة لكتاب ${escapeHtml(book.title)}">📄 صفحة الكتاب</a>
                             <button class="btn-action btn-share count-tooltip" data-tooltip="${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات المسجل: ${Number(book.shares ?? book.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" title="${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات المسجل: ${Number(book.shares ?? book.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" aria-label="مشاركة؛ ${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات ${Number(book.shares ?? book.shareCount)}` : 'عدد المشاركات غير متاح'}" onclick='shareBook(${escapeHtml(JSON.stringify(book.id))}, ${escapeHtml(JSON.stringify(book.title))})'>🔗 مشاركة</button>
                             <button class="btn-action btn-reviews" onclick="openReviewsModal('${escapeHtml(book.id)}')">⭐ تقييم ومراجعة</button>
 
