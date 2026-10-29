@@ -1,10 +1,20 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<html lang="ar" dir="rtl" data-theme="light">
 <head>
     <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8690301062221202" crossorigin="anonymous"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (() => {
+            try {
+                const savedTheme = localStorage.getItem("siteThemePreference");
+                if (savedTheme === "dark" || savedTheme === "light") {
+                    document.documentElement.setAttribute("data-theme", savedTheme);
+                }
+            } catch (_) {}
+        })();
+    </script>
     
     <!-- وسوم تحسين محركات البحث (SEO) -->
     <title>موقع الكاتب الروائي | سعيد الشوادفي</title>
@@ -71,20 +81,20 @@
         @font-face { font-display: swap; }
 
         :root[data-theme="dark"] {
-            --bg-color: #1a0307;
-            --bg-pattern: radial-gradient(rgba(212, 175, 55, 0.15) 0.8px, transparent 0.8px);
-            --card-bg: rgba(45, 10, 18, 0.85);
-            --card-hover-bg: rgba(60, 14, 24, 0.95);
+            --bg-color: #2b1018;
+            --bg-pattern: radial-gradient(rgba(212, 175, 55, 0.12) 0.8px, transparent 0.8px);
+            --card-bg: rgba(66, 29, 41, 0.94);
+            --card-hover-bg: rgba(82, 38, 52, 0.98);
             --accent-color: #d4af37;
             --accent-glow: rgba(212, 175, 55, 0.35);
-            --text-color: #f1f5f9;
-            --text-muted: #cbd5e1;
-            --border-color: rgba(212, 175, 55, 0.28);
-            --input-bg: #120205;
-            --reader-bg: #22050b;
-            --reader-text: #f8fafc;
-            --header-bg: rgba(26, 3, 7, 0.90);
-            --shadow-color: rgba(0, 0, 0, 0.7);
+            --text-color: #f8edf0;
+            --text-muted: #ddcbd1;
+            --border-color: rgba(212, 175, 55, 0.25);
+            --input-bg: #351923;
+            --reader-bg: #351923;
+            --reader-text: #fff7f8;
+            --header-bg: rgba(43, 16, 24, 0.94);
+            --shadow-color: rgba(0, 0, 0, 0.38);
         }
 
         :root[data-theme="light"] {
@@ -2834,8 +2844,10 @@ onAuthStateChanged(auth, async (user) => {
             const html = document.documentElement;
             const themeBtn = document.getElementById('themeToggleBtn');
             const isDark = html.getAttribute('data-theme') === 'dark';
-            html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-            if (themeBtn) themeBtn.innerText = isDark ? '☀️ المظهر النهاري' : '🌙 المظهر الليلي';
+            const nextTheme = isDark ? 'light' : 'dark';
+            html.setAttribute('data-theme', nextTheme);
+            try { localStorage.setItem('siteThemePreference', nextTheme); } catch (_) {}
+            if (themeBtn) themeBtn.innerText = isDark ? '🌙 المظهر الليلي' : '☀️ المظهر النهاري';
         });
 
         const toggleAdminLogin = () => {
@@ -3388,10 +3400,10 @@ onAuthStateChanged(auth, async (user) => {
 
                 const isFree = checkIsFree(item.price, 'audio');
 
-                // تحسين preload="metadata" لسرعة الاستجابة ومنع التأخير
+                // تأجيل تحميل ملفات الصوت حتى يضغط الزائر تشغيل، لتقليل طلبات الشبكة عند فتح الموقع
                 const audioPlayerHtml = (item.audioUrl && item.audioUrl.trim() !== '#' && item.audioUrl.trim() !== '') ? `
                     <div class="audio-player-container">
-                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player count-tooltip" title="عدد مرات الاستماع المسجل: ${Number(item.listens || 0).toLocaleString('ar-EG')}" data-tooltip="عدد مرات الاستماع المسجل: ${Number(item.listens || 0).toLocaleString('ar-EG')}" data-id="${escapeHtml(item.id)}" src="${safeMediaUrl(item.audioUrl)}">
+                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="none" class="custom-audio-player count-tooltip" title="عدد مرات الاستماع المسجل: ${Number(item.listens || 0).toLocaleString('ar-EG')}" data-tooltip="عدد مرات الاستماع المسجل: ${Number(item.listens || 0).toLocaleString('ar-EG')}" data-id="${escapeHtml(item.id)}" src="${safeMediaUrl(item.audioUrl)}">
                             عذراً، متصفحك لا يدعم تشغيل هذا الملف الصوتي.
                         </audio>
                     </div>` : `<p style="color:var(--text-muted); font-size:0.85rem; margin:8px 0;">الملف الصوتي غير متوفر حالياً.</p>`;
@@ -3542,7 +3554,7 @@ onAuthStateChanged(auth, async (user) => {
                 } else if (item.videoUrl) {
                     playerHtml = `
                         <div class="video-container">
-                            <video controls preload="metadata">
+                            <video controls preload="none">
                                 <source src="${safeMediaUrl(item.videoUrl)}">
                                 متصفحك لا يدعم تشغيل هذا الفيديو.
                             </video>
@@ -3881,7 +3893,7 @@ onAuthStateChanged(auth, async (user) => {
                     <div class="video-container course-video-player" style="margin:12px 0;">
                         ${isYouTubeVideo
                             ? `<iframe src="${getYouTubeEmbedUrl(item.videoUrl)}?enablejsapi=1" data-course-view-tracking="1" data-course-id="${escapeHtml(item.id)}" allowfullscreen loading="lazy" style="width:100%; min-height:220px; border:0; border-radius:12px;"></iframe>`
-                            : `<video controls preload="metadata" playsinline data-course-id="${escapeHtml(item.id)}" style="width:100%; min-height:220px; border:0; border-radius:12px; display:block;"><source src="${safeMediaUrl(item.videoUrl)}">متصفحك لا يدعم تشغيل هذا الفيديو.</video>`}
+                            : `<video controls preload="none" playsinline data-course-id="${escapeHtml(item.id)}" style="width:100%; min-height:220px; border:0; border-radius:12px; display:block;"><source src="${safeMediaUrl(item.videoUrl)}">متصفحك لا يدعم تشغيل هذا الفيديو.</video>`}
                     </div>` : '';
                 const fileBtn = item.fileUrl ? `<a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(item.fileUrl)}" rel="noopener noreferrer" download>📥 تحميل الملف</a>` : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
 
@@ -4445,7 +4457,7 @@ onAuthStateChanged(auth, async (user) => {
                 const audioPlayerHtml = safeBookAudioUrl ? `
                     <div class="audio-player-container" data-audio-container="${escapeHtml(book.id)}">
                         <span style="font-size:0.82rem; color:var(--accent-color); font-weight:bold; display:block; margin-bottom:4px;">🎧 الإلقاء الصوتي للرواية</span>
-                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="metadata" class="custom-audio-player count-tooltip" data-tooltip="عدد مرات الاستماع المسجل: ${Number(book.listens || 0).toLocaleString('ar-EG')}" title="عدد مرات الاستماع المسجل: ${Number(book.listens || 0).toLocaleString('ar-EG')}" data-id="${escapeHtml(book.id)}" src="${escapeHtml(safeBookAudioUrl)}"
+                        <audio controls controlsList="nodownload" oncontextmenu="return false;" preload="none" class="custom-audio-player count-tooltip" data-tooltip="عدد مرات الاستماع المسجل: ${Number(book.listens || 0).toLocaleString('ar-EG')}" title="عدد مرات الاستماع المسجل: ${Number(book.listens || 0).toLocaleString('ar-EG')}" data-id="${escapeHtml(book.id)}" src="${escapeHtml(safeBookAudioUrl)}"
                             onerror="this.style.display='none'; const m=this.parentElement.querySelector('.audio-error'); if(m)m.style.display='block';">
                             عذراً، متصفحك لا يدعم تشغيل هذا الملف الصوتي.
                         </audio>
@@ -4489,7 +4501,7 @@ onAuthStateChanged(auth, async (user) => {
                             <div class="book-cover">
                                 <span class="book-badge-cat">🏷️ ${categoryName}</span>
                                 <span class="book-badge-reads">👁️ ${book.reads ?? 0}</span>
-                                ${book.coverUrl ? `<img src="${escapeHtml(safeMediaUrl(optimizedCoverUrl))}" data-original-src="${escapeHtml(safeMediaUrl(book.coverUrl))}" onerror="if(this.dataset.originalSrc && this.src!==this.dataset.originalSrc){this.src=this.dataset.originalSrc;this.dataset.originalSrc='';}else{this.style.display='none';}" alt="${escapeHtml(book.title)}" loading="lazy" onclick='openReader(${escapeHtml(JSON.stringify(book.id))})' style="cursor:pointer;" title="اضغط لبدء القراءة">` : `<span onclick='openReader(${escapeHtml(JSON.stringify(book.id))})' style="cursor:pointer;" title="اضغط لبدء القراءة">14 × 20</span>`}
+                                ${book.coverUrl ? `<img src="${escapeHtml(safeMediaUrl(optimizedCoverUrl))}" data-original-src="${escapeHtml(safeMediaUrl(book.coverUrl))}" onerror="if(this.dataset.originalSrc && this.src!==this.dataset.originalSrc){this.src=this.dataset.originalSrc;this.dataset.originalSrc='';}else{this.style.display='none';}" alt="${escapeHtml(book.title)}" loading="lazy" decoding="async" onclick='openReader(${escapeHtml(JSON.stringify(book.id))})' style="cursor:pointer;" title="اضغط لبدء القراءة">` : `<span onclick='openReader(${escapeHtml(JSON.stringify(book.id))})' style="cursor:pointer;" title="اضغط لبدء القراءة">14 × 20</span>`}
                             </div>
                             <h3 style="font-family: 'Amiri', serif; font-size: 1.45rem; color: var(--accent-color);">${escapeHtml(book.title)}</h3>
                             <div class="book-author-tag">تأليف: ${escapeHtml(book.author ?? 'سعيد الشوادفي')}</div>
