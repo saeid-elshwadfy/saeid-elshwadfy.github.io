@@ -5419,12 +5419,40 @@ onAuthStateChanged(auth, async (user) => {
         function loadEpubJs() {
             if (window.ePub) return Promise.resolve();
             if (window.__ebookEpubJsPromise) return window.__ebookEpubJsPromise;
+            const sources = [
+                'https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js',
+                'https://unpkg.com/epubjs@0.3.93/dist/epub.min.js'
+            ];
             window.__ebookEpubJsPromise = new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js';
-                script.onload = () => window.ePub ? resolve() : reject(new Error('تعذر تهيئة قارئ EPUB'));
-                script.onerror = () => reject(new Error('تعذر تحميل مكتبة قراءة EPUB'));
-                document.head.appendChild(script);
+                let index = 0;
+                const tryNextSource = () => {
+                    if (window.ePub) { resolve(); return; }
+                    if (index >= sources.length) {
+                        window.__ebookEpubJsPromise = null;
+                        reject(new Error('تعذر تحميل مكتبة EPUB من المصادر المتاحة؛ تحقق من اتصال الإنترنت أو حظر شبكات CDN.'));
+                        return;
+                    }
+                    const script = document.createElement('script');
+                    script.src = sources[index++];
+                    script.async = true;
+                    const timeout = setTimeout(() => {
+                        script.onerror = script.onload = null;
+                        script.remove();
+                        tryNextSource();
+                    }, 15000);
+                    script.onload = () => {
+                        clearTimeout(timeout);
+                        if (window.ePub) resolve();
+                        else { script.remove(); tryNextSource(); }
+                    };
+                    script.onerror = () => {
+                        clearTimeout(timeout);
+                        script.remove();
+                        tryNextSource();
+                    };
+                    document.head.appendChild(script);
+                };
+                tryNextSource();
             });
             return window.__ebookEpubJsPromise;
         }
@@ -5472,7 +5500,7 @@ onAuthStateChanged(auth, async (user) => {
                         downloadLink.href = safeMediaUrl(item.ebookPdfUrl || item.fileUrl, '');
                         pdfFrame.src = downloadLink.href + '#toolbar=1&navpanes=0&view=FitH';
                     } else {
-                        alert('تعذر فتح ملف EPUB. تحقق من سلامة الملف ورابطه وإعدادات الوصول إليه، أو نزّل الملف من رابط التنزيل.');
+                        alert('تعذر عرض ملف EPUB. قد يكون رابط الملف غير متاح للموقع أو يمنع CORS تحميله، أو أن الملف تالف. جرّب رابطًا مباشرًا عامًا لملف EPUB، وتأكد من أن الاستضافة تسمح بالوصول إليه.');
                         downloadLink.textContent = 'فتح / تنزيل ملف EPUB';
                     }
                 }
