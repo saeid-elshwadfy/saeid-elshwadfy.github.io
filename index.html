@@ -1262,6 +1262,13 @@
                 color: var(--accent-color) !important;
             }
 </style>
+
+<style id="ebook-library-styles">
+.ebook-library-section{margin:34px auto 42px;padding:clamp(18px,3vw,34px);max-width:1240px;border:1px solid rgba(190,150,65,.35);border-radius:24px;background:linear-gradient(145deg,rgba(190,150,65,.09),rgba(255,255,255,.025));box-shadow:0 14px 40px rgba(0,0,0,.07)}
+.ebook-library-heading{text-align:center;margin-bottom:22px}.ebook-kicker{font-size:.72rem;letter-spacing:.22em;color:var(--accent-color);font-weight:800}.ebook-library-heading h2{font-family:'Amiri',serif;color:var(--accent-color);font-size:clamp(1.8rem,4vw,2.5rem);margin:5px 0}.ebook-library-heading p{max-width:760px;margin:0 auto;color:var(--text-muted);line-height:1.9}
+.ebook-toolbar{display:grid;grid-template-columns:2fr repeat(3,minmax(130px,1fr));gap:10px;margin:22px 0 12px}.ebook-toolbar input,.ebook-toolbar select{width:100%;min-width:0;padding:12px;border-radius:12px;border:1px solid var(--border-color,rgba(150,150,150,.35));background:var(--card-bg,var(--bg-color));color:var(--text-color);font:inherit}.ebook-library-stats{font-size:.88rem;color:var(--text-muted);margin:8px 2px 16px}.ebook-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:18px}.ebook-card{min-width:0;overflow:hidden;border:1px solid rgba(150,150,150,.2);border-radius:17px;background:var(--card-bg,rgba(255,255,255,.05));display:flex;flex-direction:column;box-shadow:0 7px 22px rgba(0,0,0,.06)}.ebook-cover-wrap{height:245px;background:rgba(130,130,130,.09);display:grid;place-items:center;overflow:hidden}.ebook-cover-wrap img{width:100%;height:100%;object-fit:contain}.ebook-cover-placeholder{font-size:3.4rem;color:var(--accent-color)}.ebook-card-body{padding:14px;display:flex;flex-direction:column;gap:8px;flex:1}.ebook-card h3{font-family:'Amiri',serif;color:var(--accent-color);font-size:1.25rem;margin:0}.ebook-author,.ebook-desc{color:var(--text-muted);font-size:.88rem;line-height:1.7;margin:0}.ebook-desc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:4.5em}.ebook-meta{display:flex;gap:6px;flex-wrap:wrap}.ebook-chip{font-size:.72rem;padding:4px 8px;border-radius:99px;background:rgba(190,150,65,.13);color:var(--accent-color)}.ebook-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:auto;padding-top:6px}.ebook-actions button,.ebook-actions a{font:inherit;font-size:.83rem;text-align:center;text-decoration:none;border:1px solid var(--accent-color);border-radius:9px;padding:9px 6px;background:transparent;color:var(--accent-color);cursor:pointer}.ebook-actions .ebook-primary{background:var(--accent-color);color:#fff}.ebook-empty{grid-column:1/-1;text-align:center;padding:30px 12px;color:var(--text-muted);border:1px dashed rgba(150,150,150,.35);border-radius:14px}.ebook-reader-modal{width:min(1100px,96vw);max-width:1100px!important;height:min(92vh,900px);display:flex;flex-direction:column;overflow:hidden}.ebook-reader-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid rgba(150,150,150,.25)}.ebook-reader-top h3{font-family:'Amiri',serif;color:var(--accent-color);margin:0}.ebook-reader-top span{font-size:.8rem;color:var(--text-muted)}.ebook-reader-top .close-modal{position:static;line-height:1}.ebook-pdf-reader,.ebook-epub-reader{flex:1;min-height:0;margin-top:12px}.ebook-pdf-reader iframe{width:100%;height:100%;border:0;border-radius:10px;background:#fff}.ebook-epub-reader{display:flex;flex-direction:column;gap:8px}.ebook-reader-controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.ebook-reader-controls button,.ebook-reader-footer a{border:1px solid var(--accent-color);border-radius:9px;padding:7px 13px;background:transparent;color:var(--accent-color);font:inherit;text-decoration:none;cursor:pointer}.ebook-reader-controls button:disabled{opacity:.4}.ebook-epub-viewport{flex:1;min-height:0;background:#fff;color:#222;border-radius:10px;overflow:hidden}.ebook-reader-footer{padding-top:10px;text-align:left}.ebook-admin-box input,.ebook-admin-box textarea,.ebook-admin-box select{max-width:100%}.ebook-admin-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px;border-bottom:1px solid rgba(150,150,150,.2);flex-wrap:wrap}.ebook-admin-row button{margin-inline-start:6px}@media(max-width:760px){.ebook-toolbar{grid-template-columns:1fr 1fr}.ebook-toolbar input{grid-column:1/-1}.ebook-cover-wrap{height:220px}.ebook-reader-modal{height:94vh;padding:14px}.ebook-grid{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:11px}.ebook-card-body{padding:10px}.ebook-actions{grid-template-columns:1fr}}
+</style>
+
 </head>
 <body>
 
@@ -1275,6 +1282,7 @@
         <nav class="drawer-links">
             <a href="#aboutTitle" class="drawer-link-item">✨ مرحبا بكم في عالمي</a>
             <a href="#books" class="drawer-link-item">📚 الأعمال الأدبية</a>
+            <a href="#ebooks" class="drawer-link-item">📖 المكتبة الإلكترونية</a>
             <a href="#audio" class="drawer-link-item">🎙️ الصوتيات</a>
             <a href="#videos" class="drawer-link-item">📺 الفيديوهات</a>
             <a href="#services" class="drawer-link-item">🛠️ الخدمات</a>
@@ -1333,6 +1341,7 @@
             </div>
             <nav class="nav-links">
                 <a href="#books">الأعمال الأدبية</a>
+                <a href="#ebooks">المكتبة الإلكترونية</a>
                 <a href="#audio">الصوتيات</a>
                 <a href="#videos">الفيديوهات</a>
                 <a href="#services">الخدمات الأدبية</a>
@@ -1590,6 +1599,24 @@
                 </form>
             </div>
 
+            <div class="admin-section-box ebook-admin-box">
+                <h3 style="color:var(--accent-color);font-family:'Amiri',serif;margin-bottom:8px">📚 إدارة المكتبة الإلكترونية المستقلة</h3>
+                <p style="color:var(--text-muted);line-height:1.8;margin-bottom:14px">أضف كتابًا بصيغة PDF أو EPUB أو الصيغتين معًا. تُحفظ الكتب تحت سجل الأعمال الحالي في Firebase مع علامة مستقلة للمكتبة الإلكترونية، دون إنشاء مسار بيانات جديد.</p>
+                <form id="ebookAdminForm">
+                    <input type="hidden" id="ebookEditId" value="">
+                    <div class="form-group"><label for="ebookTitleInput">عنوان الكتاب</label><input id="ebookTitleInput" required maxlength="180"></div>
+                    <div class="form-group"><label for="ebookAuthorInput">المؤلف</label><input id="ebookAuthorInput" required value="سعيد الشوادفي" maxlength="120"></div>
+                    <div class="form-group"><label for="ebookCategoryInput">التصنيف</label><select id="ebookCategoryInput"><option value="novel">روايات</option><option value="story">قصص</option><option value="poetry">شعر وخواطر</option><option value="messages">رسائل</option><option value="other">أخرى</option></select></div>
+                    <div class="form-group"><label for="ebookDescInput">نبذة عن الكتاب</label><textarea id="ebookDescInput" rows="3" required maxlength="1200"></textarea></div>
+                    <div class="form-group"><label for="ebookPriceInput">السعر (اكتب مجاني للكتب المجانية)</label><input id="ebookPriceInput" required value="مجاني"></div>
+                    <div class="form-group"><label for="ebookCoverFile">غلاف الكتاب</label><input type="file" id="ebookCoverFile" accept="image/*"><input id="ebookCoverUrl" placeholder="أو رابط صورة الغلاف المباشر" style="margin-top:8px"></div>
+                    <div class="form-group"><label for="ebookPdfFile">ملف PDF</label><input type="file" id="ebookPdfFile" accept=".pdf,application/pdf"><input id="ebookPdfUrl" placeholder="أو رابط ملف PDF" style="margin-top:8px"></div>
+                    <div class="form-group"><label for="ebookEpubFile">ملف EPUB</label><input type="file" id="ebookEpubFile" accept=".epub,application/epub+zip"><input id="ebookEpubUrl" placeholder="أو رابط ملف EPUB" style="margin-top:8px"></div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="submit" id="ebookSaveBtn" class="btn-primary">حفظ الكتاب الإلكتروني ونشره</button><button type="button" id="ebookCancelEdit" class="btn-secondary" style="display:none">إلغاء التعديل</button></div>
+                </form>
+                <div id="ebookAdminList" style="margin-top:18px"></div>
+            </div>
+
             <div class="admin-section-box">
                 <h3 style="color: var(--text-color); margin-bottom: 10px; font-family: 'Amiri', serif;">✍️ التحكم في قسم الخدمات الأدبية:</h3>
                 <form id="addServiceForm">
@@ -1746,6 +1773,28 @@
 
         <div class="books-grid" id="booksGrid"></div>
 
+        <section id="ebooks" class="ebook-library-section" aria-labelledby="ebooksTitle">
+            <div class="ebook-library-heading">
+                <span class="ebook-kicker">DIGITAL READING ROOM</span>
+                <h2 id="ebooksTitle">📖 المكتبة الإلكترونية</h2>
+                <p>مساحة مستقلة لقراءة وتحميل الكتب الرقمية بصيغتي PDF وEPUB، مع أدوات بحث وتصنيف وتجربة قراءة مريحة.</p>
+            </div>
+            <div class="ebook-toolbar">
+                <input id="ebookSearch" type="search" placeholder="ابحث بعنوان الكتاب أو المؤلف..." aria-label="ابحث في المكتبة الإلكترونية">
+                <select id="ebookCategoryFilter" aria-label="تصنيف الكتب الإلكترونية">
+                    <option value="all">كل التصنيفات</option><option value="novel">روايات</option><option value="story">قصص</option><option value="poetry">شعر وخواطر</option><option value="messages">رسائل</option><option value="other">أخرى</option>
+                </select>
+                <select id="ebookFormatFilter" aria-label="صيغة الكتاب">
+                    <option value="all">كل الصيغ</option><option value="pdf">PDF</option><option value="epub">EPUB</option><option value="both">PDF و EPUB</option>
+                </select>
+                <select id="ebookAccessFilter" aria-label="نوع الإتاحة">
+                    <option value="all">مجاني ومدفوع</option><option value="free">مجاني</option><option value="paid">مدفوع</option>
+                </select>
+            </div>
+            <div class="ebook-library-stats" id="ebookLibraryStats">جاري تحميل الكتب الإلكترونية...</div>
+            <div class="ebook-grid" id="ebookGrid" aria-live="polite"></div>
+        </section>
+
         <h2 id="audio" class="section-title">🎙️ المكتبة الصوتية 🎙️</h2>
         <p class="section-intro" style="max-width:1000px;margin:-8px auto 16px;color:var(--text-muted);line-height:1.9;text-align:right;">تضم هذه المكتبة المقاطع الصوتية المنشورة المرتبطة بالأعمال الأدبية. افتح تفاصيل المقطع لمراجعة وصفه ومعرفة ما إذا كان مجانيًا أو مدفوعًا، ثم استخدم خيار الاستماع أو التنزيل المتاح له.</p>
         
@@ -1896,6 +1945,15 @@
         </div>
 
         <!-- Reader Modal -->
+        <div id="ebookReaderModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="ebookReaderTitle">
+            <div class="modal-content ebook-reader-modal">
+                <div class="ebook-reader-top"><div><h3 id="ebookReaderTitle">قارئ المكتبة الإلكترونية</h3><span id="ebookReaderFormat"></span></div><button type="button" class="close-modal" id="closeEbookReader" aria-label="إغلاق القارئ">&times;</button></div>
+                <div id="ebookPdfReader" class="ebook-pdf-reader" style="display:none"><iframe id="ebookPdfFrame" title="قارئ PDF" loading="lazy"></iframe></div>
+                <div id="ebookEpubReader" class="ebook-epub-reader" style="display:none"><div class="ebook-reader-controls"><button type="button" id="ebookPrevChapter">السابق</button><button type="button" id="ebookFontDown">A−</button><button type="button" id="ebookFontUp">A+</button><button type="button" id="ebookNextChapter">التالي</button></div><div id="ebookEpubViewport" class="ebook-epub-viewport"></div></div>
+                <div class="ebook-reader-footer"><a id="ebookReaderDownload" href="#" target="_blank" rel="noopener">تنزيل الملف</a></div>
+            </div>
+        </div>
+
         <div id="readerModal" class="modal">
             <div class="modal-content modal-content-reader">
                 <span class="close-modal" id="closeReaderBtn">&times;</span>
@@ -2511,6 +2569,8 @@ onAuthStateChanged(auth, async (user) => {
             void trackSiteVisits();
 
             renderBooks();
+            renderEbooks();
+            renderEbookAdminList();
             renderAudio();
             renderVideos();
             renderServices();
@@ -4365,6 +4425,8 @@ onAuthStateChanged(auth, async (user) => {
             if (totalReadsEl) totalReadsEl.innerText = sumReads.toLocaleString('ar-EG');
 
             renderBooks();
+            renderEbooks();
+            renderEbookAdminList();
             checkDirectBookParam();
         });
 
@@ -4426,9 +4488,10 @@ onAuthStateChanged(auth, async (user) => {
             if (!grid) return;
             grid.innerHTML = '';
 
+            const regularBooks = allBooks.filter(b => !b.ebookLibrary);
             const filtered = currentFilter === 'all' 
-                ? allBooks 
-                : allBooks.filter(b => b.category === currentFilter);
+                ? regularBooks 
+                : regularBooks.filter(b => b.category === currentFilter);
 
             if (filtered.length === 0) {
                 grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); font-size: 1.1rem; padding: 30px;">لا توجد أعمال أدبية متوفرة في هذا القسم حالياً.</p>';
@@ -5304,6 +5367,188 @@ onAuthStateChanged(auth, async (user) => {
 
         document.getElementById('cancelReviewEditBtn')?.addEventListener('click', () => {
             resetReviewForm();
+        });
+
+        // المكتبة الإلكترونية المستقلة: تستخدم سجل books الحالي لتفادي إنشاء مسار Firebase جديد.
+        let activeEpubBook = null;
+        let activeEpubPublication = null;
+        let activeEpubRendition = null;
+        let ebookFontSize = 100;
+        const ebookCategoryNames = { novel:'روايات', story:'قصص', poetry:'شعر وخواطر', messages:'رسائل', other:'أخرى' };
+        const ebookIsFree = item => /^(مجاني|free|0)$/i.test(String(item?.price ?? '').trim());
+        const ebookHasPdf = item => Boolean(safeMediaUrl(item?.ebookPdfUrl || item?.fileUrl, ''));
+        const ebookHasEpub = item => Boolean(safeMediaUrl(item?.epubUrl, ''));
+        function renderEbooks() {
+            const grid = document.getElementById('ebookGrid');
+            if (!grid) return;
+            const items = allBooks.filter(b => b.ebookLibrary === true || b.ebookLibrary === 'true');
+            const q = (document.getElementById('ebookSearch')?.value || '').trim().toLocaleLowerCase('ar');
+            const cat = document.getElementById('ebookCategoryFilter')?.value || 'all';
+            const format = document.getElementById('ebookFormatFilter')?.value || 'all';
+            const access = document.getElementById('ebookAccessFilter')?.value || 'all';
+            const filtered = items.filter(item => {
+                const hay = `${item.title || ''} ${item.author || ''} ${item.desc || ''}`.toLocaleLowerCase('ar');
+                const hasPdf = ebookHasPdf(item), hasEpub = ebookHasEpub(item);
+                const formatOk = format === 'all' || (format === 'pdf' && hasPdf) || (format === 'epub' && hasEpub) || (format === 'both' && hasPdf && hasEpub);
+                return (!q || hay.includes(q)) && (cat === 'all' || item.category === cat) && formatOk && (access === 'all' || (access === 'free' ? ebookIsFree(item) : !ebookIsFree(item)));
+            });
+            const stats = document.getElementById('ebookLibraryStats');
+            if (stats) stats.textContent = `${items.length.toLocaleString('ar-EG')} كتاب إلكتروني • ${items.filter(ebookIsFree).length.toLocaleString('ar-EG')} مجاني • ${items.filter(ebookHasPdf).length.toLocaleString('ar-EG')} PDF • ${items.filter(ebookHasEpub).length.toLocaleString('ar-EG')} EPUB`;
+            if (!filtered.length) {
+                grid.innerHTML = '<div class="ebook-empty">لا توجد كتب مطابقة حاليًا. جرّب تغيير البحث أو التصنيف.</div>';
+                return;
+            }
+            grid.innerHTML = filtered.map(item => {
+                const cover = safeMediaUrl(item.coverUrl, '');
+                const pdf = ebookHasPdf(item), epub = ebookHasEpub(item), free = ebookIsFree(item);
+                const chips = `${pdf ? '<span class="ebook-chip">PDF</span>' : ''}${epub ? '<span class="ebook-chip">EPUB</span>' : ''}<span class="ebook-chip">${free ? 'مجاني' : 'مدفوع'}</span><span class="ebook-chip">${escapeHtml(ebookCategoryNames[item.category] || 'أخرى')}</span>`;
+                const readFormat = epub ? 'epub' : 'pdf';
+                const readButton = free ? `<button class="ebook-primary" type="button" onclick="openEbookReader('${escapeHtml(item.id)}','${readFormat}')">📖 قراءة مباشرة</button>` : `<button class="ebook-primary" type="button" onclick="openBuyModal('${escapeHtml(item.id)}','digital')">🛒 طلب النسخة</button>`;
+                const downloadButtons = free ? `${pdf ? `<button type="button" onclick="downloadEbook('${escapeHtml(item.id)}','pdf')">⬇ PDF</button>` : ''}${epub ? `<button type="button" onclick="downloadEbook('${escapeHtml(item.id)}','epub')">⬇ EPUB</button>` : ''}` : '';
+                return `<article class="ebook-card"><div class="ebook-cover-wrap">${cover ? `<img src="${escapeHtml(cover)}" alt="غلاف ${escapeHtml(item.title)}" loading="lazy" decoding="async">` : '<span class="ebook-cover-placeholder">📚</span>'}</div><div class="ebook-card-body"><h3>${escapeHtml(item.title || 'كتاب إلكتروني')}</h3><p class="ebook-author">بقلم: ${escapeHtml(item.author || 'غير محدد')}</p><p class="ebook-desc">${escapeHtml(item.desc || '')}</p><div class="ebook-meta">${chips}</div><strong style="color:var(--accent-color);font-size:.9rem">${free ? 'متاح مجانًا' : `السعر: ${escapeHtml(item.price || 'يرجى التواصل')}`}</strong><div class="ebook-actions">${readButton}${downloadButtons}</div></div></article>`;
+            }).join('');
+        }
+        window.downloadEbook = (id, format) => {
+            const item = allBooks.find(b => b.id === id && b.ebookLibrary);
+            if (!item || !ebookIsFree(item)) { alert('هذا الكتاب غير متاح للتنزيل المجاني.'); return; }
+            const url = format === 'epub' ? item.epubUrl : (item.ebookPdfUrl || item.fileUrl);
+            if (!safeMediaUrl(url, '')) { alert('ملف هذه الصيغة غير متوفر.'); return; }
+            if (!isAdmin && !String(id).startsWith('def')) runTransaction(ref(db, `books/${id}/downloads`), n => (n ?? 0) + 1).catch(err => console.warn('تعذر تسجيل تنزيل الكتاب الإلكتروني:', err));
+            triggerDirectDownload(url, `${String(item.title || 'ebook').replace(/[^\w\u0600-\u06FF-]+/g,'-')}.${format}`);
+        };
+        function loadEpubJs() {
+            if (window.ePub) return Promise.resolve();
+            if (window.__ebookEpubJsPromise) return window.__ebookEpubJsPromise;
+            window.__ebookEpubJsPromise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js';
+                script.onload = () => window.ePub ? resolve() : reject(new Error('تعذر تهيئة قارئ EPUB'));
+                script.onerror = () => reject(new Error('تعذر تحميل مكتبة قراءة EPUB'));
+                document.head.appendChild(script);
+            });
+            return window.__ebookEpubJsPromise;
+        }
+        window.openEbookReader = async (id, format) => {
+            const item = allBooks.find(b => b.id === id && b.ebookLibrary);
+            if (!item || !ebookIsFree(item)) { alert('القراءة المباشرة متاحة للكتب المجانية فقط حاليًا.'); return; }
+            const modal = document.getElementById('ebookReaderModal');
+            const pdfBox = document.getElementById('ebookPdfReader');
+            const epubBox = document.getElementById('ebookEpubReader');
+            const pdfFrame = document.getElementById('ebookPdfFrame');
+            document.getElementById('ebookReaderTitle').textContent = item.title || 'قارئ الكتاب';
+            document.getElementById('ebookReaderFormat').textContent = format.toUpperCase();
+            document.getElementById('ebookReaderDownload').href = format === 'epub' ? item.epubUrl : (item.ebookPdfUrl || item.fileUrl);
+            modal.style.display = 'flex';
+            if (!isAdmin && !String(id).startsWith('def')) runTransaction(ref(db, `books/${id}/reads`), n => (n ?? 0) + 1).catch(err => console.warn('تعذر تسجيل قراءة الكتاب الإلكتروني:', err));
+            if (format === 'pdf') {
+                if (!ebookHasPdf(item)) { alert('ملف PDF غير متوفر.'); modal.style.display = 'none'; return; }
+                epubBox.style.display = 'none'; pdfBox.style.display = 'block';
+                pdfFrame.src = safeMediaUrl(item.ebookPdfUrl || item.fileUrl, '') + '#toolbar=1&navpanes=0&view=FitH';
+            } else {
+                if (!ebookHasEpub(item)) { alert('ملف EPUB غير متوفر.'); modal.style.display = 'none'; return; }
+                pdfBox.style.display = 'none'; epubBox.style.display = 'flex';
+                document.getElementById('ebookEpubViewport').innerHTML = '';
+                try {
+                    await loadEpubJs();
+                    if (activeEpubRendition?.destroy) activeEpubRendition.destroy();
+                    if (activeEpubPublication?.destroy) activeEpubPublication.destroy();
+                    activeEpubPublication = window.ePub(item.epubUrl);
+                    activeEpubRendition = activeEpubPublication.renderTo('ebookEpubViewport', { width:'100%', height:'100%', spread:'none', flow:'paginated' });
+                    await activeEpubRendition.display();
+                    ebookFontSize = 100;
+                    activeEpubRendition.themes.fontSize(`${ebookFontSize}%`);
+                } catch (err) { console.error(err); alert('تعذر فتح ملف EPUB. تأكد من سلامة الملف ورابطه وإعدادات الوصول إليه.'); }
+            }
+        };
+        function closeEbookReader() {
+            const modal = document.getElementById('ebookReaderModal');
+            if (modal) modal.style.display = 'none';
+            const frame = document.getElementById('ebookPdfFrame'); if (frame) frame.src = 'about:blank';
+            try { activeEpubRendition?.destroy?.(); activeEpubPublication?.destroy?.(); } catch (_) {}
+            activeEpubRendition = null; activeEpubPublication = null;
+        }
+        document.getElementById('closeEbookReader')?.addEventListener('click', closeEbookReader);
+        document.getElementById('ebookReaderModal')?.addEventListener('click', e => { if (e.target.id === 'ebookReaderModal') closeEbookReader(); });
+        document.getElementById('ebookPrevChapter')?.addEventListener('click', () => activeEpubRendition?.prev());
+        document.getElementById('ebookNextChapter')?.addEventListener('click', () => activeEpubRendition?.next());
+        document.getElementById('ebookFontUp')?.addEventListener('click', () => { ebookFontSize = Math.min(180, ebookFontSize + 10); activeEpubRendition?.themes.fontSize(`${ebookFontSize}%`); });
+        document.getElementById('ebookFontDown')?.addEventListener('click', () => { ebookFontSize = Math.max(70, ebookFontSize - 10); activeEpubRendition?.themes.fontSize(`${ebookFontSize}%`); });
+        ['ebookSearch','ebookCategoryFilter','ebookFormatFilter','ebookAccessFilter'].forEach(id => document.getElementById(id)?.addEventListener(id === 'ebookSearch' ? 'input' : 'change', renderEbooks));
+
+        function resetEbookAdminForm() {
+            document.getElementById('ebookAdminForm')?.reset();
+            document.getElementById('ebookEditId').value = '';
+            document.getElementById('ebookPriceInput').value = 'مجاني';
+            document.getElementById('ebookAuthorInput').value = 'سعيد الشوادفي';
+            document.getElementById('ebookSaveBtn').textContent = 'حفظ الكتاب الإلكتروني ونشره';
+            document.getElementById('ebookCancelEdit').style.display = 'none';
+        }
+        function renderEbookAdminList() {
+            const list = document.getElementById('ebookAdminList'); if (!list || !isAdmin) return;
+            const items = allBooks.filter(b => b.ebookLibrary);
+            list.innerHTML = `<h4 style="color:var(--accent-color);margin:12px 0">الكتب المضافة (${items.length})</h4>` + (items.length ? items.map(item => `<div class="ebook-admin-row"><span><strong>${escapeHtml(item.title)}</strong><small style="display:block;color:var(--text-muted)">${ebookHasPdf(item)?'PDF ':''}${ebookHasEpub(item)?'EPUB ':''} • ${ebookIsFree(item)?'مجاني':'مدفوع'}</small></span><span><button type="button" class="btn-secondary" onclick="editEbook('${escapeHtml(item.id)}')">تعديل</button><button type="button" class="btn-danger" onclick="deleteEbook('${escapeHtml(item.id)}')">حذف</button></span></div>`).join('') : '<p style="color:var(--text-muted)">لم تتم إضافة كتب إلكترونية بعد.</p>');
+        }
+        window.editEbook = id => {
+            if (!isAdmin) return;
+            const item = allBooks.find(b => b.id === id && b.ebookLibrary); if (!item) return;
+            document.getElementById('ebookEditId').value = id;
+            document.getElementById('ebookTitleInput').value = item.title || '';
+            document.getElementById('ebookAuthorInput').value = item.author || '';
+            document.getElementById('ebookCategoryInput').value = item.category || 'other';
+            document.getElementById('ebookDescInput').value = item.desc || '';
+            document.getElementById('ebookPriceInput').value = item.price || 'مجاني';
+            document.getElementById('ebookCoverUrl').value = item.coverUrl || '';
+            document.getElementById('ebookPdfUrl').value = item.ebookPdfUrl || item.fileUrl || '';
+            document.getElementById('ebookEpubUrl').value = item.epubUrl || '';
+            document.getElementById('ebookSaveBtn').textContent = 'حفظ تعديلات الكتاب';
+            document.getElementById('ebookCancelEdit').style.display = 'inline-block';
+            document.getElementById('ebookAdminForm').scrollIntoView({behavior:'smooth',block:'center'});
+        };
+        window.deleteEbook = async id => {
+            if (!isAdmin) { alert('هذه العملية للأدمن فقط.'); return; }
+            const item = allBooks.find(b => b.id === id && b.ebookLibrary); if (!item) return;
+            if (!confirm(`هل تريد حذف «${item.title}» من المكتبة الإلكترونية؟ لن يُحذف أي عمل أدبي آخر.`)) return;
+            try { await update(ref(db, `books/${id}`), { ebookLibrary: null }); alert('تمت إزالة الكتاب من المكتبة الإلكترونية.'); }
+            catch (err) { alert(`تعذر الحذف: ${err.message}`); }
+        };
+        document.getElementById('ebookCancelEdit')?.addEventListener('click', resetEbookAdminForm);
+        document.getElementById('ebookAdminForm')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            if (!isAdmin) { alert('غير مصرح: إدارة المكتبة للأدمن فقط.'); return; }
+            const btn = document.getElementById('ebookSaveBtn');
+            const editId = document.getElementById('ebookEditId').value;
+            const existing = editId ? allBooks.find(b => b.id === editId && b.ebookLibrary) : null;
+            const coverFile = document.getElementById('ebookCoverFile').files[0];
+            const pdfFile = document.getElementById('ebookPdfFile').files[0];
+            const epubFile = document.getElementById('ebookEpubFile').files[0];
+            let coverUrl = document.getElementById('ebookCoverUrl').value.trim();
+            let pdfUrl = document.getElementById('ebookPdfUrl').value.trim();
+            let epubUrl = document.getElementById('ebookEpubUrl').value.trim();
+            btn.disabled = true; btn.textContent = 'جاري رفع الملفات وحفظ الكتاب...';
+            try {
+                if (coverFile) { validateUploadFile(coverFile,{maxBytes:10*1024*1024,mimePrefixes:['image/']}); coverUrl = await uploadToCloudinary(coverFile); }
+                if (pdfFile) { validateUploadFile(pdfFile,{maxBytes:100*1024*1024,extensions:['.pdf']}); pdfUrl = await uploadToCloudinary(pdfFile); }
+                if (epubFile) { validateUploadFile(epubFile,{maxBytes:100*1024*1024,extensions:['.epub']}); epubUrl = await uploadToCloudinary(epubFile); }
+                if (!pdfUrl && !epubUrl) throw new Error('أضف ملف PDF أو EPUB واحدًا على الأقل.');
+                const data = {
+                    ebookLibrary: true,
+                    title: document.getElementById('ebookTitleInput').value.trim(),
+                    author: document.getElementById('ebookAuthorInput').value.trim(),
+                    category: document.getElementById('ebookCategoryInput').value,
+                    desc: document.getElementById('ebookDescInput').value.trim(),
+                    price: document.getElementById('ebookPriceInput').value.trim(),
+                    coverUrl: coverUrl || existing?.coverUrl || '',
+                    ebookPdfUrl: pdfUrl || existing?.ebookPdfUrl || existing?.fileUrl || '',
+                    fileUrl: pdfUrl || existing?.fileUrl || '',
+                    epubUrl: epubUrl || existing?.epubUrl || '',
+                    updatedAt: Date.now()
+                };
+                if (editId && existing) await update(ref(db, `books/${editId}`), data);
+                else await push(ref(db, 'books'), data);
+                resetEbookAdminForm();
+                alert(editId ? 'تم تحديث الكتاب الإلكتروني بنجاح.' : 'تمت إضافة الكتاب الإلكتروني بنجاح.');
+            } catch (err) { alert(`تعذر حفظ الكتاب الإلكتروني: ${err.message}`); }
+            finally { btn.disabled = false; if (!document.getElementById('ebookEditId').value) btn.textContent = 'حفظ الكتاب الإلكتروني ونشره'; }
         });
 
         document.getElementById('addBookForm')?.addEventListener('submit', async (e) => {
