@@ -1742,6 +1742,7 @@
                     <div class="form-group"><label for="ebookCoverFile">غلاف الكتاب</label><input type="file" id="ebookCoverFile" accept="image/*"><input id="ebookCoverUrl" placeholder="أو رابط صورة الغلاف المباشر" style="margin-top:8px"></div>
                     <div class="form-group"><label for="ebookPdfFile">ملف PDF</label><input type="file" id="ebookPdfFile" accept=".pdf,application/pdf"><input id="ebookPdfUrl" placeholder="أو رابط ملف PDF" style="margin-top:8px"></div>
                     <div class="form-group"><label for="ebookEpubFile">ملف EPUB</label><input type="file" id="ebookEpubFile" accept=".epub,application/epub+zip"><input id="ebookEpubUrl" placeholder="أو رابط ملف EPUB" style="margin-top:8px"></div>
+                    <div class="form-group"><label for="ebookAudioFile">التسجيل الصوتي للكتاب (استماع مجاني للجميع)</label><input type="file" id="ebookAudioFile" accept="audio/*"><input id="ebookAudioUrl" type="url" placeholder="أو رابط مباشر للتسجيل الصوتي" style="margin-top:8px"><small style="display:block;color:var(--text-muted);margin-top:6px">يمكن إضافة ملف صوتي أو رابط. الاستماع متاح مجانًا لكل الزوار سواء كان الكتاب مجانيًا أو مدفوعًا.</small></div>
                     <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="submit" id="ebookSaveBtn" class="btn-primary">حفظ الكتاب الإلكتروني ونشره</button><button type="button" id="ebookCancelEdit" class="btn-secondary" style="display:none">إلغاء التعديل</button></div>
                 </form>
                 <div id="ebookAdminList" style="margin-top:18px"></div>
@@ -5532,10 +5533,12 @@ onAuthStateChanged(auth, async (user) => {
                 const cover = safeMediaUrl(item.coverUrl, '');
                 const pdf = ebookHasPdf(item), epub = ebookHasEpub(item), free = ebookIsFree(item);
                 const chips = `${pdf ? '<span class="ebook-chip">PDF</span>' : ''}${epub ? '<span class="ebook-chip">EPUB</span>' : ''}<span class="ebook-chip">${free ? 'مجاني' : 'مدفوع'}</span><span class="ebook-chip">${escapeHtml(ebookCategoryNames[item.category] || 'أخرى')}</span>`;
+                const audioUrl = safeMediaUrl(item.audioUrl || item.ebookAudioUrl, '');
+                const audioPlayer = audioUrl ? `<div class="ebook-audio-listen" style="margin-top:14px;padding:12px;border:1px solid var(--border-color,rgba(128,128,128,.25));border-radius:12px"><strong style="display:block;margin-bottom:8px;color:var(--accent-color)">🎧 استمع إلى الكتاب مجانًا</strong><audio controls preload="metadata" playsinline style="display:block;width:100%;max-width:100%"><source src="${escapeHtml(audioUrl)}">متصفحك لا يدعم تشغيل الصوت.</audio><small style="display:block;color:var(--text-muted);margin-top:6px">الاستماع مجاني لجميع الزوار.</small></div>` : '';
                 const readFormat = pdf ? 'pdf' : 'epub';
                 const readButton = (free || isAdmin) ? `<button class="ebook-primary" type="button" onclick="openEbookReader('${escapeHtml(item.id)}','${readFormat}')">📖 قراءة مباشرة</button>` : `<button class="ebook-primary" type="button" onclick="openBuyModal('${escapeHtml(item.id)}','digital')">🛒 طلب النسخة</button>`;
                 const downloadButtons = free ? `${epub ? `<button type="button" onclick="downloadEbook('${escapeHtml(item.id)}','epub')">⬇ EPUB</button>` : ''}${pdf ? `<button type="button" onclick="downloadEbook('${escapeHtml(item.id)}','pdf')">⬇ PDF</button>` : ''}` : '';
-                return `<article class="ebook-card"><div class="ebook-cover-wrap">${cover ? `<img src="${escapeHtml(cover)}" alt="غلاف ${escapeHtml(item.title)}" loading="lazy" decoding="async">` : '<span class="ebook-cover-placeholder">📚</span>'}</div><div class="ebook-card-body"><h3>${escapeHtml(item.title || 'كتاب إلكتروني')}</h3><p class="ebook-author">بقلم: ${escapeHtml(item.author || 'غير محدد')}</p><p class="ebook-desc">${escapeHtml(item.desc || '')}</p><div class="ebook-meta">${chips}</div><strong style="color:var(--accent-color);font-size:.9rem">${free ? 'متاح مجانًا' : `السعر: ${escapeHtml(item.price || 'يرجى التواصل')}`}</strong><div class="ebook-actions">${readButton}${downloadButtons}</div>${isAdmin ? `<div class="ebook-admin-card-actions" style="display:flex;gap:8px;margin-top:12px"><button type="button" class="btn-secondary" onclick="editEbook('${escapeHtml(item.id)}')">✏️ تعديل</button><button type="button" class="btn-danger" onclick="deleteEbook('${escapeHtml(item.id)}')">🗑️ حذف</button></div>` : ''}</div></article>`;
+                return `<article class="ebook-card"><div class="ebook-cover-wrap">${cover ? `<img src="${escapeHtml(cover)}" alt="غلاف ${escapeHtml(item.title)}" loading="lazy" decoding="async">` : '<span class="ebook-cover-placeholder">📚</span>'}</div><div class="ebook-card-body"><h3>${escapeHtml(item.title || 'كتاب إلكتروني')}</h3><p class="ebook-author">بقلم: ${escapeHtml(item.author || 'غير محدد')}</p><p class="ebook-desc">${escapeHtml(item.desc || '')}</p><div class="ebook-meta">${chips}</div><strong style="color:var(--accent-color);font-size:.9rem">${free ? 'متاح مجانًا' : `السعر: ${escapeHtml(item.price || 'يرجى التواصل')}`}</strong><div class="ebook-actions">${readButton}${downloadButtons}</div>${audioPlayer}${isAdmin ? `<div class="ebook-admin-card-actions" style="display:flex;gap:8px;margin-top:12px"><button type="button" class="btn-secondary" onclick="editEbook('${escapeHtml(item.id)}')">✏️ تعديل</button><button type="button" class="btn-danger" onclick="deleteEbook('${escapeHtml(item.id)}')">🗑️ حذف</button></div>` : ''}</div></article>`;
             }).join('');
         }
         window.downloadEbook = (id, format) => {
@@ -5694,7 +5697,7 @@ onAuthStateChanged(auth, async (user) => {
         function renderEbookAdminList() {
             const list = document.getElementById('ebookAdminList'); if (!list || !isAdmin) return;
             const items = allBooks.filter(b => b.ebookLibrary);
-            list.innerHTML = `<h4 style="color:var(--accent-color);margin:12px 0">الكتب المضافة (${items.length})</h4>` + (items.length ? items.map(item => `<div class="ebook-admin-row"><span><strong>${escapeHtml(item.title)}</strong><small style="display:block;color:var(--text-muted)">${ebookHasPdf(item)?'PDF ':''}${ebookHasEpub(item)?'EPUB ':''} • ${ebookIsFree(item)?'مجاني':'مدفوع'}</small></span><span><button type="button" class="btn-secondary" onclick="editEbook('${escapeHtml(item.id)}')">تعديل</button><button type="button" class="btn-danger" onclick="deleteEbook('${escapeHtml(item.id)}')">حذف</button></span></div>`).join('') : '<p style="color:var(--text-muted)">لم تتم إضافة كتب إلكترونية بعد.</p>');
+            list.innerHTML = `<h4 style="color:var(--accent-color);margin:12px 0">الكتب المضافة (${items.length})</h4>` + (items.length ? items.map(item => `<div class="ebook-admin-row"><span><strong>${escapeHtml(item.title)}</strong><small style="display:block;color:var(--text-muted)">${ebookHasPdf(item)?'PDF ':''}${ebookHasEpub(item)?'EPUB ':''}${safeMediaUrl(item.audioUrl || item.ebookAudioUrl,'')?'• صوتي مجاني ':''} • ${ebookIsFree(item)?'مجاني':'مدفوع'}</small></span><span><button type="button" class="btn-secondary" onclick="editEbook('${escapeHtml(item.id)}')">تعديل</button><button type="button" class="btn-danger" onclick="deleteEbook('${escapeHtml(item.id)}')">حذف</button></span></div>`).join('') : '<p style="color:var(--text-muted)">لم تتم إضافة كتب إلكترونية بعد.</p>');
         }
         window.editEbook = id => {
             if (!isAdmin) return;
@@ -5708,6 +5711,7 @@ onAuthStateChanged(auth, async (user) => {
             document.getElementById('ebookCoverUrl').value = item.coverUrl || '';
             document.getElementById('ebookPdfUrl').value = item.ebookPdfUrl || item.fileUrl || '';
             document.getElementById('ebookEpubUrl').value = item.epubUrl || '';
+            document.getElementById('ebookAudioUrl').value = item.audioUrl || item.ebookAudioUrl || '';
             document.getElementById('ebookSaveBtn').textContent = 'حفظ تعديلات الكتاب';
             document.getElementById('ebookCancelEdit').style.display = 'inline-block';
             document.getElementById('ebookAdminForm').scrollIntoView({behavior:'smooth',block:'center'});
@@ -5729,14 +5733,17 @@ onAuthStateChanged(auth, async (user) => {
             const coverFile = document.getElementById('ebookCoverFile').files[0];
             const pdfFile = document.getElementById('ebookPdfFile').files[0];
             const epubFile = document.getElementById('ebookEpubFile').files[0];
+            const audioFile = document.getElementById('ebookAudioFile').files[0];
             let coverUrl = document.getElementById('ebookCoverUrl').value.trim();
             let pdfUrl = document.getElementById('ebookPdfUrl').value.trim();
             let epubUrl = document.getElementById('ebookEpubUrl').value.trim();
+            let audioUrl = document.getElementById('ebookAudioUrl').value.trim();
             btn.disabled = true; btn.textContent = 'جاري رفع الملفات وحفظ الكتاب...';
             try {
                 if (coverFile) { validateUploadFile(coverFile,{maxBytes:10*1024*1024,mimePrefixes:['image/']}); coverUrl = await uploadToCloudinary(coverFile); }
                 if (pdfFile) { validateUploadFile(pdfFile,{maxBytes:100*1024*1024,extensions:['.pdf']}); pdfUrl = await uploadToCloudinary(pdfFile); }
                 if (epubFile) { validateUploadFile(epubFile,{maxBytes:100*1024*1024,extensions:['.epub']}); epubUrl = await uploadToCloudinary(epubFile); }
+                if (audioFile) { validateUploadFile(audioFile,{maxBytes:100*1024*1024,mimePrefixes:['audio/']}); audioUrl = await uploadToCloudinary(audioFile); }
                 if (!pdfUrl && !epubUrl) throw new Error('أضف ملف PDF أو EPUB واحدًا على الأقل.');
                 const data = {
                     ebookLibrary: true,
@@ -5749,6 +5756,7 @@ onAuthStateChanged(auth, async (user) => {
                     ebookPdfUrl: pdfUrl || existing?.ebookPdfUrl || existing?.fileUrl || '',
                     fileUrl: pdfUrl || existing?.fileUrl || '',
                     epubUrl: epubUrl || existing?.epubUrl || '',
+                    audioUrl: audioUrl || existing?.audioUrl || existing?.ebookAudioUrl || '',
                     updatedAt: Date.now()
                 };
                 if (editId && existing) await update(ref(db, `books/${editId}`), data);
