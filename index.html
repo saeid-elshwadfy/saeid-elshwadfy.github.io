@@ -5416,36 +5416,40 @@ onAuthStateChanged(auth, async (user) => {
             if (!isAdmin && !String(id).startsWith('def')) runTransaction(ref(db, `books/${id}/downloads`), n => (n ?? 0) + 1).catch(err => console.warn('تعذر تسجيل تنزيل الكتاب الإلكتروني:', err));
             triggerDirectDownload(url, `${String(item.title || 'ebook').replace(/[^\w\u0600-\u06FF-]+/g,'-')}.${format}`);
         };
-        function loadEpubJs() {
-            if (window.ePub) return Promise.resolve();
-            if (window.__ebookEpubJsPromise) return window.__ebookEpubJsPromise;
-            const sources = [
-                'https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js',
-                'https://unpkg.com/epubjs@0.3.93/dist/epub.min.js'
-            ];
-            window.__ebookEpubJsPromise = new Promise((resolve, reject) => {
+        function loadEbookDependency(globalCheck, sources, promiseKey, label) {
+            if (globalCheck()) return Promise.resolve();
+            if (window[promiseKey]) return window[promiseKey];
+            window[promiseKey] = new Promise((resolve, reject) => {
                 let index = 0;
                 const tryNextSource = () => {
-                    if (window.ePub) { resolve(); return; }
+                    if (globalCheck()) { resolve(); return; }
                     if (index >= sources.length) {
-                        window.__ebookEpubJsPromise = null;
-                        reject(new Error('تعذر تحميل مكتبة EPUB من المصادر المتاحة؛ تحقق من اتصال الإنترنت أو حظر شبكات CDN.'));
+                        window[promiseKey] = null;
+                        reject(new Error(`تعذر تحميل ${label} من المصادر المتاحة.`));
                         return;
                     }
                     const script = document.createElement('script');
                     script.src = sources[index++];
                     script.async = true;
+                    script.crossOrigin = 'anonymous';
+                    let settled = false;
                     const timeout = setTimeout(() => {
-                        script.onerror = script.onload = null;
+                        if (settled) return;
+                        settled = true;
+                        script.onload = script.onerror = null;
                         script.remove();
                         tryNextSource();
                     }, 15000);
                     script.onload = () => {
+                        if (settled) return;
+                        settled = true;
                         clearTimeout(timeout);
-                        if (window.ePub) resolve();
+                        if (globalCheck()) resolve();
                         else { script.remove(); tryNextSource(); }
                     };
                     script.onerror = () => {
+                        if (settled) return;
+                        settled = true;
                         clearTimeout(timeout);
                         script.remove();
                         tryNextSource();
@@ -5453,8 +5457,36 @@ onAuthStateChanged(auth, async (user) => {
                     document.head.appendChild(script);
                 };
                 tryNextSource();
+            }).catch(error => {
+                window[promiseKey] = null;
+                throw error;
             });
-            return window.__ebookEpubJsPromise;
+            return window[promiseKey];
+        }
+        async function loadEpubJs() {
+            // epub.js 0.3.x يعتمد على JSZip لفك ضغط ملف EPUB؛ يجب تحميله أولاً.
+            await loadEbookDependency(
+                () => !!window.JSZip,
+                [
+                    'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+                    'https://unpkg.com/jszip@3.10.1/dist/jszip.min.js'
+                ],
+                '__ebookJSZipPromise',
+                'مكتبة JSZip المطلوبة لقراءة EPUB'
+            );
+            await loadEbookDependency(
+                () => typeof window.ePub === 'function',
+                [
+                    'https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js',
+                    'https://unpkg.com/epubjs@0.3.93/dist/epub.min.js'
+                ],
+                '__ebookEpubJsPromise',
+                'مكتبة epub.js'
+            );
+            if (!window.JSZip || typeof window.ePub !== 'function') {
+                throw new Error('لم تكتمل تهيئة مكتبات قارئ EPUB (JSZip / epub.js).');
+            }
         }
         window.openEbookReader = async (id, format) => {
             const item = allBooks.find(b => b.id === id && b.ebookLibrary);
@@ -5515,8 +5547,8 @@ onAuthStateChanged(auth, async (user) => {
         }
         document.getElementById('closeEbookReader')?.addEventListener('click', closeEbookReader);
         document.getElementById('ebookReaderModal')?.addEventListener('click', e => { if (e.target.id === 'ebookReaderModal') closeEbookReader(); });
-        document.getElementById('ebookPrevChapter')?.addEventListener('click', () => activeEpubRendition?.prev());
-        document.getElementById('ebookNextChapter')?.addEventListener('click', () => activeEpubRendition?.next());
+        document.getElementById('ebookPrevChapter')?.addEventListener('click', () => { if (activeEpubRendition) Promise.resolve(activeEpubRendition.prev()).catch(err => console.warn('تعذر الانتقال للصفحة السابقة:', err)); });
+        document.getElementById('ebookNextChapter')?.addEventListener('click', () => { if (activeEpubRendition) Promise.resolve(activeEpubRendition.next()).catch(err => console.warn('تعذر الانتقال للصفحة التالية:', err)); });
         document.getElementById('ebookFontUp')?.addEventListener('click', () => { ebookFontSize = Math.min(180, ebookFontSize + 10); activeEpubRendition?.themes.fontSize(`${ebookFontSize}%`); });
         document.getElementById('ebookFontDown')?.addEventListener('click', () => { ebookFontSize = Math.max(70, ebookFontSize - 10); activeEpubRendition?.themes.fontSize(`${ebookFontSize}%`); });
         ['ebookSearch','ebookCategoryFilter','ebookFormatFilter','ebookAccessFilter'].forEach(id => document.getElementById(id)?.addEventListener(id === 'ebookSearch' ? 'input' : 'change', renderEbooks));
