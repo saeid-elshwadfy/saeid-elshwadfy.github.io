@@ -5547,7 +5547,7 @@ onAuthStateChanged(auth, async (user) => {
                 const ebookRatingCount = ebookRatings.length || Number(item.ratingCount || 0);
                 const ebookRatingSum = ebookRatings.length ? ebookRatings.reduce((sum, v) => sum + v, 0) : Number(item.ratingSum || 0);
                 const ebookAvgRating = ebookRatingCount ? (ebookRatingSum / ebookRatingCount).toFixed(1) : '0.0';
-                const ebookReviewButton = `<div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span style="font-size:.88rem;color:var(--text-muted)">⭐ ${ebookAvgRating} / 5 <span style="font-size:.8rem">(${ebookRatingCount.toLocaleString('ar-EG')} تقييم)</span></span><button class="btn-action btn-reviews" type="button" onclick="openReviewsModal('${escapeHtml(item.id)}')">⭐ تقييم ومراجعة</button></div><div class="latest-review-preview" id="latestReview_${escapeHtml(item.id)}" style="display:none;margin-top:10px"></div>`;
+                const ebookReviewButton = `<div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="rating-stars ebook-rating-tooltip" tabindex="0" role="img" aria-label="متوسط التقييم ${ebookAvgRating} من 5، وعدد التقييمات ${ebookRatingCount}" title="متوسط التقييم: ${ebookAvgRating} من 5 — عدد التقييمات: ${ebookRatingCount.toLocaleString('ar-EG')}" style="font-size:.88rem;color:var(--text-muted);white-space:nowrap">⭐ ${ebookAvgRating} / 5 <span style="font-size:.8rem">(${ebookRatingCount.toLocaleString('ar-EG')} تقييم)</span></span><button class="btn-action btn-reviews" type="button" onclick="openReviewsModal('${escapeHtml(item.id)}')">⭐ تقييم ومراجعة</button></div><div class="latest-review-preview" id="latestReview_${escapeHtml(item.id)}" style="display:none;margin-top:10px"></div>`;
                 const readFormat = pdf ? 'pdf' : 'epub';
                 const ebookReads = Number(item.reads || 0).toLocaleString('ar-EG');
                 const ebookDownloads = Number(item.downloads || 0).toLocaleString('ar-EG');
@@ -6006,7 +6006,7 @@ onAuthStateChanged(auth, async (user) => {
             };
             const apply = () => {
                 const groups = [
-                    ['#booksGrid .book-card', 'book'], ['#audioGrid .custom-card', 'audio'],
+                    ['#booksGrid .book-card', 'book'], ['#ebookGrid .ebook-card', 'ebook'], ['#audioGrid .custom-card', 'audio'],
                     ['#videosGrid .custom-card', 'video'], ['#coursesGrid .custom-card', 'course'],
                     ['#productsGrid .custom-card', 'product'], ['#servicesGrid .custom-card', 'service']
                 ];
@@ -6020,12 +6020,16 @@ onAuthStateChanged(auth, async (user) => {
                             label = 'الاستماع'; count = statValue(card, /استماع/);
                         } else if (cl.contains('rating-stars') || /اضغط للتقييم|عدد التقييمات/.test(el.getAttribute('title') || '')) {
                             label = 'التقييمات';
-                            // اعتمد على عدد التقييمات المكتوب في عنصر النجوم نفسه إن توفر، لتجنب التقاط رقم آخر من البطاقة.
-                            count = existingCount(el, /تقييم/);
-                            if (count === null) {
-                                const m = (card.querySelector('.book-stats, .media-rating-box')?.parentElement?.textContent || card.textContent).match(/\(?\s*([\d٠-٩۰-۹,٬]+)\s*تقييم/);
-                                if (m) { const raw = m[1].replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[,٬]/g,''); count = Number(raw); }
+                            // اقرأ عدد التقييمات من سطر الإحصاءات في البطاقة، لا من عنوان النجوم (الذي لا يحمل رقمًا عادةً).
+                            const ratingText = card.querySelector('.book-stats')?.textContent || card.textContent || '';
+                            const ratingMatch = ratingText.match(/[（(]?\s*([\d٠-٩۰-۹,٬]+)\s*تقييم/);
+                            if (ratingMatch) {
+                                const raw = ratingMatch[1].replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[,٬\s]/g, '');
+                                count = Number(raw);
                             }
+                            if (count === null || !Number.isFinite(count)) count = existingCount(el, /تقييم/);
+                            const avgMatch = ratingText.match(/(?:⭐|★)\s*([\d٠-٩۰-۹]+(?:[.,٫][\d٠-٩۰-۹]+)?)\s*\/\s*5/);
+                            el.dataset.ratingAverage = avgMatch ? avgMatch[1].replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace('٫', '.').replace(',', '.') : '';
                         } else if (cl.contains('btn-share') || /مشاركة/.test(t)) {
                             watchShareCount(el, kind);
                             return;
@@ -6065,9 +6069,17 @@ onAuthStateChanged(auth, async (user) => {
                             label = 'القراءة'; count = statValue(card, /قراءة|👁/);
                         }
                         if (!label) return;
-                        const message = count === null
-                            ? `عداد ${label} غير متاح لهذا الزر حالياً؛ لم يُعثر على رقم مسجل خاص به.`
-                            : `عدد مرات ${label} المسجلة: ${fmt(count)}`;
+                        let message;
+                        if (label === 'التقييمات') {
+                            const avg = el.dataset.ratingAverage;
+                            message = count === null || !Number.isFinite(count)
+                                ? 'عدد التقييمات غير متاح حالياً.'
+                                : `⭐ عدد التقييمات: ${fmt(count)}${avg ? ` — متوسط التقييم: ${avg} من 5` : ''}`;
+                        } else {
+                            message = count === null
+                                ? `عداد ${label} غير متاح لهذا الزر حالياً؛ لم يُعثر على رقم مسجل خاص به.`
+                                : `عدد مرات ${label} المسجلة: ${fmt(count)}`;
+                        }
                         setTip(el, message);
                     });
                 });
