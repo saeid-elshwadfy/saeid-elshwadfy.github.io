@@ -1361,6 +1361,12 @@
 </style>
 
 
+<style id="ebook-counter-tooltip-styles">
+.ebook-stats{display:flex;gap:12px;flex-wrap:wrap;padding:7px 0;color:var(--text-muted);font-size:.8rem;border-top:1px solid rgba(150,150,150,.16);border-bottom:1px solid rgba(150,150,150,.16)}
+.ebook-stats span{white-space:nowrap}
+.ebook-card .ebook-actions .count-tooltip{overflow:visible;position:relative}
+.ebook-card .ebook-actions .count-tooltip:hover,.ebook-card .ebook-actions .count-tooltip:focus-visible{z-index:30}
+</style>
 <style id="ebook-read-epub-alignment-fix">
 /* ضبط أزرار المكتبة: القراءة وEPUB متجاوران دون فراغ جانبي */
 .ebook-card .ebook-actions {
@@ -1999,11 +2005,11 @@
                 <form id="addReviewForm" style="text-align: right;">
                     <h4 id="reviewFormTitle" style="color: var(--accent-color); font-size: 1.1rem; margin-bottom: 10px; font-family: 'Amiri', serif;">⭐ تقييم ومراجعة</h4>
                     <div id="reviewModalStars" role="radiogroup" aria-label="تقييم من نجمة إلى خمس نجوم" style="display:flex;justify-content:center;gap:9px;direction:rtl;margin:12px 0 6px;">
-                        <button type="button" class="review-star-choice" data-rating="1" aria-label="نجمة واحدة" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
-                        <button type="button" class="review-star-choice" data-rating="2" aria-label="نجمتان" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
-                        <button type="button" class="review-star-choice" data-rating="3" aria-label="ثلاث نجوم" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
-                        <button type="button" class="review-star-choice" data-rating="4" aria-label="أربع نجوم" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
-                        <button type="button" class="review-star-choice" data-rating="5" aria-label="خمس نجوم" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
+                        <button type="button" class="review-star-choice" data-rating="1" aria-label="نجمة واحدة" title="تقييم بنجمة واحدة — ضعيف" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
+                        <button type="button" class="review-star-choice" data-rating="2" aria-label="نجمتان" title="تقييم بنجمتين — مقبول" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
+                        <button type="button" class="review-star-choice" data-rating="3" aria-label="ثلاث نجوم" title="تقييم بثلاث نجوم — جيد" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
+                        <button type="button" class="review-star-choice" data-rating="4" aria-label="أربع نجوم" title="تقييم بأربع نجوم — جيد جدًا" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
+                        <button type="button" class="review-star-choice" data-rating="5" aria-label="خمس نجوم" title="تقييم بخمس نجوم — ممتاز" style="border:0;background:transparent;color:#9ca3af;font-size:2.1rem;cursor:pointer;padding:0 2px;">★</button>
                     </div>
                     <p id="reviewRatingHint" style="text-align:center;color:var(--text-muted);font-size:.82rem;margin-bottom:14px;">اختيار النجوم إجباري</p>
                     <input type="hidden" id="selectedReviewRating" value="">
@@ -5341,7 +5347,7 @@ onAuthStateChanged(auth, async (user) => {
                                     <div class="review-header">
                                         <span class="review-author">👤 ${escapeHtml(rev.name ?? 'قارئ')}</span>
                                         <div class="review-meta">
-                                            <span class="review-stars" aria-label="${Math.max(0, Math.min(5, Number(rev.rating) || 0))} من 5 نجوم">${'★'.repeat(Math.max(0, Math.min(5, Number(rev.rating) || 0)))}<span class="empty-star">${'★'.repeat(5 - Math.max(0, Math.min(5, Number(rev.rating) || 0)))}</span></span>
+                                            <span class="review-stars" title="تقييم القارئ: ${Math.max(0, Math.min(5, Number(rev.rating) || 0))} من 5 نجوم" aria-label="${Math.max(0, Math.min(5, Number(rev.rating) || 0))} من 5 نجوم">${'★'.repeat(Math.max(0, Math.min(5, Number(rev.rating) || 0)))}<span class="empty-star">${'★'.repeat(5 - Math.max(0, Math.min(5, Number(rev.rating) || 0)))}</span></span>
                                             <span class="review-date">📅 ${escapeHtml(rev.date ?? '')}</span>
                                         </div>
                                     </div>
@@ -5543,9 +5549,12 @@ onAuthStateChanged(auth, async (user) => {
                 const ebookAvgRating = ebookRatingCount ? (ebookRatingSum / ebookRatingCount).toFixed(1) : '0.0';
                 const ebookReviewButton = `<div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span style="font-size:.88rem;color:var(--text-muted)">⭐ ${ebookAvgRating} / 5 <span style="font-size:.8rem">(${ebookRatingCount.toLocaleString('ar-EG')} تقييم)</span></span><button class="btn-action btn-reviews" type="button" onclick="openReviewsModal('${escapeHtml(item.id)}')">⭐ تقييم ومراجعة</button></div><div class="latest-review-preview" id="latestReview_${escapeHtml(item.id)}" style="display:none;margin-top:10px"></div>`;
                 const readFormat = pdf ? 'pdf' : 'epub';
-                const readButton = (free || isAdmin) ? `<button class="ebook-primary" type="button" onclick="openEbookReader('${escapeHtml(item.id)}','${readFormat}')">📖 قراءة مباشرة</button>` : `<button class="ebook-primary" type="button" onclick="openBuyModal('${escapeHtml(item.id)}','digital')">🛒 طلب النسخة</button>`;
-                const downloadButtons = free ? `${epub ? `<button type="button" onclick="downloadEbook('${escapeHtml(item.id)}','epub')">⬇ EPUB</button>` : ''}${pdf ? `<button type="button" onclick="downloadEbook('${escapeHtml(item.id)}','pdf')">⬇ PDF</button>` : ''}` : '';
-                return `<article class="ebook-card"><div class="ebook-cover-wrap">${cover ? `<img src="${escapeHtml(cover)}" alt="غلاف ${escapeHtml(item.title)}" loading="lazy" decoding="async">` : '<span class="ebook-cover-placeholder">📚</span>'}</div><div class="ebook-card-body"><h3>${escapeHtml(item.title || 'كتاب إلكتروني')}</h3><p class="ebook-author">تأليف: ${escapeHtml(item.author || 'غير محدد')}</p><p class="ebook-desc">${escapeHtml(item.desc || '')}</p><div class="ebook-meta">${chips}</div><strong style="color:var(--accent-color);font-size:.9rem">${free ? 'متاح مجانًا' : `السعر: ${escapeHtml(item.price || 'يرجى التواصل')}`}</strong><div class="ebook-actions">${readButton}${downloadButtons}</div>${audioPlayer}${ebookReviewButton}${isAdmin ? `<div class="ebook-admin-card-actions" style="display:flex;gap:8px;margin-top:12px"><button type="button" class="btn-secondary" onclick="editEbook('${escapeHtml(item.id)}')">✏️ تعديل</button><button type="button" class="btn-danger" onclick="deleteEbook('${escapeHtml(item.id)}')">🗑️ حذف</button></div>` : ''}</div></article>`;
+                const ebookReads = Number(item.reads || 0).toLocaleString('ar-EG');
+                const ebookDownloads = Number(item.downloads || 0).toLocaleString('ar-EG');
+                const readButton = (free || isAdmin) ? `<button class="ebook-primary count-tooltip" type="button" data-tooltip="إجمالي مرات قراءة الكتاب: ${ebookReads}" aria-label="قراءة مباشرة؛ إجمالي القراءات ${ebookReads}" onclick="openEbookReader('${escapeHtml(item.id)}','${readFormat}')">📖 قراءة مباشرة</button>` : `<button class="ebook-primary count-tooltip" type="button" data-tooltip="القراءة متاحة بعد طلب النسخة" aria-label="طلب النسخة الرقمية" onclick="openBuyModal('${escapeHtml(item.id)}','digital')">🛒 طلب النسخة</button>`;
+                const downloadButtons = free ? `${epub ? `<button class="count-tooltip" type="button" data-tooltip="إجمالي تحميلات الكتاب: ${ebookDownloads}" aria-label="تحميل EPUB؛ إجمالي التحميلات ${ebookDownloads}" onclick="downloadEbook('${escapeHtml(item.id)}','epub')">⬇ EPUB</button>` : ''}${pdf ? `<button class="count-tooltip" type="button" data-tooltip="إجمالي تحميلات الكتاب: ${ebookDownloads}" aria-label="تحميل PDF؛ إجمالي التحميلات ${ebookDownloads}" onclick="downloadEbook('${escapeHtml(item.id)}','pdf')">⬇ PDF</button>` : ''}` : '';
+                const ebookCounters = `<div class="ebook-stats" aria-label="إحصائيات الكتاب"><span title="عدد مرات القراءة">👁️ ${ebookReads} قراءة</span><span title="عدد مرات التحميل">📥 ${ebookDownloads} تحميل</span></div>`;
+                return `<article class="ebook-card"><div class="ebook-cover-wrap">${cover ? `<img src="${escapeHtml(cover)}" alt="غلاف ${escapeHtml(item.title)}" loading="lazy" decoding="async">` : '<span class="ebook-cover-placeholder">📚</span>'}</div><div class="ebook-card-body"><h3>${escapeHtml(item.title || 'كتاب إلكتروني')}</h3><p class="ebook-author">تأليف: ${escapeHtml(item.author || 'غير محدد')}</p><p class="ebook-desc">${escapeHtml(item.desc || '')}</p><div class="ebook-meta">${chips}</div><strong style="color:var(--accent-color);font-size:.9rem">${free ? 'متاح مجانًا' : `السعر: ${escapeHtml(item.price || 'يرجى التواصل')}`}</strong>${ebookCounters}<div class="ebook-actions">${readButton}${downloadButtons}</div>${audioPlayer}${ebookReviewButton}${isAdmin ? `<div class="ebook-admin-card-actions" style="display:flex;gap:8px;margin-top:12px"><button type="button" class="btn-secondary" onclick="editEbook('${escapeHtml(item.id)}')">✏️ تعديل</button><button type="button" class="btn-danger" onclick="deleteEbook('${escapeHtml(item.id)}')">🗑️ حذف</button></div>` : ''}</div></article>`;
             }).join('');
             filtered.forEach(item => loadLatestReviewPreview(item.id));
         }
