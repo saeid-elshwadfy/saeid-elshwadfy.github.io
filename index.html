@@ -1,4 +1,4 @@
-                            <!DOCTYPE html>
+                             <!DOCTYPE html>
 <html lang="ar" dir="rtl" data-theme="light">
 <head>
     <!-- Google AdSense -->
@@ -1736,7 +1736,7 @@
             </div>
 
             <div class="admin-section-box ebook-admin-box">
-                <h3 style="color:var(--accent-color);font-family:'Amiri',serif;margin-bottom:8px">📚 إدارة المكتبة الإلكترونية المستقلة</h3>
+                <h3 style="color:var(--accent-color);font-family:'Amiri',serif;margin-bottom:8px">📚 التحكم في المكتبة الإلكترونية:</h3>
                 <p style="color:var(--text-muted);line-height:1.8;margin-bottom:14px">أضف كتابًا بصيغة PDF أو EPUB أو الصيغتين معًا. تُحفظ الكتب تحت سجل الأعمال الحالي في Firebase مع علامة مستقلة للمكتبة الإلكترونية، دون إنشاء مسار بيانات جديد.</p>
                 <form id="ebookAdminForm">
                     <input type="hidden" id="ebookEditId" value="">
@@ -1913,7 +1913,7 @@
         <section id="ebooks" class="ebook-library-section" aria-labelledby="ebooksTitle">
             <div class="ebook-library-heading">
                 <span class="ebook-kicker">DIGITAL READING ROOM</span>
-                <h2 id="ebooksTitle">📖 المكتبة الإلكترونية</h2>
+                <h2 id="ebooksTitle">📖 المكتبة الإلكترونية 📖</h2>
                 <p>مساحة مستقلة لقراءة وتحميل الكتب الرقمية بصيغتي PDF وEPUB، مع أدوات بحث وتصنيف وتجربة قراءة مريحة.</p>
             </div>
             <div class="ebook-toolbar">
@@ -5506,7 +5506,7 @@ onAuthStateChanged(auth, async (user) => {
             resetReviewForm();
         });
 
-        // المكتبة الإلكترونية المستقلة: تستخدم سجل books الحالي لتفادي إنشاء مسار Firebase جديد.
+        // المكتبة الإلكترونية: تستخدم سجل books الحالي لتفادي إنشاء مسار Firebase جديد.
         let activeEpubBook = null;
         let activeEpubPublication = null;
         let activeEpubRendition = null;
@@ -5540,7 +5540,7 @@ onAuthStateChanged(auth, async (user) => {
                 const pdf = ebookHasPdf(item), epub = ebookHasEpub(item), free = ebookIsFree(item);
                 const chips = `${pdf ? '<span class="ebook-chip">PDF</span>' : ''}${epub ? '<span class="ebook-chip">EPUB</span>' : ''}<span class="ebook-chip">${free ? 'مجاني' : 'مدفوع'}</span><span class="ebook-chip">${escapeHtml(ebookCategoryNames[item.category] || 'أخرى')}</span>`;
                 const audioUrl = safeMediaUrl(item.audioUrl || item.ebookAudioUrl, '');
-                const audioPlayer = audioUrl ? `<div class="ebook-audio-listen" style="margin-top:14px;padding:12px;border:1px solid var(--border-color,rgba(128,128,128,.25));border-radius:12px"><strong style="display:block;margin-bottom:8px;color:var(--accent-color)">🎧 استمع إلى الكتاب مجانًا</strong><audio controls preload="metadata" playsinline style="display:block;width:100%;max-width:100%"><source src="${escapeHtml(audioUrl)}">متصفحك لا يدعم تشغيل الصوت.</audio><small style="display:block;color:var(--text-muted);margin-top:6px">أتمنى لكم رحلة هادئة.</small></div>` : '';
+                const audioPlayer = audioUrl ? `<div class="ebook-audio-listen" style="margin-top:14px;padding:12px;border:1px solid var(--border-color,rgba(128,128,128,.25));border-radius:12px"><strong style="display:block;margin-bottom:8px;color:var(--accent-color)">🎧 استمع إلى الكتاب مجانًا</strong><audio controls preload="metadata" playsinline style="display:block;width:100%;max-width:100%"><source src="${escapeHtml(audioUrl)}">متصفحك لا يدعم تشغيل الصوت.</audio><small style="display:block;color:var(--text-muted);margin-top:6px">[أتمنى لكم قراءة ممتعة]</small></div>` : '';
                 const ebookRatings = item.ratingsByUid && typeof item.ratingsByUid === 'object'
                     ? Object.values(item.ratingsByUid).map(Number).filter(v => Number.isFinite(v) && v >= 1 && v <= 5)
                     : [];
