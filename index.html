@@ -1427,6 +1427,7 @@
             <a href="#videos" class="drawer-link-item">📺 الفيديوهات</a>
             <a href="#services" class="drawer-link-item">🛠️ الخدمات</a>
             <a href="#courses" class="drawer-link-item">🎓 الدورات والورش</a>
+            <a href="#unified-store" class="drawer-link-item">🛒 المتجر الموحد</a>
             <a href="#store" class="drawer-link-item">🛍️ المنتجات الرقمية</a>
         </nav>
     </div>
@@ -1486,6 +1487,7 @@
                 <a href="#videos">الفيديوهات</a>
                 <a href="#services">الخدمات الأدبية</a>
                 <a href="#courses">الدورات والورش</a>
+                <a href="#unified-store">🛒 المتجر الموحد</a>
                 <a href="#store">المنتجات الرقمية</a>
             </nav>
             <div class="header-actions">
@@ -1559,6 +1561,10 @@
 
         <!-- Admin Panel -->
         <section id="adminPanel" class="admin-panel">
+            <div class="admin-section-box" id="unifiedShippingAdmin" style="margin:16px 0;padding:16px;border:1px solid var(--border-color);border-radius:14px">
+              <h3 style="color:var(--accent-color);font-family:'Amiri',serif">🚚 إعدادات مصاريف شحن المتجر الموحد</h3>
+              <p style="color:var(--text-muted);line-height:1.8">تم اعتماد سعر شحن موحّد قدره <strong style="color:var(--accent-color)">60 جنيهًا مصريًا</strong> لجميع محافظات الجمهورية. يُضاف تلقائيًا إلى طلبات النسخ الورقية فقط، ولا تُفرض مصاريف شحن على المنتجات الرقمية.</p>
+            </div>
             <div id="adminNotificationsBox" style="margin:0 0 16px;position:relative"><button type="button" id="adminNotificationsBtn" class="btn-primary" style="width:auto;position:relative">🔔 الإشعارات <span id="adminNotificationsBadge" style="display:none;position:absolute;top:-7px;right:-7px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#d32f2f;color:#fff;font-size:12px;line-height:22px;font-weight:700">0</span></button><div id="adminNotificationsList" style="display:none;margin-top:10px;max-height:320px;overflow:auto;border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:8px;background:rgba(0,0,0,.15)"></div></div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="color: var(--accent-color); font-family: 'Amiri', serif;">🛠️ لوحة تحكم الكاتب الشاملة</h2>
@@ -1961,6 +1967,161 @@
         <h2 id="courses" class="section-title">🎓 الدورات وورش العمل 🎓</h2>
         <p class="section-intro" style="max-width:1000px;margin:-8px auto 16px;color:var(--text-muted);line-height:1.9;text-align:right;">يعرض هذا القسم الدورات وورش العمل المتاحة في موضوعات الكتابة وصناعة المحتوى الأدبي. راجع وصف كل دورة لمعرفة موضوعها ومتطلباتها وسعرها وطريقة الحصول على موادها قبل الاشتراك.</p>
         <div class="grid-container" id="coursesGrid"></div>
+
+
+        <!-- متجر موحد تجريبي: يعرض العناصر المنشورة دون تعديل أقسامها الأصلية -->
+        <style id="unifiedStoreStyles">
+          .unified-store{max-width:1100px;margin:36px auto;padding:clamp(16px,3vw,28px);border:1px solid var(--border-color);border-radius:24px;background:linear-gradient(145deg,var(--card-bg),rgba(212,175,55,.055));box-shadow:0 12px 32px var(--shadow-color)}
+          .unified-store-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+          .unified-store-head h2{font-family:'Amiri',serif;color:var(--accent-color);font-size:2rem}
+          .unified-store-tools{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:10px;margin:16px 0}
+          .unified-store-search{width:100%;padding:12px 15px;border:1px solid var(--border-color);border-radius:14px;background:var(--input-bg);color:var(--text-color);font:inherit}
+          .unified-store-filters{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:14px 0 22px}
+          .unified-store-filters button{border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);padding:9px 14px;border-radius:22px;font:700 .88rem 'Tajawal',sans-serif;cursor:pointer}
+          .unified-store-filters button.active{background:linear-gradient(135deg,#d4af37,#b8860b);color:white;border-color:transparent}
+          .unified-store-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+          .unified-product{background:var(--card-bg);border:1px solid var(--border-color);border-radius:17px;padding:15px;display:flex;flex-direction:column;gap:9px;min-width:0}
+          .unified-product img{width:100%;height:190px;object-fit:cover;border-radius:12px;background:var(--input-bg)}
+          .unified-product h3{font-family:'Amiri',serif;color:var(--accent-color);font-size:1.18rem;line-height:1.5}
+          .unified-product p{color:var(--text-muted);font-size:.9rem;line-height:1.7;flex:1}
+          .unified-product-price{font-weight:800;color:var(--accent-color);background:rgba(212,175,55,.08);border:1px solid var(--border-color);padding:7px 10px;border-radius:10px;text-align:center}
+          .unified-add{border:0;border-radius:22px;padding:11px;background:linear-gradient(135deg,#d4af37,#b8860b);color:white;font:800 .95rem 'Tajawal',sans-serif;cursor:pointer}
+          .unified-cart-open{border:0;border-radius:24px;padding:11px 18px;background:#7c3aed;color:#fff;font:800 .95rem 'Tajawal',sans-serif;cursor:pointer;white-space:nowrap}
+          .unified-store-note{font-size:.88rem;color:var(--text-muted);line-height:1.8;margin-top:12px}
+          .unified-cart-panel{display:none;margin:20px 0 0;padding:16px;border:1px solid var(--accent-color);border-radius:16px;background:var(--input-bg)}
+          .unified-cart-panel.open{display:block}
+          .unified-cart-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-color)}
+          .unified-qty{display:flex;align-items:center;gap:8px}
+          .unified-qty button{width:28px;height:28px;border:1px solid var(--border-color);border-radius:50%;background:var(--card-bg);color:var(--text-color);cursor:pointer}
+          .unified-remove{border:0;background:transparent;color:#dc2626;cursor:pointer;font:inherit}
+          .unified-checkout{margin-top:14px;padding:18px;border:1px solid var(--border-color);border-radius:15px;background:var(--card-bg)}
+          .unified-checkout-start{display:block;width:100%;margin-top:16px;padding:14px 18px;border:1px solid #fcd200;border-radius:8px;background:#ffd814;color:#17212b;font:800 1rem 'Tajawal',sans-serif;cursor:pointer;box-shadow:0 2px 5px #00000012}
+          .unified-checkout-start:hover{background:#f7ca00}
+          .unified-checkout[hidden],.unified-checkout-start[hidden]{display:none!important}
+          .unified-checkout input:not([type="radio"]),.unified-checkout textarea{width:100%;padding:11px 13px;margin:6px 0 12px;border:1px solid var(--border-color);border-radius:10px;background:var(--input-bg);color:var(--text-color);font:inherit}
+          .unified-payment-choice{display:flex;align-items:center;gap:9px;padding:7px 3px;cursor:pointer;font-weight:600}
+          .unified-payment-choice input[type="radio"]{width:auto;margin:0;accent-color:var(--accent-color)}
+          .unified-book-variant{width:100%;padding:10px 12px;border:1px solid var(--border-color);border-radius:10px;background:var(--input-bg);color:var(--text-color);font:600 .9rem 'Tajawal',sans-serif}
+          .unified-book-menu{position:relative}
+          .unified-book-menu summary{list-style:none;text-align:center}
+          .unified-book-menu summary::-webkit-details-marker{display:none}
+          .unified-book-menu-options{display:grid;gap:7px;margin-top:7px;padding:9px;border:1px solid var(--border-color);border-radius:12px;background:var(--card-bg)}
+          .unified-book-option{width:100%;padding:10px;border:1px solid var(--border-color);border-radius:9px;background:var(--input-bg);color:var(--text-color);font:700 .88rem 'Tajawal',sans-serif;cursor:pointer;text-align:center}
+          .unified-book-option:hover{border-color:var(--accent-color)}
+          .unified-cod-policy{color:var(--text-color);font-size:.9rem}
+          .unified-total{font-size:1.1rem;font-weight:800;color:var(--accent-color);margin-top:12px}
+          .unified-store-toast{position:fixed;z-index:100500;top:22px;right:50%;transform:translate(50%,-18px);width:min(92vw,440px);padding:14px 18px;border:1px solid #16a34a;border-radius:14px;background:var(--card-bg,#fff);color:var(--text-color,#222);box-shadow:0 12px 35px #0003;display:flex;align-items:center;gap:10px;font-weight:800;opacity:0;visibility:hidden;transition:opacity .22s ease,transform .22s ease,visibility .22s;pointer-events:none}
+          .unified-store-toast.show{opacity:1;visibility:visible;transform:translate(50%,0)}
+          .unified-store-toast-icon{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:#dcfce7;color:#15803d;font-size:19px}
+          @media(max-width:600px){.unified-store-tools{grid-template-columns:1fr}.unified-cart-row{grid-template-columns:1fr auto}.unified-cart-row .unified-remove{grid-column:1/-1;text-align:right}.unified-store-head h2{font-size:1.55rem}}
+
+          /* واجهة المتجر الموحد بطابع متاجر التسوق الكبرى */
+          #unified-store.unified-store{max-width:1240px;padding:22px;border-radius:12px;background:var(--bg-color);box-shadow:none;border:0}
+          #unified-store .unified-store-head{background:#263746;color:#fff;padding:16px 20px;border-radius:10px;margin-bottom:16px}
+          #unified-store .unified-store-head h2{color:#fff;font-size:1.8rem}
+          #unified-store .unified-store-head p{color:#e6edf3!important}
+          #unified-store .unified-cart-open{background:#f5bd28;color:#17212b;border-radius:8px}
+          #unified-store .unified-store-tools{grid-template-columns:minmax(220px,1fr) auto;background:var(--card-bg);padding:12px;border:1px solid var(--border-color);border-radius:9px}
+          #unified-store .unified-store-search{border-radius:7px;background:#fff;color:#222;border-color:#cbd5e1}
+          #unified-store .unified-store-filters{float:right;width:220px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:0;margin:0 0 18px;padding:14px;background:var(--card-bg);border:1px solid var(--border-color);border-radius:9px;text-align:right}
+          #unified-store .unified-store-filters:before{content:'القسم';font-weight:900;color:var(--text-color);padding:0 8px 10px;border-bottom:1px solid var(--border-color);margin-bottom:5px}
+          #unified-store .unified-store-filters button{background:transparent;border:0;border-radius:6px;color:var(--text-color);text-align:right;padding:9px 10px;font-size:.94rem}
+          #unified-store .unified-store-filters button:hover,#unified-store .unified-store-filters button.active{background:#e8f1f8;color:#17608a}
+          #unified-store .unified-store-grid{margin-right:238px;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
+          #unified-store .unified-product{background:var(--card-bg);border:1px solid #d8dee5;border-radius:8px;padding:12px;gap:8px;box-shadow:0 1px 3px #0000000b}
+          #unified-store .unified-product:hover{border-color:#9bbbd2;box-shadow:0 4px 12px #00000012;transform:translateY(-2px)}
+          #unified-store .unified-product img{height:230px;object-fit:contain;background:#fff;border-radius:5px;padding:5px}
+          #unified-store .unified-product h3{font-family:'Tajawal',sans-serif;color:var(--text-color);font-size:1.02rem;font-weight:700;line-height:1.55;text-align:right}
+          #unified-store .unified-product p{font-size:.86rem;text-align:right}
+          #unified-store .unified-product-price{background:transparent;border:0;border-radius:0;text-align:right;padding:4px 0;color:#b12704;font-size:1.08rem}
+          #unified-store .unified-add{background:#ffd814;color:#17212b;border:1px solid #fcd200;border-radius:24px;font-weight:700}
+          #unified-store .unified-add:hover{background:#f7ca00}
+          #unified-store .unified-store-note{clear:both;padding-top:15px}
+          @media(max-width:900px){#unified-store .unified-store-filters{width:190px}#unified-store .unified-store-grid{margin-right:205px;grid-template-columns:repeat(2,minmax(0,1fr))}}
+          @media(max-width:600px){#unified-store.unified-store{padding:10px}#unified-store .unified-store-filters{float:none;width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}#unified-store .unified-store-filters:before{grid-column:1/-1}#unified-store .unified-store-grid{margin-right:0;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}#unified-store .unified-product{padding:8px}#unified-store .unified-product img{height:155px}#unified-store .unified-store-tools{grid-template-columns:1fr}}
+        </style>
+        <section id="unified-store" class="unified-store" aria-labelledby="unifiedStoreTitle">
+          <div class="unified-store-head">
+            <div>
+              <h2 id="unifiedStoreTitle">🛒 المتجر الإلكتروني الموحد</h2>
+              <p style="color:var(--text-muted);margin-top:4px">كل إصدارات الموقع وخدماته ودوراته في مكان واحد. اختر النسخة الإلكترونية أو الورقية من بطاقة الكتاب نفسها.</p>
+            </div>
+            <button type="button" class="unified-cart-open" id="unifiedCartToggle">🛍️ سلة المشتريات <span id="unifiedCartCount">0</span></button>
+          </div>
+          <div class="unified-store-tools">
+            <input id="unifiedStoreSearch" class="unified-store-search" type="search" placeholder="ابحث عن كتاب أو صوتية أو دورة أو خدمة..." aria-label="البحث في المتجر">
+            <span style="align-self:center;color:var(--text-muted);font-size:.85rem">الأسعار بالجنيه المصري</span>
+          </div>
+          <div class="unified-store-filters" id="unifiedStoreFilters">
+            <button type="button" class="active" data-store-filter="all">الكل</button>
+            <button type="button" data-store-filter="book">📚 الكتب</button>
+            <button type="button" data-store-filter="audio">🎧 الصوتيات</button>
+            <button type="button" data-store-filter="video">🎬 الفيديوهات</button>
+            <button type="button" data-store-filter="service">✍️ الخدمات</button>
+            <button type="button" data-store-filter="course">🎓 الدورات والورش</button>
+            <button type="button" data-store-filter="product">📦 المنتجات الرقمية</button>
+          </div>
+          <div id="unifiedStoreGrid" class="unified-store-grid" aria-live="polite">
+            <p style="color:var(--text-muted)">جاري تحميل منتجات المتجر...</p>
+          </div>
+          <p class="unified-store-note">هذه نسخة تجريبية للعرض وتجربة السلة. إرسال الطلب يتم يدويًا عبر واتساب، ولا يتم تحصيل أي مبلغ إلكتروني من هذه الصفحة.</p>
+          <div id="unifiedStoreToast" class="unified-store-toast" role="status" aria-live="polite"><span class="unified-store-toast-icon">✓</span><span id="unifiedStoreToastText">تمت العملية بنجاح</span></div>
+          <div id="unifiedCartPanel" class="unified-cart-panel">
+            <h3 style="color:var(--accent-color);font-family:'Amiri',serif">سلة مشترياتك</h3>
+            <div id="unifiedCartItems"></div>
+            <div id="unifiedCartTotal" class="unified-total"></div>
+            <button type="button" id="unifiedCheckoutStart" class="unified-checkout-start" hidden>إتمام عملية الشراء</button>
+            <div class="unified-checkout" id="unifiedCheckoutForm" hidden>
+              <h3 style="color:var(--accent-color);font-family:'Amiri',serif;margin-bottom:8px">بيانات إرسال الطلب</h3>
+              <label for="unifiedCustomerName">الاسم</label>
+              <input id="unifiedCustomerName" type="text" autocomplete="name" placeholder="اسم العميل">
+              <label for="unifiedCustomerPhone">رقم الهاتف / واتساب</label>
+              <input id="unifiedCustomerPhone" type="tel" autocomplete="tel" placeholder="01xxxxxxxxx">
+              <div id="unifiedGovernorateWrap" hidden style="margin:10px 0">
+                <label for="unifiedGovernorate">محافظة الشحن</label>
+                <select id="unifiedGovernorate" style="width:100%;padding:11px;border:1px solid var(--border-color);border-radius:10px;background:var(--input-bg);color:var(--text-color);font:inherit"><option value="">اختر المحافظة</option></select>
+                <small id="unifiedShippingRateHint" style="display:block;color:var(--text-muted);margin-top:5px">تُحسب مصاريف الشحن حسب المحافظة.</small>
+              </div>
+                <div id="unifiedAddressWrap" hidden>
+                    <label for="unifiedCustomerAddress">عنوان الشحن بالتفصيل (مطلوب للدفع عند الاستلام)</label>
+                    <textarea id="unifiedCustomerAddress" rows="2" placeholder="المحافظة — المدينة — الشارع — رقم العقار — علامة مميزة" autocomplete="street-address"></textarea>
+                </div>
+              <label for="unifiedCustomerNotes">ملاحظات (اختياري)</label>
+              <textarea id="unifiedCustomerNotes" rows="2" placeholder="العنوان أو تفاصيل النسخة أو الخدمة المطلوبة..."></textarea>
+              <fieldset id="unifiedPaymentOptions" class="unified-payment-options" style="border:1px solid var(--border-color);border-radius:12px;padding:12px;margin:8px 0 14px">
+                <legend style="padding:0 7px;font-weight:800;color:var(--accent-color)">اختار طريقة الدفع</legend>
+                <label class="unified-payment-choice"><input type="radio" name="unifiedPaymentMethod" value="vodafone" checked> فودافون كاش</label>
+                <label class="unified-payment-choice"><input type="radio" name="unifiedPaymentMethod" value="wallet"> المحافظ الإلكترونية (أورانج / اتصالات / WE / المحافظ البنكية)</label>
+                <label class="unified-payment-choice"><input type="radio" name="unifiedPaymentMethod" value="instapay"> إنستاباي (InstaPay)</label>
+                <label class="unified-payment-choice" id="unifiedCodChoice" hidden><input type="radio" name="unifiedPaymentMethod" value="cod"> الدفع عند الاستلام (للكتب الورقية فقط)</label>
+                <div id="unifiedWalletTypeWrap" hidden style="margin:8px 0">
+                  <label for="unifiedWalletType" style="display:block;font-weight:700;margin-bottom:5px">اختر المحفظة:</label>
+                  <select id="unifiedWalletType" style="width:100%;padding:10px;border:1px solid var(--border-color);border-radius:10px;background:var(--input-bg);color:var(--text-color);font:inherit">
+                    <option value="أورانج كاش">أورانج كاش (Orange Cash)</option>
+                    <option value="اتصالات كاش">اتصالات كاش (Etisalat Cash)</option>
+                    <option value="وي باي">WE Pay</option>
+                    <option value="محفظة البنك الأهلي">محفظة البنك الأهلي (الأهلي فون كاش)</option>
+                    <option value="محفظة بنك مصر">محفظة بنك مصر (BM Wallet)</option>
+                    <option value="محفظة بنك CIB">محفظة بنك CIB (Smart Wallet)</option>
+                    <option value="محفظة بنك القاهرة">محفظة بنك القاهرة (قاهرة كاش)</option>
+                    <option value="محفظة بنك الإسكندرية">محفظة بنك الإسكندرية</option>
+                    <option value="محفظة إلكترونية أخرى">محفظة إلكترونية أخرى</option>
+                  </select>
+                </div>
+                <div id="unifiedPaymentDetails" style="margin-top:10px;padding:12px;border:1px dashed var(--border-color);border-radius:10px;line-height:1.8"></div>
+                <p id="unifiedPaymentHint" style="font-size:.85rem;color:var(--text-muted);line-height:1.7;margin:8px 0 0">بيانات التحويل مطابقة لبيانات الدفع المعروضة في الموقع.</p>
+                <div id="unifiedCodPolicy" hidden style="margin-top:12px;padding:12px;border:1px solid #d97706;border-radius:10px;background:rgba(217,119,6,.08)">
+                  <label style="display:flex;gap:9px;align-items:flex-start;cursor:pointer;font-weight:700;line-height:1.8">
+                    <input id="unifiedShippingConsent" type="checkbox" style="margin-top:6px;flex:0 0 auto">
+                    <span>أوافق على أنه في حالة رفض استلام الطلب بعد شحنه، ألتزم بسداد مصاريف الشحن الفعلية التي تكبدها المتجر، وسيتم إبلاغي بقيمتها قبل تأكيد الطلب.</span>
+                  </label>
+                </div>
+              </fieldset>
+              <button type="button" class="unified-add" id="unifiedPrepareOrder" style="width:100%">مراجعة الطلب وتجهيزه للإرسال</button>
+              <div id="unifiedOrderResult" style="display:none;margin-top:14px;padding:12px;border:1px dashed var(--accent-color);border-radius:12px;line-height:1.8"></div>
+            </div>
+          </div>
+        </section>
 
         <h2 id="store" class="section-title">🛍️ متجر المنتجات الرقمية 🛍️</h2>
         <p class="section-intro" style="max-width:1000px;margin:-8px auto 16px;color:var(--text-muted);line-height:1.9;text-align:right;">يحتوي المتجر على المنتجات الرقمية التي تُنشر عبر المنصة. تختلف الملفات وشروط الإتاحة من منتج لآخر؛ لذا اقرأ الوصف والسعر وطريقة التسليم الموضحة في بطاقة المنتج قبل الطلب.</p>
@@ -6091,6 +6252,454 @@ onAuthStateChanged(auth, async (user) => {
             apply();
             const observer = new MutationObserver(() => apply());
             observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+        })();
+
+
+        /* --- المتجر الموحد: سلة مستقلة مع حفظ إعدادات الشحن فقط في Firebase --- */
+        (() => {
+            const storeGrid = document.getElementById('unifiedStoreGrid');
+            if (!storeGrid) return;
+            let storeFilter = 'all';
+            let storeSearch = '';
+            const cart = new Map();
+            let lastPreparedOrder = null;
+            let storeToastTimer = null;
+            const storeGovernorates = [
+                ['cairo','القاهرة'],['giza','الجيزة'],['alexandria','الإسكندرية'],['qalyubia','القليوبية'],
+                ['beheira','البحيرة'],['matrouh','مطروح'],['kafr_el_sheikh','كفر الشيخ'],['gharbia','الغربية'],
+                ['monufia','المنوفية'],['dakahlia','الدقهلية'],['damietta','دمياط'],['port_said','بورسعيد'],
+                ['ismailia','الإسماعيلية'],['suez','السويس'],['sharqia','الشرقية'],['north_sinai','شمال سيناء'],
+                ['south_sinai','جنوب سيناء'],['faiyum','الفيوم'],['bani_suef','بني سويف'],['minya','المنيا'],
+                ['assiut','أسيوط'],['sohag','سوهاج'],['qena','قنا'],['luxor','الأقصر'],['aswan','أسوان'],
+                ['red_sea','البحر الأحمر'],['new_valley','الوادي الجديد']
+            ];
+            let unifiedShippingRates = {};
+            let unifiedShippingRatesLoaded = false;
+            const isShippingRequired = rows => rows.some(row => row.physicalBook === true);
+            const selectedGovernorate = () => document.getElementById('unifiedGovernorate')?.value || '';
+            // سعر شحن موحّد وثابت لجميع المحافظات
+            const UNIFIED_SHIPPING_RATE = 60;
+            const selectedShippingRate = () => selectedGovernorate() ? UNIFIED_SHIPPING_RATE : null;
+            const moneyEGP = value => Number(value || 0).toLocaleString('ar-EG') + ' جنيه';
+            const renderGovernorates = () => {
+                const select = document.getElementById('unifiedGovernorate');
+                if (!select) return;
+                const current = select.value;
+                select.innerHTML = '<option value="">اختر المحافظة</option>' + storeGovernorates.map(([key,name]) =>
+                    '<option value="' + key + '">' + name + '</option>').join('');
+                if (current) select.value = current;
+            };
+            const updateShippingSummary = () => {
+                const rows = [...cart.values()];
+                const wrap = document.getElementById('unifiedGovernorateWrap');
+                const addressWrap = document.getElementById('unifiedAddressWrap');
+                const required = isShippingRequired(rows);
+                if (wrap) wrap.hidden = !required;
+                if (addressWrap) addressWrap.hidden = !required;
+                const hint = document.getElementById('unifiedShippingRateHint');
+                const rate = selectedShippingRate();
+                if (hint) hint.textContent = !required ? '' : !selectedGovernorate()
+                    ? 'اختر المحافظة لمعرفة مصاريف الشحن.'
+                    : rate === null ? 'لم تُحدَّد تكلفة الشحن لهذه المحافظة بعد؛ يرجى التواصل مع المتجر.'
+                    : 'مصاريف الشحن إلى هذه المحافظة: ' + moneyEGP(rate);
+                return {required, rate};
+            };
+            const initShippingSettings = () => {
+                renderGovernorates();
+                const ratesHost = document.getElementById('unifiedShippingAdminRates');
+                if (ratesHost && !ratesHost.dataset.built) {
+                    ratesHost.dataset.built = '1';
+                    ratesHost.innerHTML = storeGovernorates.map(([key,name]) =>
+                        '<label style="display:block;font-weight:700">' + name + '<input type="number" min="0" step="0.01" data-shipping-rate="' + key + '" placeholder="سعر الشحن بالجنيه" style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid var(--border-color);border-radius:8px;background:var(--input-bg);color:var(--text-color)"></label>'
+                    ).join('');
+                }
+                onValue(ref(db, 'storeSettings/unifiedShippingRates'), snapshot => {
+                    unifiedShippingRates = snapshot.val() || {};
+                    unifiedShippingRatesLoaded = true;
+                    document.querySelectorAll('[data-shipping-rate]').forEach(input => {
+                        const key = input.dataset.shippingRate;
+                        if (document.activeElement !== input) input.value = unifiedShippingRates[key] ?? '';
+                    });
+                    updateShippingSummary();
+                    renderCart();
+                }, error => console.warn('تعذر تحميل أسعار الشحن:', error));
+                document.getElementById('unifiedSaveShippingRates')?.addEventListener('click', async () => {
+                    if (!isAdmin) { alert('حفظ أسعار الشحن متاح للإدارة فقط.'); return; }
+                    const next = {};
+                    let invalid = false;
+                    document.querySelectorAll('[data-shipping-rate]').forEach(input => {
+                        const raw = input.value.trim();
+                        if (raw === '') return;
+                        const value = Number(raw);
+                        if (!Number.isFinite(value) || value < 0) invalid = true;
+                        else next[input.dataset.shippingRate] = value;
+                    });
+                    const status = document.getElementById('unifiedShippingSaveStatus');
+                    if (invalid) { alert('تأكد أن جميع أسعار الشحن أرقام صحيحة غير سالبة.'); return; }
+                    try {
+                        await set(ref(db, 'storeSettings/unifiedShippingRates'), next);
+                        if (status) status.textContent = 'تم حفظ أسعار الشحن بنجاح ✓';
+                    } catch (error) {
+                        console.error(error);
+                        if (status) status.textContent = 'تعذر الحفظ؛ راجع صلاحيات Firebase.';
+                        alert('لم نتمكن من حفظ أسعار الشحن. تأكد من صلاحيات قاعدة بيانات Firebase.');
+                    }
+                });
+                document.getElementById('unifiedGovernorate')?.addEventListener('change', () => { updateShippingSummary(); renderCart(); });
+            };
+            const showStoreToast = message => {
+                const toast = document.getElementById('unifiedStoreToast');
+                const text = document.getElementById('unifiedStoreToastText');
+                if (!toast || !text) return;
+                text.textContent = message;
+                toast.classList.add('show');
+                clearTimeout(storeToastTimer);
+                storeToastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+            };
+
+            const toStoreDigits = value => String(value ?? '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+            const storePriceNumber = value => {
+                const clean = toStoreDigits(value).replace(/,/g, '');
+                const match = clean.match(/(\d+(?:\.\d+)?)/);
+                return match ? Number(match[1]) : null;
+            };
+            const storeIsFree = value => checkIsFree(value, 'product');
+            const storeText = value => String(value ?? '').trim();
+            const storeImage = item => {
+                const raw = item.coverUrl || item.imageUrl || item.image || item.thumbnail || item.thumbUrl || '';
+                if (!raw) return '';
+                try { return safeMediaUrl(raw); } catch (_) { return ''; }
+            };
+            const makeStoreItem = (type, item, titleKey='title', priceOverride=null) => {
+                const title = storeText(item[titleKey] || item.name || 'منتج');
+                const priceText = storeText(priceOverride ?? item.price) || 'السعر عند الطلب';
+                const physicalBook = type === 'book-paper';
+                return {
+                    key: `${type}:${item.id}`,
+                    id: item.id,
+                    type,
+                    physicalBook,
+                    title: physicalBook ? `${title} — نسخة ورقية` : title,
+                    desc: storeText(item.desc || item.description),
+                    priceText,
+                    amount: storeIsFree(priceText) ? 0 : storePriceNumber(priceText),
+                    free: storeIsFree(priceText),
+                    image: storeImage(item)
+                };
+            };
+            const collectStoreItems = () => {
+                const list = [];
+                (allBooks || []).filter(x => !x.ebookLibrary).forEach(x => {
+                    const digital = makeStoreItem('book', x);
+                    const variants = [{...digital, title:`${digital.title} — نسخة إلكترونية`, key:`book:${x.id}:digital`, variantLabel:'نسخة إلكترونية'}];
+                    const paperPrice = storeText(x.paperPrice);
+                    if (paperPrice && !/غير متاح|غير متاحة|لا يوجد|نفد/i.test(paperPrice)) {
+                        variants.push({...makeStoreItem('book-paper', x, 'title', paperPrice), key:`book:${x.id}:paper`, variantLabel:'نسخة ورقية'});
+                    }
+                    list.push({
+                        key:`book:${x.id}`, id:x.id, type:'book',
+                        title:digital.title, desc:digital.desc, image:digital.image,
+                        variants
+                    });
+                });
+                (allAudio || []).forEach(x => list.push(makeStoreItem('audio', x)));
+                (allVideos || []).forEach(x => list.push(makeStoreItem('video', x)));
+                (allServices || []).forEach(x => list.push(makeStoreItem('service', x)));
+                (allCourses || []).forEach(x => list.push(makeStoreItem('course', x)));
+                (allProducts || []).forEach(x => list.push(makeStoreItem('product', x)));
+                return list;
+            };
+            const currentItems = () => collectStoreItems().filter(item => {
+                const typeOk = storeFilter === 'all' || item.type === storeFilter;
+                const variantsText = item.variants ? item.variants.map(v => `${v.variantLabel} ${v.priceText}`).join(' ') : `${item.priceText || ''}`;
+                const haystack = `${item.title} ${item.desc} ${variantsText}`.toLowerCase();
+                return typeOk && haystack.includes(storeSearch.toLowerCase());
+            });
+            const formatStoreMoney = amount => amount == null ? 'يحدد بعد التواصل' : amount === 0 ? 'مجاني' : `${amount.toLocaleString('ar-EG')} جنيه`;
+            const renderStore = () => {
+                const items = currentItems();
+                if (!items.length) {
+                    storeGrid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:24px">لا توجد عناصر مطابقة حاليًا.</p>';
+                    return;
+                }
+                storeGrid.innerHTML = items.map(item => {
+                    const image = item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" loading="lazy" onerror="this.style.display='none'">` : '';
+                    const desc = item.desc ? escapeHtml(item.desc.slice(0,150)) : 'راجع تفاصيل المنتج وطريقة الحصول عليه قبل إرسال الطلب.';
+                    if (item.type === 'book' && item.variants) {
+                        const digital = item.variants.find(v => !v.physicalBook);
+                        const paper = item.variants.find(v => v.physicalBook);
+                        const digitalFree = Boolean(digital && digital.free);
+                        const bookId = escapeHtml(String(item.id));
+                        const digitalDownload = digitalFree
+                            ? `<button type="button" class="unified-add" data-store-free-download="${bookId}" data-book-url="${escapeHtml(safeMediaUrl((allBooks || []).find(b => String(b.id) === String(item.id))?.fileUrl || ''))}">📥 تحميل مجاني</button>`
+                            : '';
+                        const paidOptions = [digital && !digitalFree ? `<button type="button" class="unified-book-option" data-store-add-book="${escapeHtml(item.key)}" data-book-variant="digital">النسخة الإلكترونية — ${escapeHtml(digital.priceText)}</button>` : '', paper ? `<button type="button" class="unified-book-option" data-store-add-book="${escapeHtml(item.key)}" data-book-variant="paper">النسخة الورقية — ${escapeHtml(paper.priceText)}</button>` : ''].filter(Boolean).join('');
+                        const purchaseMenu = paidOptions ? `<details class="unified-book-menu"><summary class="unified-add">${digitalFree ? 'شراء النسخة الورقية ▾' : 'إضافة إلى السلة ▾'}</summary><div class="unified-book-menu-options">${paidOptions}</div></details>` : '';
+                        return `<article class="unified-product" data-book-card="${escapeHtml(item.key)}">
+                            ${image}
+                            <small style="color:var(--text-muted)">كتاب</small>
+                            <h3>${escapeHtml(item.title)}</h3>
+                            <p>${desc}</p>
+                            ${digitalDownload}${purchaseMenu}
+                        </article>`;
+                    }
+                    const kind = ({audio:'إصدار صوتي',video:'مادة مرئية',service:'خدمة أدبية',course:'دورة / ورشة',product:'منتج رقمي'})[item.type];
+                    return `<article class="unified-product">
+                        ${image}
+                        <small style="color:var(--text-muted)">${kind}</small>
+                        <h3>${escapeHtml(item.title)}</h3>
+                        <p>${desc}</p>
+                        <div class="unified-product-price">${escapeHtml(item.priceText)}${item.amount == null ? ' — يحدد بعد التواصل' : ''}</div>
+                        <button type="button" class="unified-add" data-store-add="${escapeHtml(item.key)}">إضافة إلى السلة</button>
+                    </article>`;
+                }).join('');
+            };
+            const updateCartCount = () => {
+                const count = [...cart.values()].reduce((sum, row) => sum + row.qty, 0);
+                const node = document.getElementById('unifiedCartCount');
+                if (node) node.textContent = count.toLocaleString('ar-EG');
+            };
+            const renderCart = () => {
+                const host = document.getElementById('unifiedCartItems');
+                const totalNode = document.getElementById('unifiedCartTotal');
+                const rows = [...cart.values()];
+                const checkoutStart = document.getElementById('unifiedCheckoutStart');
+                const checkoutForm = document.getElementById('unifiedCheckoutForm');
+                if (!rows.length) {
+                    host.innerHTML = '<p style="color:var(--text-muted);padding:12px 0">السلة فارغة. أضف منتجًا للبدء.</p>';
+                    totalNode.textContent = '';
+                    if (checkoutStart) checkoutStart.hidden = true;
+                    if (checkoutForm) checkoutForm.hidden = true;
+                } else {
+                    if (checkoutStart) checkoutStart.hidden = false;
+                    host.innerHTML = rows.map(row => `<div class="unified-cart-row">
+                        <div><strong>${escapeHtml(row.title)}</strong><div style="color:var(--text-muted);font-size:.84rem">${escapeHtml(row.priceText)}</div></div>
+                        <div class="unified-qty">
+                          <button type="button" data-cart-minus="${escapeHtml(row.key)}" aria-label="تقليل الكمية">−</button>
+                          <strong>${row.qty}</strong>
+                          <button type="button" data-cart-plus="${escapeHtml(row.key)}" aria-label="زيادة الكمية">+</button>
+                        </div>
+                        <button type="button" class="unified-remove" data-cart-remove="${escapeHtml(row.key)}">حذف</button>
+                    </div>`).join('');
+                    const hasUnknown = rows.some(row => row.amount == null);
+                    const productsTotal = rows.reduce((sum,row) => sum + (row.amount || 0) * row.qty, 0);
+                    const shipping = updateShippingSummary();
+                    const shippingLine = shipping.required
+                        ? (shipping.rate === null ? 'لم تُحدَّد بعد' : moneyEGP(shipping.rate))
+                        : 'لا توجد (منتجات رقمية)';
+                    const finalTotal = productsTotal + (shipping.required && shipping.rate !== null ? shipping.rate : 0);
+                    totalNode.innerHTML = '<div style="display:grid;gap:6px"><div>سعر المنتجات: <strong>' + moneyEGP(productsTotal) + '</strong></div><div>مصاريف الشحن: <strong>' + escapeHtml(shippingLine) + '</strong></div><div style="border-top:1px solid var(--border-color);padding-top:7px;font-size:1.08rem">الإجمالي النهائي: <strong>' + moneyEGP(finalTotal) + '</strong></div>' + (hasUnknown ? '<small style="color:var(--text-muted)">توجد عناصر يتحدد سعرها بعد التواصل.</small>' : '') + '</div>';
+                }
+                updateCartCount();
+                if (typeof updatePaymentChoices === 'function') updatePaymentChoices();
+                document.getElementById('unifiedOrderResult').style.display = 'none';
+                lastPreparedOrder = null;
+            };
+            const addCartRow = item => {
+                const row = cart.get(item.key);
+                const alreadyInCart = Boolean(row);
+                if (row) row.qty += 1;
+                else cart.set(item.key, {...item, qty:1});
+                renderCart();
+                document.getElementById('unifiedCartPanel').classList.add('open');
+                showStoreToast(alreadyInCart ? `تمت زيادة كمية «${item.title}» في السلة` : `تمت إضافة «${item.title}» إلى السلة بنجاح`);
+            };
+            const addToCart = key => {
+                const item = collectStoreItems().find(x => x.key === key);
+                if (!item) return;
+                addCartRow(item);
+            };
+            const addBookVariantToCart = (bookKey, variantType) => {
+                const book = collectStoreItems().find(x => x.key === bookKey && x.type === 'book');
+                const variant = book?.variants?.find(v => (v.physicalBook ? 'paper' : 'digital') === variantType);
+                if (!variant) return;
+                addCartRow({...variant, type:'book'});
+            };
+
+            storeGrid.addEventListener('click', event => {
+                const freeDownloadButton = event.target.closest('[data-store-free-download]');
+                if (freeDownloadButton) {
+                    const book = (allBooks || []).find(b => String(b.id) === freeDownloadButton.dataset.storeFreeDownload);
+                    if (book) window.downloadBook(book.id, book.fileUrl, book.price, book.category);
+                    return;
+                }
+                const bookButton = event.target.closest('[data-store-add-book]');
+                if (bookButton) {
+                    event.preventDefault();
+                    addBookVariantToCart(bookButton.dataset.storeAddBook, bookButton.dataset.bookVariant || 'digital');
+                    const menu = bookButton.closest('details');
+                    if (menu) menu.open = false;
+                    return;
+                }
+                const button = event.target.closest('[data-store-add]');
+                if (button) addToCart(button.dataset.storeAdd);
+            });
+            document.getElementById('unifiedStoreFilters').addEventListener('click', event => {
+                const button = event.target.closest('[data-store-filter]');
+                if (!button) return;
+                storeFilter = button.dataset.storeFilter;
+                document.querySelectorAll('#unifiedStoreFilters button').forEach(x => x.classList.toggle('active', x === button));
+                renderStore();
+            });
+            document.getElementById('unifiedStoreSearch').addEventListener('input', event => {
+                storeSearch = event.target.value || '';
+                renderStore();
+            });
+            document.getElementById('unifiedCheckoutStart')?.addEventListener('click', () => {
+                const form = document.getElementById('unifiedCheckoutForm');
+                if (!cart.size || !form) return;
+                form.hidden = false;
+                form.scrollIntoView({behavior:'smooth', block:'start'});
+            });
+            document.getElementById('unifiedCartToggle').addEventListener('click', () => {
+                document.getElementById('unifiedCartPanel').classList.toggle('open');
+                renderCart();
+            });
+            document.getElementById('unifiedCartItems').addEventListener('click', event => {
+                const plus = event.target.closest('[data-cart-plus]');
+                const minus = event.target.closest('[data-cart-minus]');
+                const removeButton = event.target.closest('[data-cart-remove]');
+                const key = plus?.dataset.cartPlus || minus?.dataset.cartMinus || removeButton?.dataset.cartRemove;
+                if (!key || !cart.has(key)) return;
+                if (removeButton) {
+                    const removedTitle = cart.get(key).title;
+                    cart.delete(key);
+                    showStoreToast(`تم حذف «${removedTitle}» من السلة`);
+                }
+                else if (plus) cart.get(key).qty += 1;
+                else {
+                    cart.get(key).qty -= 1;
+                    if (cart.get(key).qty <= 0) cart.delete(key);
+                }
+                renderCart();
+            });
+            function updatePaymentChoices() {
+                const rows = [...cart.values()];
+                const codChoice = document.getElementById('unifiedCodChoice');
+                const codRadio = codChoice?.querySelector('input');
+                const codAllowed = rows.length > 0 && rows.every(row => row.physicalBook === true);
+                if (codChoice) codChoice.hidden = !codAllowed;
+                if (!codAllowed && codRadio?.checked) {
+                    const defaultRadio = document.querySelector('input[name="unifiedPaymentMethod"][value="vodafone"]');
+                    if (defaultRadio) defaultRadio.checked = true;
+                }
+                const selected = document.querySelector('input[name="unifiedPaymentMethod"]:checked')?.value || 'vodafone';
+                const walletWrap = document.getElementById('unifiedWalletTypeWrap');
+                if (walletWrap) walletWrap.hidden = selected !== 'wallet';
+                const codPolicy = document.getElementById('unifiedCodPolicy');
+                if (codPolicy) codPolicy.hidden = selected !== 'cod' || !codAllowed;
+                const addressWrap = document.getElementById('unifiedAddressWrap');
+                if (addressWrap) addressWrap.hidden = !isShippingRequired(rows);
+                const consent = document.getElementById('unifiedShippingConsent');
+                if (consent && (selected !== 'cod' || !codAllowed)) consent.checked = false;
+
+                const details = document.getElementById('unifiedPaymentDetails');
+                const hint = document.getElementById('unifiedPaymentHint');
+                const paymentNumber = '01096227242';
+                if (details) {
+                    if (selected === 'vodafone') {
+                        details.innerHTML = `<strong>فودافون كاش</strong><br>رقم المحفظة للتحويل: <strong dir="ltr">${paymentNumber}</strong>
+                          <button type="button" data-copy-payment="${paymentNumber}" style="margin-inline-start:8px;padding:5px 10px;border:1px solid var(--border-color);border-radius:8px;background:var(--card-bg);color:var(--text-color);cursor:pointer">نسخ الرقم</button>`;
+                    } else if (selected === 'wallet') {
+                        const wallet = document.getElementById('unifiedWalletType')?.value || 'محفظة إلكترونية';
+                        details.innerHTML = `<strong>${escapeHtml(wallet)}</strong><br>رقم المحفظة لاستقبال التحويل: <strong dir="ltr">${paymentNumber}</strong>
+                          <button type="button" data-copy-payment="${paymentNumber}" style="margin-inline-start:8px;padding:5px 10px;border:1px solid var(--border-color);border-radius:8px;background:var(--card-bg);color:var(--text-color);cursor:pointer">نسخ الرقم</button>`;
+                    } else if (selected === 'instapay') {
+                        details.innerHTML = `<strong>إنستاباي (InstaPay)</strong><br>رقم الهاتف للتحويل: <strong dir="ltr">${paymentNumber}</strong>
+                          <button type="button" data-copy-payment="${paymentNumber}" style="margin-inline-start:8px;padding:5px 10px;border:1px solid var(--border-color);border-radius:8px;background:var(--card-bg);color:var(--text-color);cursor:pointer">نسخ الرقم</button>
+                          <a href="instapay://" style="display:inline-block;margin-inline-start:8px;color:var(--accent-color);font-weight:700">فتح تطبيق InstaPay</a>`;
+                    } else {
+                        details.innerHTML = '<strong>الدفع عند الاستلام</strong><br>يتم تحصيل قيمة النسخ الورقية ورسوم الشحن عند الاستلام، وتُحدد تكلفة الشحن قبل تأكيد الطلب.';
+                    }
+                }
+                if (hint) hint.textContent = selected === 'cod'
+                    ? 'الدفع عند الاستلام متاح للنسخ الورقية فقط. يلزم الموافقة على سياسة مصاريف الشحن أدناه.'
+                    : 'استخدم رقم التحويل الموضح أعلاه، ثم أرسل الطلب عبر واتساب لتأكيد التفاصيل.';
+            }
+
+            document.querySelectorAll('input[name="unifiedPaymentMethod"]').forEach(radio => radio.addEventListener('change', updatePaymentChoices));
+            document.getElementById('unifiedWalletType')?.addEventListener('change', updatePaymentChoices);
+            document.getElementById('unifiedPaymentDetails')?.addEventListener('click', async event => {
+                const button = event.target.closest('[data-copy-payment]');
+                if (!button) return;
+                try {
+                    await navigator.clipboard.writeText(button.dataset.copyPayment);
+                    showStoreToast('تم نسخ رقم التحويل');
+                } catch (_) {
+                    showStoreToast('تعذر النسخ تلقائيًا؛ يمكنك تحديد الرقم ونسخه');
+                }
+            });
+
+            document.getElementById('unifiedPrepareOrder').addEventListener('click', () => {
+                const rows = [...cart.values()];
+                const name = document.getElementById('unifiedCustomerName').value.trim();
+                const phone = document.getElementById('unifiedCustomerPhone').value.trim();
+                const address = document.getElementById('unifiedCustomerAddress')?.value.trim() || '';
+                const notes = document.getElementById('unifiedCustomerNotes').value.trim();
+                const paymentRadio = document.querySelector('input[name="unifiedPaymentMethod"]:checked');
+                const paymentLabels = {
+                    vodafone:'فودافون كاش',
+                    wallet:document.getElementById('unifiedWalletType')?.value || 'محفظة إلكترونية',
+                    instapay:'إنستاباي (InstaPay)',
+                    cod:'الدفع عند الاستلام'
+                };
+                const paymentMethod = paymentRadio?.value || '';
+                const codAllowed = rows.length > 0 && rows.every(row => row.physicalBook === true);
+                const consent = document.getElementById('unifiedShippingConsent')?.checked === true;
+                const shipping = updateShippingSummary();
+                const governorateName = storeGovernorates.find(([key]) => key === selectedGovernorate())?.[1] || '';
+                const result = document.getElementById('unifiedOrderResult');
+                if (!rows.length) { alert('السلة فارغة. أضف منتجًا أولًا.'); return; }
+                if (shipping.required && !selectedGovernorate()) { alert('من فضلك اختر محافظة الشحن.'); document.getElementById('unifiedGovernorate')?.focus(); return; }
+                if (shipping.required && shipping.rate === null) { alert('لم تُحدَّد مصاريف الشحن لهذه المحافظة بعد. يرجى التواصل مع المتجر قبل إتمام الطلب.'); return; }
+                if (shipping.required && address.length < 10) { alert('من فضلك اكتب عنوان الشحن بالتفصيل.'); document.getElementById('unifiedAddressWrap')?.scrollIntoView({behavior:'smooth',block:'center'}); document.getElementById('unifiedCustomerAddress')?.focus(); return; }
+                if (!paymentMethod || (paymentMethod === 'cod' && !codAllowed)) { alert('من فضلك اختر طريقة دفع متاحة لهذا الطلب.'); return; }
+                if (paymentMethod === 'cod' && !consent) { alert('لإتمام طلب الدفع عند الاستلام، يجب الموافقة على سياسة مصاريف الشحن عند رفض الاستلام.'); document.getElementById('unifiedCodPolicy')?.scrollIntoView({behavior:'smooth',block:'center'}); return; }
+                if (paymentMethod === 'cod' && address.length < 10) { alert('من فضلك اكتب عنوان الشحن بالتفصيل.'); document.getElementById('unifiedAddressWrap')?.scrollIntoView({behavior:'smooth',block:'center'}); document.getElementById('unifiedCustomerAddress')?.focus(); return; }
+                if (name.length < 2) { alert('من فضلك اكتب الاسم.'); return; }
+                if (phone.replace(/\D/g,'').length < 8) { alert('من فضلك اكتب رقم هاتف صحيحًا للتواصل.'); return; }
+                const orderCode = `SHOP-${Date.now().toString().slice(-8)}`;
+                const productsTotal = rows.reduce((sum,row) => sum + (row.amount || 0) * row.qty, 0);
+                const shippingCost = shipping.required ? shipping.rate : 0;
+                const total = productsTotal + shippingCost;
+                const unknown = rows.some(row => row.amount == null);
+                const paymentNumber = '01096227242';
+                const message = [
+                    'طلب جديد من المتجر الإلكتروني — موقع الكاتب سعيد الشوادفي',
+                    `رقم الطلب: ${orderCode}`,
+                    `الاسم: ${name}`,
+                    `الهاتف: ${phone}`,
+                    ...(shipping.required ? [`محافظة الشحن: ${governorateName}`, `عنوان الشحن: ${address}`] : []),
+                    `طريقة الدفع المفضلة: ${paymentLabels[paymentMethod]}`, 
+                    'المنتجات:',
+                    ...rows.map((row,index) => `${index+1}) ${row.title} × ${row.qty} — ${row.priceText}`),
+                    `سعر المنتجات: ${productsTotal.toLocaleString('ar-EG')} جنيه`,
+                    `مصاريف الشحن: ${shippingCost.toLocaleString('ar-EG')} جنيه${shipping.required ? ` (${governorateName})` : ' (لا توجد)'}`,
+                    `الإجمالي النهائي: ${total.toLocaleString('ar-EG')} جنيه${unknown ? ' (توجد عناصر يتحدد سعرها بعد التواصل)' : ''}`, 
+                    `ملاحظات: ${notes || 'لا توجد'}`,
+                    paymentMethod === 'cod'
+                      ? 'أقر العميل بموافقته على أنه إذا رفض استلام الطلب بعد شحنه، يلتزم بسداد مصاريف الشحن الفعلية التي تكبدها المتجر، على أن يتم إبلاغه بقيمتها قبل تأكيد الطلب.'
+                      : `بيانات التحويل: ${paymentLabels[paymentMethod]} — رقم الاستقبال ${paymentNumber}. يرجى إرسال بيانات التحويل/تأكيده عبر واتساب بعد إتمامه.`
+                ].join('\n');
+                lastPreparedOrder = {orderCode, message, paymentMethod, shippingConsent:paymentMethod === 'cod' && consent};
+                const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+                result.style.display = 'block';
+                result.innerHTML = `<strong style="color:var(--accent-color)">تم تجهيز الطلب ${escapeHtml(orderCode)}</strong>
+                    <p>طريقة الدفع المختارة: <strong>${escapeHtml(paymentLabels[paymentMethod])}</strong>. راجع التفاصيل ثم أرسل الطلب عبر واتساب. لن يتم تحصيل أي مبلغ من هذه الصفحة.</p>
+                    <a class="btn-primary" style="display:block;text-decoration:none;margin-top:10px" href="${wa}" target="_blank" rel="noopener noreferrer">إرسال الطلب عبر واتساب</a>`;
+            });
+
+            // يعاد بناء العرض عند وصول بيانات كل قسم من Firebase.
+            const storeRefresh = () => { renderStore(); renderCart(); };
+            const refreshTimer = setInterval(() => {
+                if (typeof allBooks !== 'undefined' && typeof allAudio !== 'undefined' && typeof allProducts !== 'undefined') {
+                    storeRefresh();
+                }
+            }, 1200);
+            setTimeout(() => clearInterval(refreshTimer), 12000);
+            renderStore();
+            renderCart();
+            initShippingSettings();
         })();
 
         renderBooks();
