@@ -6407,7 +6407,15 @@ onAuthStateChanged(auth, async (user) => {
                 (allServices || []).forEach(x => list.push(makeStoreItem('service', x)));
                 (allCourses || []).forEach(x => list.push(makeStoreItem('course', x)));
                 (allProducts || []).forEach(x => list.push(makeStoreItem('product', x)));
-                return list;
+                // المتجر الموحد يعرض المنتجات المدفوعة فقط.
+                // في الكتب نحتفظ بالنسخ المدفوعة فقط؛ فقد تكون الرقمية مجانية والورقية مدفوعة أو العكس.
+                return list.flatMap(item => {
+                    if (item.type === 'book' && Array.isArray(item.variants)) {
+                        const paidVariants = item.variants.filter(variant => !variant.free);
+                        return paidVariants.length ? [{...item, variants: paidVariants}] : [];
+                    }
+                    return item.free ? [] : [item];
+                });
             };
             const currentItems = () => collectStoreItems().filter(item => {
                 const typeOk = storeFilter === 'all' || item.type === storeFilter;
