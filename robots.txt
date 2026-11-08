@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
-
-Sitemap: https://github.io
+Sitemap: https://saeid-elshwadfy.github.io/sitemap.xml
