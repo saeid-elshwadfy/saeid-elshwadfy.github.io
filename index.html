@@ -1597,8 +1597,8 @@
             </div>
             <div id="adminNotificationsBox" style="margin:0 0 16px;position:relative"><button type="button" id="adminNotificationsBtn" class="btn-primary" style="width:auto;position:relative">🔔 الإشعارات <span id="adminNotificationsBadge" style="display:none;position:absolute;top:-7px;right:-7px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#d32f2f;color:#fff;font-size:12px;line-height:22px;font-weight:700">0</span></button><div id="adminNotificationsList" style="display:none;margin-top:10px;max-height:320px;overflow:auto;border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:8px;background:rgba(0,0,0,.15)"></div></div>
             <div class="admin-section-box" id="contactMessagesAdmin" style="margin-top:16px;">
-                <h3 style="color:var(--accent-color);font-family:'Amiri',serif;margin-bottom:12px;">💬 رسائل الزوار والعملاء</h3>
-                <div id="contactMessagesAdminList" style="overflow-x:auto;"><p style="color:var(--text-muted);">لا توجد رسائل جديدة حالياً.</p></div>
+                <h3 style="color:var(--accent-color);font-family:'Amiri',serif;margin-bottom:12px;">💬 طلبات النشر</h3>
+                <div id="contactMessagesAdminList" style="overflow-x:auto;"><p style="color:var(--text-muted);">لا توجد طلبات نشر حالياً.</p></div>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="color: var(--accent-color); font-family: 'Amiri', serif;">🛠️ لوحة تحكم الكاتب الشاملة</h2>
@@ -3488,7 +3488,7 @@ onAuthStateChanged(auth, async (user) => {
                     .map(([id, item]) => ({ id, ...(item || {}) }))
                     .sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
                 if (!entries.length) {
-                    container.innerHTML = '<p style="color:var(--text-muted);">لا توجد رسائل جديدة حالياً.</p>';
+                    container.innerHTML = '<p style="color:var(--text-muted);">لا توجد طلبات نشر حالياً.</p>';
                     return;
                 }
                 container.innerHTML = `<table class="requests-table"><thead><tr><th>الاسم</th><th>وسيلة التواصل</th><th>الرسالة</th><th>التاريخ</th><th>الحالة</th></tr></thead><tbody>${entries.map(item => `<tr><td>${escapeHtml(item.name || '')}</td><td>${escapeHtml(item.contact || '')}</td><td style="min-width:220px;white-space:pre-wrap;">${escapeHtml(item.message || '')}</td><td>${item.createdAt ? new Date(item.createdAt).toLocaleString('ar-EG') : ''}</td><td>${item.read ? 'تمت القراءة' : '<strong style="color:#16a34a">جديدة</strong>'}<br><button type="button" class="btn-secondary" style="margin-top:6px;padding:6px 10px;" data-contact-read="${escapeHtml(item.id)}">تحديد كمقروءة</button></td></tr>`).join('')}</tbody></table>`;
