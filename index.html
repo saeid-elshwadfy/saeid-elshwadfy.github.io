@@ -18,7 +18,7 @@
     
     <!-- وسوم تحسين محركات البحث (SEO) -->
     <title>موقع الكاتب الروائي | سعيد الشوادفي</title>
-    <meta name="description" content="الموقع الرسمي للكاتب والروائي سعيد الشوادفي. تعرّف إلى أعماله الأدبية، واستكشف الروايات والقصص المتاحة، والمكتبة الصوتية والمرئية، والخدمات الأدبية والدورات والمنتجات الرقمية.">
+    <meta name="description" content="الموقع الرسمي للكاتب والروائي سعيد الشوادفي. اقرأ نبذة عن روايتي ظلال لا تنام وابن الغزال، واستكشف الروايات والقصص والخواطر المنشورة، والمكتبة الإلكترونية والصوتية والمرئية، والخدمات الأدبية والدورات.">
     <meta name="author" content="سعيد الشوادفي">
     <meta name="robots" content="index, follow, max-image-preview:large">
     <link rel="canonical" href="https://saeid-elshwadfy.github.io/">
@@ -26,7 +26,7 @@
 
     <!-- أكواد تعريفية لوسائل التواصل الاجتماعي (Open Graph) -->
     <meta property="og:title" content="موقع الكاتب الروائي | سعيد الشوادفي">
-    <meta property="og:description" content="الموقع الرسمي للكاتب والروائي سعيد الشوادفي؛ اكتشف الأعمال الأدبية والمكتبة الصوتية والمرئية والخدمات المخصصة للكتّاب.">
+    <meta property="og:description" content="الموقع الرسمي للكاتب والروائي سعيد الشوادفي؛ اقرأ نبذة عن روايتي ظلال لا تنام وابن الغزال، واستكشف الأعمال الأدبية والمكتبة الإلكترونية والصوتية والمرئية والخدمات المخصصة للكتّاب.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://saeid-elshwadfy.github.io/">
 
@@ -63,7 +63,7 @@
     <!-- كروت منصة تويتر / X -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="موقع الكاتب الروائي | سعيد الشوادفي">
-    <meta name="twitter:description" content="الموقع الرسمي للكاتب والروائي سعيد الشوادفي؛ اكتشف الأعمال الأدبية والمكتبة الصوتية والمرئية والخدمات المخصصة للكتّاب.">
+    <meta name="twitter:description" content="الموقع الرسمي للكاتب والروائي سعيد الشوادفي؛ اقرأ نبذة عن روايتي ظلال لا تنام وابن الغزال، واستكشف الأعمال الأدبية والمكتبة الإلكترونية والصوتية والمرئية والخدمات المخصصة للكتّاب.">
     <meta name="twitter:image" content="https://res.cloudinary.com/uha8a6rd/image/upload/v1790121942/ieq5er6fzf6xyfhmtgcw.jpg">
 
     <!-- أيقونة اللوجو للمتصفح (Favicon) -->
@@ -741,6 +741,35 @@
             padding: 12px;
             box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
         }
+
+        /* زر التقييم والمراجعة الرئيسي: نفس تصميم زر الشراء وبعرض كامل البطاقة */
+        .btn-reviews-full {
+            grid-column: 1 / -1 !important;
+            width: 100% !important;
+            min-height: 44px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #d97706 100%) !important;
+            color: #fff !important;
+            font-size: 0.98rem !important;
+            padding: 12px !important;
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        .action-buttons-group .btn-reviews.btn-reviews-full {
+            grid-column: 1 / -1 !important;
+            height: auto !important;
+            min-height: 48px !important;
+            max-height: none !important;
+            padding: 12px !important;
+            font-size: 0.98rem !important;
+            line-height: 1.3 !important;
+            white-space: nowrap !important;
+        }
+        .btn-reviews-full:hover { transform: translateY(-2px); opacity: .96; }
 
         .buy-dropdown-menu {
             display: none;
@@ -1923,7 +1952,8 @@
             <button class="tab-btn" data-cat="free">🎁 كتب مجانية</button>
         </div>
 
-        <div class="books-grid" id="booksGrid"></div>
+        <div class="books-grid" id="booksGrid"><p style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-muted);">جاري تحميل الأعمال الأدبية...</p></div>
+        <noscript><p style="max-width:1000px;margin:12px auto;padding:12px;border:1px solid var(--border-color);border-radius:10px;line-height:1.8;">يتطلب عرض فهرس الأعمال والمكتبة التفاعلية تفعيل JavaScript في المتصفح. يمكنك قراءة التعريف والأدلة الموجودة في الصفحة، ثم تفعيل JavaScript لاستعراض الأعمال المنشورة.</p></noscript>
 
         <section id="ebooks" class="ebook-library-section" aria-labelledby="ebooksTitle">
             <div class="ebook-library-heading">
@@ -1944,7 +1974,7 @@
                 </select>
             </div>
             <div class="ebook-library-stats" id="ebookLibraryStats">جاري تحميل الكتب الإلكترونية...</div>
-            <div class="ebook-grid" id="ebookGrid" aria-live="polite"></div>
+            <div class="ebook-grid" id="ebookGrid" aria-live="polite"><div class="ebook-empty">جاري تحميل المكتبة الإلكترونية...</div></div>
         </section>
 
         <h2 id="audio" class="section-title">🎙️ المكتبة الصوتية 🎙️</h2>
@@ -4798,27 +4828,10 @@ onAuthStateChanged(auth, async (user) => {
                     return { id, ...b };
                 }).sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
             } else {
-                allBooks = [{
-                    id: 'defB1',
-                    title: 'ظلال لا تنام',
-                    author: 'سعيد الشوادفي',
-                    category: 'novel',
-                    desc: 'رواية غموض وتشويق تدور أحداثها في أزقة مظلمة حيث تطفو أسرار الماضى وتبقى الظلال ساهرة لا تنام.',
-                    price: '50 جنيه',
-                    paperPrice: '120 جنيه',
-                    coverUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&w=500&q=80',
-                    fileUrl: '#',
-                    amazonLink: 'https://www.amazon.com',
-                    googlePlayLink: 'https://play.google.com',
-                    freePages: ['الفصل الأول: البداية المظلمة...\nانطلقت الخطوات السريعة في أزقة المدينة المنسية...'],
-                    reads: 120,
-                    downloads: 45,
-                    rating: 4.8,
-                    ratingSum: 24,
-                    ratingCount: 5,
-                    updatedAt: 1
-                }];
-                sumReads = 120;
+                // لا نعرض بيانات تجريبية أو أرقاماً/روابط غير حقيقية إذا كانت قاعدة الكتب فارغة.
+                // بيانات الأعمال المنشورة يجب أن تأتي من Firebase فقط.
+                allBooks = [];
+                sumReads = 0;
             }
 
             renderAnalyticsDashboard();
@@ -4833,6 +4846,15 @@ onAuthStateChanged(auth, async (user) => {
             renderEbooks();
             renderEbookAdminList();
             checkDirectBookParam();
+        }, (error) => {
+            console.error('تعذر تحميل الأعمال الأدبية من Firebase:', error);
+            allBooks = [];
+            const booksGrid = document.getElementById('booksGrid');
+            const ebookGrid = document.getElementById('ebookGrid');
+            const ebookStats = document.getElementById('ebookLibraryStats');
+            if (booksGrid) booksGrid.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-muted);">تعذر تحميل الأعمال الأدبية الآن. يرجى إعادة المحاولة لاحقاً.</p>';
+            if (ebookGrid) ebookGrid.innerHTML = '<div class="ebook-empty">تعذر تحميل المكتبة الإلكترونية الآن. يرجى إعادة المحاولة لاحقاً.</div>';
+            if (ebookStats) ebookStats.textContent = 'تعذر تحميل بيانات المكتبة الإلكترونية';
         });
 
         document.querySelectorAll('#categoryTabs .tab-btn').forEach(btn => {
@@ -4962,6 +4984,9 @@ onAuthStateChanged(auth, async (user) => {
 
                 const optimizedCoverUrl = optimizeCloudinaryUrl(book.coverUrl, 400);
                 const categoryName = getCategoryName(book.category);
+                // رابط HTML مباشر لصفحة الكتاب المستقلة التي ينشئها Worker ببياناته
+                // وعينة القراءة وبيانات Book المنظمة لمحركات البحث.
+                const seoBookUrl = `https://tight-firefly-b99c.saeidelshwadfy.workers.dev/book/${encodeURIComponent(book.id)}`;
 
                 const cardHtml = `
                     <div class="book-card" id="bookCard_${book.id}">
@@ -4991,14 +5016,14 @@ onAuthStateChanged(auth, async (user) => {
                         </div>
 
                         <div class="action-buttons-group">
+                            <button class="btn-action btn-reviews btn-reviews-full" onclick="openReviewsModal('${escapeHtml(book.id)}')">⭐ تقييم ومراجعة</button>
                             ${amazonBtnHtml}
                             ${googleBtnHtml}
                             ${readBtnHtml}
+                            <a class="btn-action btn-read" href="${escapeHtml(seoBookUrl)}" aria-label="صفحة تفاصيل ${escapeHtml(book.title)}" title="فتح صفحة مستقلة تتضمن تفاصيل الكتاب وعينة القراءة">🔎 تفاصيل الكتاب</a>
                             ${downloadBtnHtml}
 
                             <button class="btn-action btn-share count-tooltip" data-tooltip="${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات المسجل: ${Number(book.shares ?? book.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" title="${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات المسجل: ${Number(book.shares ?? book.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" aria-label="مشاركة؛ ${Number.isFinite(Number(book.shares ?? book.shareCount)) && (book.shares != null || book.shareCount != null) ? `عدد المشاركات ${Number(book.shares ?? book.shareCount)}` : 'عدد المشاركات غير متاح'}" onclick='shareBook(${escapeHtml(JSON.stringify(book.id))}, ${escapeHtml(JSON.stringify(book.title))})'>🔗 مشاركة</button>
-                            <button class="btn-action btn-reviews" onclick="openReviewsModal('${escapeHtml(book.id)}')">⭐ تقييم ومراجعة</button>
-
                             ${buySectionHtml}
 
                             ${adminBtns}
