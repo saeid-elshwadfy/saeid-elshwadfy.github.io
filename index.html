@@ -1508,6 +1508,7 @@
             <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; align-items: center;">
                 <a href="#books" class="btn-primary" style="width: auto;">تصفح الروايات 📚</a>
                 <button id="openPublishModalBtn" class="btn-publish-featured">انشر معنا ✒️ ✨</button>
+                <button id="openContactModalBtn" class="btn-primary" style="background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);">💬 مراسلة الإدارة</button>
             </div>
         </section>
 
@@ -1566,6 +1567,10 @@
               <p style="color:var(--text-muted);line-height:1.8">تم اعتماد سعر شحن موحّد قدره <strong style="color:var(--accent-color)">60 جنيهًا مصريًا</strong> لجميع محافظات الجمهورية. يُضاف تلقائيًا إلى طلبات النسخ الورقية فقط، ولا تُفرض مصاريف شحن على المنتجات الرقمية.</p>
             </div>
             <div id="adminNotificationsBox" style="margin:0 0 16px;position:relative"><button type="button" id="adminNotificationsBtn" class="btn-primary" style="width:auto;position:relative">🔔 الإشعارات <span id="adminNotificationsBadge" style="display:none;position:absolute;top:-7px;right:-7px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#d32f2f;color:#fff;font-size:12px;line-height:22px;font-weight:700">0</span></button><div id="adminNotificationsList" style="display:none;margin-top:10px;max-height:320px;overflow:auto;border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:8px;background:rgba(0,0,0,.15)"></div></div>
+            <div class="admin-section-box" id="contactMessagesAdmin" style="margin-top:16px;">
+                <h3 style="color:var(--accent-color);font-family:'Amiri',serif;margin-bottom:12px;">💬 رسائل الزوار والعملاء</h3>
+                <div id="contactMessagesAdminList" style="overflow-x:auto;"><p style="color:var(--text-muted);">لا توجد رسائل جديدة حالياً.</p></div>
+            </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="color: var(--accent-color); font-family: 'Amiri', serif;">🛠️ لوحة تحكم الكاتب الشاملة</h2>
                 <button class="btn-danger" style="flex: none; padding: 6px 16px;" id="logoutBtn">تسجيل الخروج ✖</button>
@@ -2246,6 +2251,22 @@
             </div>
         </div>
 
+        <!-- Contact Administration Modal -->
+        <div id="contactAdminModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="contactAdminTitle">
+            <div class="modal-content" style="max-width:560px;">
+                <span class="close-modal" id="closeContactAdminBtn" aria-label="إغلاق">&times;</span>
+                <h3 id="contactAdminTitle" style="color:var(--accent-color);font-family:'Amiri',serif;font-size:1.8rem;">💬 مراسلة الإدارة</h3>
+                <p style="color:var(--text-muted);margin:8px 0 18px;line-height:1.8;">اكتب رسالتك وسيتلقى فريق الإدارة رسالتك للرد عليك. لا يلزم تسجيل الدخول.</p>
+                <form id="contactAdminForm">
+                    <div class="form-group"><label for="contactVisitorName">الاسم:</label><input id="contactVisitorName" type="text" maxlength="100" required placeholder="اكتب اسمك"></div>
+                    <div class="form-group"><label for="contactVisitorMethod">وسيلة التواصل (واتساب أو بريد إلكتروني):</label><input id="contactVisitorMethod" type="text" maxlength="150" required placeholder="رقم الهاتف أو البريد الإلكتروني"></div>
+                    <div class="form-group"><label for="contactVisitorMessage">رسالتك:</label><textarea id="contactVisitorMessage" rows="5" maxlength="3000" required placeholder="اكتب رسالتك هنا..."></textarea></div>
+                    <button type="submit" id="sendContactAdminBtn" class="btn-primary" style="width:100%;">إرسال الرسالة 📩</button>
+                    <small id="contactAdminStatus" style="display:block;margin-top:10px;color:var(--text-muted);"></small>
+                </form>
+            </div>
+        </div>
+
         <!-- Reader Modal -->
         <div id="ebookReaderModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="ebookReaderTitle">
             <div class="modal-content ebook-reader-modal">
@@ -2882,6 +2903,7 @@ onAuthStateChanged(auth, async (user) => {
             // طلبات النشر حساسة؛ لا نقرأها من قاعدة البيانات إلا للأدمن.
             if (isAdmin) {
                 loadPublishRequests();
+                loadContactAdminMessages();
 
                 // بعد اكتمال تسجيل دخول الأدمن نعيد بناء لوحة التحليلات.
                 // كانت اللوحة تُبنى سابقًا قبل تحديد isAdmin، فتظل بعض البطاقات
@@ -3325,6 +3347,55 @@ onAuthStateChanged(auth, async (user) => {
             document.getElementById('publishModal').style.display = 'none';
         });
 
+        const contactAdminModal = document.getElementById('contactAdminModal');
+        document.getElementById('openContactModalBtn')?.addEventListener('click', () => {
+            if (contactAdminModal) contactAdminModal.style.display = 'flex';
+        });
+        document.getElementById('closeContactAdminBtn')?.addEventListener('click', () => {
+            if (contactAdminModal) contactAdminModal.style.display = 'none';
+        });
+        contactAdminModal?.addEventListener('click', (event) => {
+            if (event.target === contactAdminModal) contactAdminModal.style.display = 'none';
+        });
+
+        document.getElementById('contactAdminForm')?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const sendButton = document.getElementById('sendContactAdminBtn');
+            const status = document.getElementById('contactAdminStatus');
+            const name = document.getElementById('contactVisitorName').value.trim();
+            const contact = document.getElementById('contactVisitorMethod').value.trim();
+            const message = document.getElementById('contactVisitorMessage').value.trim();
+            if (!name || !contact || !message) return;
+            sendButton.disabled = true;
+            sendButton.textContent = 'جارٍ إرسال رسالتك...';
+            status.textContent = '';
+            try {
+                await ensureVisitorAuth();
+                const messageRef = push(ref(db, 'contactMessages'));
+                const messageData = {
+                    name: name.slice(0, 100),
+                    contact: contact.slice(0, 150),
+                    message: message.slice(0, 3000),
+                    uid: auth.currentUser?.uid || null,
+                    createdAt: Date.now(),
+                    read: false
+                };
+                await set(messageRef, messageData);
+                await window.notifyAdminNewContact?.(name, messageRef.key);
+                document.getElementById('contactAdminForm').reset();
+                status.textContent = 'تم إرسال رسالتك بنجاح. شكرًا لتواصلك معنا ❤️';
+                status.style.color = '#16a34a';
+                setTimeout(() => { if (contactAdminModal) contactAdminModal.style.display = 'none'; }, 1600);
+            } catch (error) {
+                console.warn('تعذر إرسال رسالة الزائر:', error);
+                status.textContent = 'تعذر إرسال الرسالة حاليًا. قد تحتاج قاعدة البيانات إلى السماح بحفظ رسائل الزوار؛ لم يتم تغيير قواعد Firebase.';
+                status.style.color = '#dc2626';
+            } finally {
+                sendButton.disabled = false;
+                sendButton.textContent = 'إرسال الرسالة 📩';
+            }
+        });
+
         document.getElementById('authorPublishForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitPublishBtn');
@@ -3375,6 +3446,35 @@ onAuthStateChanged(auth, async (user) => {
                 btn.disabled = false;
             }
         });
+
+        let contactMessagesListenerAttached = false;
+        function loadContactAdminMessages() {
+            if (contactMessagesListenerAttached || !isAdmin) return;
+            contactMessagesListenerAttached = true;
+            onValue(ref(db, 'contactMessages'), (snapshot) => {
+                const container = document.getElementById('contactMessagesAdminList');
+                if (!container) return;
+                const entries = Object.entries(snapshot.val() || {})
+                    .map(([id, item]) => ({ id, ...(item || {}) }))
+                    .sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
+                if (!entries.length) {
+                    container.innerHTML = '<p style="color:var(--text-muted);">لا توجد رسائل جديدة حالياً.</p>';
+                    return;
+                }
+                container.innerHTML = `<table class="requests-table"><thead><tr><th>الاسم</th><th>وسيلة التواصل</th><th>الرسالة</th><th>التاريخ</th><th>الحالة</th></tr></thead><tbody>${entries.map(item => `<tr><td>${escapeHtml(item.name || '')}</td><td>${escapeHtml(item.contact || '')}</td><td style="min-width:220px;white-space:pre-wrap;">${escapeHtml(item.message || '')}</td><td>${item.createdAt ? new Date(item.createdAt).toLocaleString('ar-EG') : ''}</td><td>${item.read ? 'تمت القراءة' : '<strong style="color:#16a34a">جديدة</strong>'}<br><button type="button" class="btn-secondary" style="margin-top:6px;padding:6px 10px;" data-contact-read="${escapeHtml(item.id)}">تحديد كمقروءة</button></td></tr>`).join('')}</tbody></table>`;
+                container.querySelectorAll('[data-contact-read]').forEach(button => {
+                    button.addEventListener('click', async () => {
+                        if (!isAdmin) return;
+                        try { await update(ref(db, `contactMessages/${button.dataset.contactRead}`), { read: true }); }
+                        catch (error) { alert('تعذر تحديث حالة الرسالة: ' + error.message); }
+                    });
+                });
+            }, error => {
+                console.warn('تعذر تحميل رسائل الزوار:', error);
+                const container = document.getElementById('contactMessagesAdminList');
+                if (container) container.innerHTML = '<p style="color:#dc2626;">تعذر تحميل الرسائل. راجع صلاحيات قراءة contactMessages في Firebase Rules.</p>';
+            });
+        }
 
         let publishRequestsListenerAttached = false;
         function loadPublishRequests() {
@@ -4077,7 +4177,9 @@ onAuthStateChanged(auth, async (user) => {
                     ? `⭐ تقييم جديد${item.title ? ` على «${item.title}»` : ''}`
                     : item.type === 'publish'
                         ? `✒️ طلب نشر جديد${item.title ? `: «${item.title}»` : ''}`
-                        : (item.title || 'إشعار جديد');
+                        : item.type === 'contact'
+                            ? '💬 رسالة جديدة من زائر'
+                            : (item.title || 'إشعار جديد');
                 const date = item.createdAt ? new Date(item.createdAt).toLocaleString('ar-EG') : '';
                 return `<div class="admin-notification-item ${item.read ? '' : 'unread'}" data-notification-id="${item.id}" style="padding:10px;border-bottom:1px solid rgba(255,255,255,.12);cursor:pointer;${item.read ? '' : 'font-weight:700;'}"><strong>${escapeHtml(title)}</strong>${item.sender ? `<div>${escapeHtml(item.sender)}</div>` : ''}<div style="font-size:.82rem;opacity:.75;margin-top:4px">${escapeHtml(date)}${item.read ? ' • تمت القراءة' : ' • جديد'}</div></div>`;
             }).join('');
@@ -4137,6 +4239,7 @@ onAuthStateChanged(auth, async (user) => {
 
         window.notifyAdminNewReview = (title, sender = '') => createAdminNotification('review', { title, sender });
         window.notifyAdminNewPublish = (title, sender = '', targetId = '') => createAdminNotification('publish', { title, sender, targetId, targetSection: 'publish' });
+        window.notifyAdminNewContact = (sender = '', targetId = '') => createAdminNotification('contact', { title: 'رسالة زائر', sender, targetId, targetSection: 'contactMessagesAdmin' });
         document.getElementById('adminNotificationsBtn')?.addEventListener('click', () => {
             const list = document.getElementById('adminNotificationsList');
             if (list) list.style.display = list.style.display === 'none' ? 'block' : 'none';
