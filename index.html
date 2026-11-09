@@ -1290,6 +1290,16 @@
                 .footer-links a {
                 color: var(--accent-color) !important;
             }
+
+/* ===== قسم المقالات الأدبية ===== */
+.articles-section{max-width:1100px;margin:34px auto;padding:30px 26px;border:1px solid var(--border-color);border-radius:22px;background:linear-gradient(145deg,var(--card-bg),rgba(212,175,55,.045));box-shadow:0 12px 30px var(--shadow-color)}
+.articles-heading{text-align:center;margin-bottom:22px}.articles-heading h2{font-family:'Amiri',serif;color:var(--accent-color);font-size:2rem;margin-bottom:6px}.articles-heading p{color:var(--text-muted);max-width:780px;margin:auto;line-height:1.9}
+.articles-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:16px}
+.article-card{display:flex;flex-direction:column;gap:10px;padding:19px;border:1px solid var(--border-color);border-radius:15px;background:var(--card-bg);min-height:220px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.article-card:hover{transform:translateY(-3px);border-color:var(--accent-color);box-shadow:0 8px 22px var(--shadow-color)}
+.article-card .article-category{color:var(--accent-color);font-size:.82rem;font-weight:800}.article-card h3{font-family:'Amiri',serif;font-size:1.25rem;line-height:1.55;color:var(--text-color)}.article-card p{color:var(--text-muted);font-size:.94rem;line-height:1.85;flex:1}.article-card a{color:var(--accent-color);font-weight:800;text-decoration:none;align-self:flex-start}.article-card a:hover{text-decoration:underline}
+@media(max-width:600px){.articles-section{padding:22px 14px}.articles-heading h2{font-size:1.7rem}.articles-grid{grid-template-columns:1fr}}
+
 </style>
 
 <style id="ebook-library-styles">
@@ -1451,6 +1461,7 @@
         <nav class="drawer-links">
             <a href="#aboutTitle" class="drawer-link-item">✨ مرحبا بكم في عالمي</a>
             <a href="#books" class="drawer-link-item">📚 الأعمال الأدبية</a>
+            <a href="#articles" class="drawer-link-item">✍️ المقالات الأدبية</a>
             <a href="#ebooks" class="drawer-link-item">📖 المكتبة الإلكترونية</a>
             <a href="#audio" class="drawer-link-item">🎙️ الصوتيات</a>
             <a href="#videos" class="drawer-link-item">📺 الفيديوهات</a>
@@ -1511,6 +1522,7 @@
             </div>
             <nav class="nav-links">
                 <a href="#books">الأعمال الأدبية</a>
+                <a href="#articles">المقالات الأدبية</a>
                 <a href="#ebooks">المكتبة الإلكترونية</a>
                 <a href="#audio">الصوتيات</a>
                 <a href="#videos">الفيديوهات</a>
@@ -1938,6 +1950,64 @@
             </div>
             <p style="margin:14px 0 0;">تتضمن الأعمال التي يذكرها الكاتب في تعريفه روايتي «ظلال لا تنام» و«ابن الغزال». يمكن استكشاف العناوين المتاحة حاليًا من قسم الأعمال الأدبية، إذ تعتمد البطاقات المعروضة على المحتوى المنشور في المكتبة.</p>
             <a href="#books" style="display:inline-block;margin-top:8px;color:var(--accent-color);font-weight:700;">انتقل إلى فهرس الأعمال الأدبية ←</a>
+        </section>
+
+        
+        <section id="articles" class="articles-section" aria-labelledby="articlesTitle">
+            <div class="articles-heading">
+                <h2 id="articlesTitle">✍️ مقالات في فن الرواية والقراءة ✍️</h2>
+                <p>مساحة معرفية متجددة للكتابة الإبداعية وبناء الشخصيات والحوار والحبكة، إلى جانب القراءة الواعية والنقد الأدبي. لكل مقال صفحة مستقلة تساعدك على القراءة والرجوع إلى أفكاره.</p>
+            </div>
+            <div class="articles-grid">
+                <article class="article-card">
+                <span class="article-category">فن الرواية</span>
+                <h3>كيف تبدأ كتابة رواية؟ من الفكرة الأولى إلى سؤال الحكاية</h3>
+                <p>دليل عملي لبداية الرواية: اختيار الفكرة، وصياغة السؤال المركزي، وتحديد الشخصية والصراع، وبناء مسودة أولى قابلة للتطوير.</p>
+                <a href="articles/how-to-start-a-novel.html" aria-label="اقرأ مقال: كيف تبدأ كتابة رواية؟ من الفكرة الأولى إلى سؤال الحكاية">اقرأ المقال كاملًا ←</a>
+            </article>
+                <article class="article-card">
+                <span class="article-category">بناء الشخصيات</span>
+                <h3>بناء الشخصية الروائية: الرغبة والتناقض والتحول</h3>
+                <p>تعرف إلى عناصر الشخصية الروائية المقنعة: الرغبة والاحتياج والتناقض والخلفية والاختيار والتحول عبر الأحداث.</p>
+                <a href="articles/building-fictional-characters.html" aria-label="اقرأ مقال: بناء الشخصية الروائية: الرغبة والتناقض والتحول">اقرأ المقال كاملًا ←</a>
+            </article>
+                <article class="article-card">
+                <span class="article-category">الحوار الروائي</span>
+                <h3>كيف تكتب حوارًا روائيًا طبيعيًا يكشف الشخصية؟</h3>
+                <p>مبادئ كتابة الحوار الروائي: اختلاف الأصوات، والإيحاء، والإيقاع، والصراع الخفي، ومتى تستخدم الصمت بدل الكلام.</p>
+                <a href="articles/writing-natural-dialogue.html" aria-label="اقرأ مقال: كيف تكتب حوارًا روائيًا طبيعيًا يكشف الشخصية؟">اقرأ المقال كاملًا ←</a>
+            </article>
+                <article class="article-card">
+                <span class="article-category">الحبكة والصراع</span>
+                <h3>بناء الحبكة الروائية: كيف تتحول الأحداث إلى قصة متماسكة؟</h3>
+                <p>شرح عملي للحبكة والصراع والسبب والنتيجة وتصاعد التوتر والمفاجأة والنهاية في كتابة الرواية.</p>
+                <a href="articles/novel-plot-and-conflict.html" aria-label="اقرأ مقال: بناء الحبكة الروائية: كيف تتحول الأحداث إلى قصة متماسكة؟">اقرأ المقال كاملًا ←</a>
+            </article>
+                <article class="article-card">
+                <span class="article-category">الكتابة الإبداعية</span>
+                <h3>كتابة المشهد والوصف: كيف تجعل القارئ يرى ويشعر؟</h3>
+                <p>تعلم بناء المشهد الروائي باستخدام الحواس والتفاصيل المنتقاة والفعل والوصف المتوازن ووجهة النظر.</p>
+                <a href="articles/creative-writing-scene-description.html" aria-label="اقرأ مقال: كتابة المشهد والوصف: كيف تجعل القارئ يرى ويشعر؟">اقرأ المقال كاملًا ←</a>
+            </article>
+                <article class="article-card">
+                <span class="article-category">القراءة الواعية</span>
+                <h3>كيف نقرأ الرواية بوعي؟ أسئلة تجعل القراءة أكثر عمقًا</h3>
+                <p>منهج مبسط للقراءة الواعية: ملاحظة الشخصيات والسرد والبناء والرموز وتدوين الأسئلة دون إفساد متعة القراءة.</p>
+                <a href="articles/active-reading-novel.html" aria-label="اقرأ مقال: كيف نقرأ الرواية بوعي؟ أسئلة تجعل القراءة أكثر عمقًا">اقرأ المقال كاملًا ←</a>
+            </article>
+                <article class="article-card">
+                <span class="article-category">النقد الأدبي</span>
+                <h3>مدخل إلى النقد الأدبي: كيف نبني رأيًا يستند إلى النص؟</h3>
+                <p>مدخل مبسط للنقد الأدبي يفرق بين الذوق والحكم والتحليل، ويشرح الاستشهاد بالنص وقراءة عناصر العمل دون تعميم.</p>
+                <a href="articles/literary-criticism-basics.html" aria-label="اقرأ مقال: مدخل إلى النقد الأدبي: كيف نبني رأيًا يستند إلى النص؟">اقرأ المقال كاملًا ←</a>
+            </article>
+                <article class="article-card">
+                <span class="article-category">مراجعة الأعمال الأدبية</span>
+                <h3>كيف تكتب مراجعة أدبية مفيدة دون حرق الرواية؟</h3>
+                <p>خطوات كتابة مراجعة أدبية متوازنة: تقديم العمل، وتحديد موضوعه، وتحليل عناصره، وتجنب الحرق، وصياغة توصية دقيقة.</p>
+                <a href="articles/how-to-review-a-novel.html" aria-label="اقرأ مقال: كيف تكتب مراجعة أدبية مفيدة دون حرق الرواية؟">اقرأ المقال كاملًا ←</a>
+            </article>
+            </div>
         </section>
 
         <h2 id="books" class="section-title">✨ الأعمال الأدبية ✨</h2>
@@ -2433,6 +2503,7 @@
             </div>
             <div class="footer-links">
                 <a href="#aboutTitle">عن الكاتب</a>
+                <a href="#articles">المقالات الأدبية</a>
                 <a href="https://wa.me/201096227242" target="_blank" rel="noopener noreferrer">تواصل معنا</a>
                 <a href="javascript:void(0)" onclick="openLegalModal('privacyModal')">سياسة الخصوصية</a>
                 <a href="javascript:void(0)" onclick="openLegalModal('termsModal')">شروط الاستخدام</a>
@@ -5833,7 +5904,7 @@ onAuthStateChanged(auth, async (user) => {
                 const pdf = ebookHasPdf(item), epub = ebookHasEpub(item), free = ebookIsFree(item);
                 const chips = `${pdf ? '<span class="ebook-chip">PDF</span>' : ''}${epub ? '<span class="ebook-chip">EPUB</span>' : ''}<span class="ebook-chip">${free ? 'مجاني' : 'مدفوع'}</span><span class="ebook-chip">${escapeHtml(ebookCategoryNames[item.category] || 'أخرى')}</span>`;
                 const audioUrl = safeMediaUrl(item.audioUrl || item.ebookAudioUrl, '');
-                const audioPlayer = audioUrl ? `<div class="ebook-audio-listen" style="margin-top:14px;padding:12px;border:1px solid var(--border-color,rgba(128,128,128,.25));border-radius:12px"><strong style="display:block;margin-bottom:8px;color:var(--accent-color)">🎧 استمع إلى الكتاب مجانًا</strong><audio controls preload="metadata" playsinline style="display:block;width:100%;max-width:100%"><source src="${escapeHtml(audioUrl)}">متصفحك لا يدعم تشغيل الصوت.</audio><small style="display:block;color:var(--text-muted);margin-top:6px">[أتمنى لكم قراءة ممتعة]</small></div>` : '';
+                const audioPlayer = audioUrl ? `<div class="ebook-audio-listen" style="margin-top:14px;padding:12px;border:1px solid var(--border-color,rgba(128,128,128,.25));border-radius:12px"><strong style="display:block;margin-bottom:8px;color:var(--accent-color)">🎧 استـمـاع 🔊</strong><audio controls preload="metadata" playsinline style="display:block;width:100%;max-width:100%"><source src="${escapeHtml(audioUrl)}">متصفحك لا يدعم تشغيل الصوت.</audio><small style="display:block;color:var(--text-muted);margin-top:6px">[أتمنى لكم قراءة ممتعة]</small></div>` : '';
                 const ebookRatings = item.ratingsByUid && typeof item.ratingsByUid === 'object'
                     ? Object.values(item.ratingsByUid).map(Number).filter(v => Number.isFinite(v) && v >= 1 && v <= 5)
                     : [];
