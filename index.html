@@ -5904,7 +5904,7 @@ onAuthStateChanged(auth, async (user) => {
                 const pdf = ebookHasPdf(item), epub = ebookHasEpub(item), free = ebookIsFree(item);
                 const chips = `${pdf ? '<span class="ebook-chip">PDF</span>' : ''}${epub ? '<span class="ebook-chip">EPUB</span>' : ''}<span class="ebook-chip">${free ? 'مجاني' : 'مدفوع'}</span><span class="ebook-chip">${escapeHtml(ebookCategoryNames[item.category] || 'أخرى')}</span>`;
                 const audioUrl = safeMediaUrl(item.audioUrl || item.ebookAudioUrl, '');
-                const audioPlayer = audioUrl ? `<div class="ebook-audio-listen"><div class="ebook-audio-heading"><span class="ebook-audio-icon">♫</span><span>استمع إلى الكتاب</span></div><audio controls preload="metadata" playsinline aria-label="استمع إلى ${escapeHtml(item.title || 'الكتاب')}"><source src="${escapeHtml(audioUrl)}">متصفحك لا يدعم تشغيل الصوت.</audio><small>استمتع بالاستماع إلى هذا الجزء</small></div>` : '';
+                const audioPlayer = audioUrl ? `<div class="ebook-audio-listen"><div class="ebook-audio-heading"><span class="ebook-audio-icon">♫</span><span>استمع إلى الكتاب</span></div><audio controls preload="metadata" playsinline aria-label="استمع إلى ${escapeHtml(item.title || 'الكتاب')}"><source src="${escapeHtml(audioUrl)}">متصفحك لا يدعم تشغيل الصوت.</audio><small>"استمتعوا، ولا تنسوا تقييم الكتاب."</small></div>` : '';
                 const ebookRatings = item.ratingsByUid && typeof item.ratingsByUid === 'object'
                     ? Object.values(item.ratingsByUid).map(Number).filter(v => Number.isFinite(v) && v >= 1 && v <= 5)
                     : [];
