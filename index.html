@@ -6621,10 +6621,15 @@ onAuthStateChanged(auth, async (user) => {
                 (allServices || []).forEach(x => list.push(makeStoreItem('service', x)));
                 (allCourses || []).forEach(x => list.push(makeStoreItem('course', x)));
                 (allProducts || []).forEach(x => list.push(makeStoreItem('product', x)));
-                // المتجر الموحد يعرض المنتجات المدفوعة فقط.
-                // في الكتب نحتفظ بالنسخ المدفوعة فقط؛ فقد تكون الرقمية مجانية والورقية مدفوعة أو العكس.
+                // المتجر الموحد يعرض الأعمال المدفوعة فقط.
+                // شرط الكتب: النسخة الورقية متاحة فعليًا، وإلا يُستبعد الكتاب بالكامل من المتجر.
+                // لا نحذف أي سجل من قاعدة البيانات؛ هذا فلتر عرض فقط.
                 return list.flatMap(item => {
                     if (item.type === 'book' && Array.isArray(item.variants)) {
+                        const sourceBook = (allBooks || []).find(b => String(b.id) === String(item.id));
+                        const paperPrice = storeText(sourceBook?.paperPrice);
+                        const paperAvailable = Boolean(paperPrice) && !/غير متاح|غير متاحة|لا يوجد|نفد|غير موجود/i.test(paperPrice);
+                        if (!paperAvailable) return [];
                         const paidVariants = item.variants.filter(variant => !variant.free);
                         return paidVariants.length ? [{...item, variants: paidVariants}] : [];
                     }
@@ -6979,5 +6984,31 @@ onAuthStateChanged(auth, async (user) => {
       })();
     </script>
 
+    <script>
+      /* نظام موحّد: تشغيل أي صوت/فيديو HTML5 يوقف بقية المشغلات تلقائيًا */
+      (() => {
+        if (window.__siteSingleMediaPlaybackInstalled) return;
+        window.__siteSingleMediaPlaybackInstalled = true;
+        document.addEventListener('play', event => {
+          const active = event.target;
+          if (!(active instanceof HTMLMediaElement)) return;
+          document.querySelectorAll('audio, video').forEach(media => {
+            if (media !== active && !media.paused) {
+              try { media.pause(); } catch (_) {}
+            }
+          });
+          // إيقاف بث يوتيوب المضمّن عند تشغيل ملف صوت/فيديو محلي
+          document.querySelectorAll('iframe').forEach(frame => {
+            if (/youtube(-nocookie)?\.com\/embed/i.test(frame.src || '')) {
+              try { frame.contentWindow.postMessage(JSON.stringify({event:'command',func:'pauseVideo',args:[]}), '*'); } catch (_) {}
+            }
+          });
+        }, true);
+        // عند فتح نافذة البث المباشر، أوقف مشغلات HTML5 الموجودة بالموقع
+        document.getElementById('siteLiveLauncher')?.addEventListener('click', () => {
+          document.querySelectorAll('audio, video').forEach(media => { try { media.pause(); } catch (_) {} });
+        });
+      })();
+    </script>
 </body>
 </html>
