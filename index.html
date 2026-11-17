@@ -945,7 +945,7 @@
             border: 0;
         }
 
-        /* تحسين كارت فيديوهات الدورات والورش */
+        /* تحسين بطاقات مواد المكتبة الإسلامية */
         #coursesGrid.single-course {
             grid-template-columns: minmax(320px, 680px);
             justify-content: center;
@@ -964,6 +964,36 @@
             border-radius: 16px;
             border: 1px solid rgba(212,175,55,.38);
             box-shadow: 0 8px 22px rgba(0,0,0,.28);
+        }
+
+        /* مشغل الصوت له حاوية مستقلة؛ لا نستخدم إطار الفيديو ذي الارتفاع الصفري معه */
+        .course-audio-player {
+            width: 100%;
+            box-sizing: border-box;
+            margin: 14px 0 10px;
+            padding: 14px;
+            min-height: 76px;
+            display: flex;
+            align-items: center;
+            border-radius: 16px;
+            border: 1px solid rgba(212,175,55,.42);
+            background: linear-gradient(135deg, rgba(212,175,55,.13), rgba(0,0,0,.16));
+            box-shadow: 0 8px 22px rgba(0,0,0,.20);
+        }
+        .course-audio-player audio {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            height: 42px;
+            opacity: 1;
+            visibility: visible;
+        }
+        .course-video-player video,
+        .course-video-player iframe {
+            display: block;
+            visibility: visible;
+            opacity: 1;
         }
 
         .course-video-heading {
@@ -1466,7 +1496,7 @@
             <a href="#audio" class="drawer-link-item">🎙️ الصوتيات</a>
             <a href="#videos" class="drawer-link-item">📺 الفيديوهات</a>
             <a href="#services" class="drawer-link-item">🛠️ الخدمات</a>
-            <a href="#courses" class="drawer-link-item">🎓 الدورات والورش</a>
+            <a href="#courses" class="drawer-link-item">🕌 المكتبة الإسلامية</a>
             <a href="#unified-store" class="drawer-link-item">🛒 المتجر الموحد</a>
             <a href="#store" class="drawer-link-item">🛍️ المنتجات الرقمية</a>
         </nav>
@@ -1527,7 +1557,7 @@
                 <a href="#audio">الصوتيات</a>
                 <a href="#videos">الفيديوهات</a>
                 <a href="#services">الخدمات الأدبية</a>
-                <a href="#courses">الدورات والورش</a>
+                <a href="#courses">المكتبة الإسلامية</a>
                 <a href="#unified-store">🛒 المتجر الموحد</a>
                 <a href="#store">المنتجات الرقمية</a>
             </nav>
@@ -1853,25 +1883,30 @@
             </div>
 
             <div class="admin-section-box">
-                <h3 style="color: var(--text-color); margin-bottom: 10px; font-family: 'Amiri', serif;">🎓 التحكم في قسم الدورات والورش:</h3>
+                <h3 style="color: var(--text-color); margin-bottom: 10px; font-family: 'Amiri', serif;">🕌 التحكم في المكتبة الإسلامية:</h3>
                 <form id="addCourseForm">
                     <input type="hidden" id="editCourseId" value="">
-                    <div class="form-group"><label>عنوان الدورة (مع الإيموجي):</label><input type="text" id="courseTitle" placeholder="مثال: 🖊️ ورشة صناعة الحبكة الروائية" required></div>
-                    <div class="form-group"><label>وصف الدورة:</label><textarea id="courseDesc" rows="2" placeholder="ماذا سيتعلم المتدرب..." required></textarea></div>
-                    <div class="form-group"><label>سعر الاشتراك:</label><input type="text" id="coursePrice" placeholder="مثال: الاشتراك: 250 جنيه" required></div>
+                    <div class="form-group"><label>عنوان المادة الإسلامية:</label><input type="text" id="courseTitle" placeholder="مثال: 📖 سورة الكهف بصوت القارئ..." required></div>
+                    <div class="form-group"><label>تصنيف المادة:</label><select id="courseCategory" required><option value="quran">📖 القرآن الكريم</option><option value="sermons">🕌 الخطب الإسلامية</option><option value="lessons">🎙️ الدروس والمحاضرات</option><option value="adhkar">🤲 الأذكار والأدعية</option><option value="seerah">🌙 السيرة النبوية</option></select></div>
+                    <div class="form-group"><label>وصف المادة:</label><textarea id="courseDesc" rows="2" placeholder="اكتب نبذة مختصرة عن التلاوة أو الخطبة أو الدرس..." required></textarea></div>
+                    <div class="form-group"><label>معلومة إضافية أو اسم القارئ / الخطيب (اختياري):</label><input type="text" id="coursePrice" placeholder="مثال: بصوت الشيخ... أو خطبة الجمعة"></div>
                     <div class="form-group">
-                        <label>🎬 فيديو الدورة / الورشة:</label>
-                        <input type="file" id="courseVideoFileInput" accept="video/*" style="margin-bottom: 8px;">
-                        <input type="text" id="courseVideoUrl" placeholder="أو ضع رابط فيديو مباشر / YouTube Embed URL">
-                        <small style="display:block; color:var(--text-muted); margin-top:6px;">يمكنك اختيار فيديو من جهازك، وسيتم رفعه تلقائيًا إلى Cloudinary، أو وضع رابط الفيديو مباشرة.</small>
+                        <label>🎧 نوع التسجيل:</label>
+                        <select id="courseMediaType"><option value="audio">🎧 ملف صوتي</option><option value="video">🎬 فيديو</option></select>
                     </div>
                     <div class="form-group">
-                        <label>📄 ملف الدورة أو الورشة (اختياري):</label>
+                        <label>🎧 ملف صوتي أو فيديو / رابط مباشر:</label>
+                        <input type="file" id="courseVideoFileInput" accept="audio/*,video/*" style="margin-bottom: 8px;">
+                        <input type="text" id="courseVideoUrl" placeholder="ضع رابط ملف صوتي أو فيديو مباشر">
+                        <small style="display:block; color:var(--text-muted); margin-top:6px;">يمكن رفع ملف صوتي أو فيديو إلى Cloudinary، أو إضافة رابط مباشر. روابط YouTube متاحة عند اختيار الفيديو.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>📄 ملف مرفق للمادة (اختياري):</label>
                         <input type="file" id="courseFileInput" accept=".pdf,.zip,.rar,.doc,.docx" style="margin-bottom: 8px;">
                         <input type="text" id="courseFileUrl" placeholder="أو ضع رابط الملف المباشر">
                         <small style="display:block; color:var(--text-muted); margin-top:6px;">يمكنك اختيار الملف من جهازك أو استخدام رابط مباشر للملف.</small>
                     </div>
-                    <button type="submit" id="submitCourseBtn" class="btn-primary" style="width: 100%;">حفظ الدورة التدريبية 💾</button>
+                    <button type="submit" id="submitCourseBtn" class="btn-primary" style="width: 100%;">حفظ ونشر المادة الإسلامية 💾</button>
                 </form>
             </div>
 
@@ -2069,8 +2104,16 @@
         </div>
         <div class="grid-container" id="servicesGrid"></div>
 
-        <h2 id="courses" class="section-title">🎓 الدورات وورش العمل 🎓</h2>
-        <p class="section-intro" style="max-width:1000px;margin:-8px auto 16px;color:var(--text-muted);line-height:1.9;text-align:right;">يعرض هذا القسم الدورات وورش العمل المتاحة في موضوعات الكتابة وصناعة المحتوى الأدبي. راجع وصف كل دورة لمعرفة موضوعها ومتطلباتها وسعرها وطريقة الحصول على موادها قبل الاشتراك.</p>
+        <h2 id="courses" class="section-title">🕌 المكتبة الإسلامية 🕌</h2>
+        <p class="section-intro" style="max-width:1000px;margin:-8px auto 16px;color:var(--text-muted);line-height:1.9;text-align:right;">مساحة إيمانية تضم تلاوات القرآن الكريم، والخطب الإسلامية، والدروس والمحاضرات، والأذكار والأدعية، ومواد من السيرة النبوية. نسأل الله أن يجعلها علمًا نافعًا وأجرًا ممتدًا.</p>
+        <div class="category-tabs" id="islamicCategoryTabs" style="margin:14px auto 20px;">
+            <button type="button" class="tab-btn active" data-islamic-cat="all">الكل</button>
+            <button type="button" class="tab-btn" data-islamic-cat="quran">📖 القرآن الكريم</button>
+            <button type="button" class="tab-btn" data-islamic-cat="sermons">🕌 الخطب</button>
+            <button type="button" class="tab-btn" data-islamic-cat="lessons">🎙️ الدروس والمحاضرات</button>
+            <button type="button" class="tab-btn" data-islamic-cat="adhkar">🤲 الأذكار والأدعية</button>
+            <button type="button" class="tab-btn" data-islamic-cat="seerah">🌙 السيرة النبوية</button>
+        </div>
         <div class="grid-container" id="coursesGrid"></div>
 
 
@@ -2154,7 +2197,7 @@
             <button type="button" class="unified-cart-open" id="unifiedCartToggle">🛍️ سلة المشتريات <span id="unifiedCartCount">0</span></button>
           </div>
           <div class="unified-store-tools">
-            <input id="unifiedStoreSearch" class="unified-store-search" type="search" placeholder="ابحث عن كتاب أو صوتية أو دورة أو خدمة..." aria-label="البحث في المتجر">
+            <input id="unifiedStoreSearch" class="unified-store-search" type="search" placeholder="ابحث عن كتاب أو صوتية أو فيديو أو خدمة..." aria-label="البحث في المتجر">
             <span style="align-self:center;color:var(--text-muted);font-size:.85rem">الأسعار بالجنيه المصري</span>
           </div>
           <div class="unified-store-filters" id="unifiedStoreFilters">
@@ -2163,7 +2206,6 @@
             <button type="button" data-store-filter="audio">🎧 الصوتيات</button>
             <button type="button" data-store-filter="video">🎬 الفيديوهات</button>
             <button type="button" data-store-filter="service">✍️ الخدمات</button>
-            <button type="button" data-store-filter="course">🎓 الدورات والورش</button>
             <button type="button" data-store-filter="product">📦 المنتجات الرقمية</button>
           </div>
           <div id="unifiedStoreGrid" class="unified-store-grid" aria-live="polite">
@@ -4430,7 +4472,7 @@ onAuthStateChanged(auth, async (user) => {
             }
         };
 
-        /* --- 4. الدورات والورش --- */
+        /* --- 4. المكتبة الإسلامية (مع الإبقاء على مسار البيانات الحالي للتوافق) --- */
         onValue(ref(db, 'courses'), (snapshot) => {
             const data = snapshot.val();
             allCourses = data
@@ -4440,28 +4482,75 @@ onAuthStateChanged(auth, async (user) => {
             if (isAdmin) renderAnalyticsDashboard();
         });
 
+        let currentIslamicCategory = 'all';
+        const islamicCategoryNames = {
+            quran: 'القرآن الكريم', sermons: 'الخطب الإسلامية', lessons: 'الدروس والمحاضرات',
+            adhkar: 'الأذكار والأدعية', seerah: 'السيرة النبوية'
+        };
+        document.getElementById('islamicCategoryTabs')?.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-islamic-cat]');
+            if (!button) return;
+            currentIslamicCategory = button.dataset.islamicCat || 'all';
+            document.querySelectorAll('#islamicCategoryTabs [data-islamic-cat]').forEach(tab => tab.classList.toggle('active', tab === button));
+            renderCourses();
+        });
+
         function renderCourses() {
             const container = document.getElementById('coursesGrid');
             if (!container) return;
             container.innerHTML = '';
-            container.classList.toggle('single-course', allCourses.length === 1);
-            allCourses.forEach(item => {
+            // إخفاء مادة الفيديو الافتراضية الخاصة بـ«أنواع الرواة» من المكتبة الإسلامية.
+            // هذا استثناء للعرض فقط؛ لا يحذف أي سجل من Firebase.
+            const isDefaultNarratorsVideo = item => {
+                const title = String(item?.title || '').normalize('NFKD')
+                    .replace(/[\u064B-\u065F\u0670]/g, '')
+                    .replace(/[أإآ]/g, 'ا')
+                    .replace(/ة/g, 'ه')
+                    .replace(/\s+/g, ' ').trim();
+                return title.includes('انواع الرواه');
+            };
+            const visibleCourses = (allCourses || []).filter(item =>
+                !isDefaultNarratorsVideo(item) &&
+                (currentIslamicCategory === 'all' || (item.category || 'lessons') === currentIslamicCategory)
+            );
+            container.classList.toggle('single-course', visibleCourses.length === 1);
+            if (!visibleCourses.length) {
+                container.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:28px 12px;line-height:2">لا توجد مواد منشورة في هذا التصنيف حاليًا. نسعد بإضافة محتوى نافع قريبًا بإذن الله.</p>';
+                return;
+            }
+            visibleCourses.forEach(item => {
                 const adminBtns = isAdmin ? `
                         <div class="course-admin-actions">
                             <button class="btn-edit course-action-btn" onclick="editCourse('${escapeHtml(item.id)}')">تعديل ✏️</button>
                             <button class="btn-danger course-action-btn" onclick="deleteCourse('${escapeHtml(item.id)}')">حذف 🗑️</button>
                         </div>` : '';
 
-                const isYouTubeVideo = item.videoUrl && (item.videoUrl.includes('youtube.com') || item.videoUrl.includes('youtu.be'));
+                const mediaType = item.mediaType || 'video';
+                const isYouTubeVideo = mediaType !== 'audio' && item.videoUrl && (item.videoUrl.includes('youtube.com') || item.videoUrl.includes('youtu.be'));
                 const safeCourseVideoId = String(item.id).replace(/[^a-zA-Z0-9_-]/g, '_');
                 const currentCourseViews = Number(item.views || 0);
-                const videoBtn = item.videoUrl ? `
+                const mediaBtn = item.videoUrl ? (mediaType === 'audio'
+                    ? `
+                    <div class="course-audio-player" role="group" aria-label="مشغل التسجيل الصوتي">
+                        <audio controls preload="metadata" controlsList="nodownload" data-course-id="${escapeHtml(item.id)}">
+                            <source src="${safeMediaUrl(item.videoUrl)}">متصفحك لا يدعم تشغيل الصوت.
+                        </audio>
+                    </div>`
+                    : `
                     <div class="video-container course-video-player" style="margin:12px 0;">
                         ${isYouTubeVideo
-                            ? `<iframe src="${getYouTubeEmbedUrl(item.videoUrl)}?enablejsapi=1" data-course-view-tracking="1" data-course-id="${escapeHtml(item.id)}" allowfullscreen loading="lazy" style="width:100%; min-height:220px; border:0; border-radius:12px;"></iframe>`
-                            : `<video controls preload="none" playsinline data-course-id="${escapeHtml(item.id)}" style="width:100%; min-height:220px; border:0; border-radius:12px; display:block;"><source src="${safeMediaUrl(item.videoUrl)}">متصفحك لا يدعم تشغيل هذا الفيديو.</video>`}
-                    </div>` : '';
-                const fileBtn = item.fileUrl ? `<a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(item.fileUrl)}" rel="noopener noreferrer" download>📥 تحميل الملف</a>` : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
+                            ? `<iframe src="${getYouTubeEmbedUrl(item.videoUrl)}?enablejsapi=1" data-course-view-tracking="1" data-course-id="${escapeHtml(item.id)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" title="${escapeHtml(item.title || 'مشاهدة المادة المرئية')}"></iframe>`
+                            : `<video controls preload="metadata" playsinline data-course-id="${escapeHtml(item.id)}" aria-label="مشغل الفيديو"><source src="${safeMediaUrl(item.videoUrl)}">متصفحك لا يدعم تشغيل هذا الفيديو.</video>`}
+                    </div>`
+                ) : '';
+                // زر التحميل يستخدم الملف المرفق أولاً، ثم رابط الصوت/الفيديو إذا لم يوجد ملف منفصل.
+                const courseDownloadUrl = item.fileUrl || item.videoUrl || '';
+                const fileBtn = courseDownloadUrl
+                    ? `<a class="btn-secondary course-action-btn" href="${cloudinaryDownloadUrl(courseDownloadUrl)}" rel="noopener noreferrer" download aria-label="تحميل ${escapeHtml(item.title || 'المادة الإسلامية')}">📥 تحميل</a>`
+                    : `<span class="course-action-btn" style="visibility:hidden;"></span>`;
+                const categoryName = islamicCategoryNames[item.category] || 'محتوى إسلامي';
+                const mediaLabel = mediaType === 'audio' ? '🎧 تسجيل صوتي' : '🎬 مادة مرئية';
+                const extraInfo = item.price ? `<span class="course-price-pill">ℹ️ ${escapeHtml(item.price)}</span>` : '';
 
                 const html = `
                     <div class="custom-card course-video-card">
@@ -4469,18 +4558,21 @@ onAuthStateChanged(auth, async (user) => {
                             <h3 class="course-video-heading">${escapeHtml(item.title)}</h3>
                             <p class="course-video-desc">${escapeHtml(item.desc)}</p>
                         </div>
-                        ${videoBtn}
-                        ${item.videoUrl ? `<div class="course-video-meta"><span class="course-price-pill">💰 ${escapeHtml(item.price)}</span><span id="course-video-views-${safeCourseVideoId}">👁️ ${currentCourseViews.toLocaleString('ar-EG')} مشاهدة</span></div>` : `<div class="course-video-meta"><span class="course-price-pill">💰 ${escapeHtml(item.price)}</span></div>`}
+                        ${mediaBtn}
+                        <div class="course-video-meta"><span class="course-price-pill">📂 ${escapeHtml(categoryName)}</span><span>${mediaLabel}</span>${extraInfo}${item.videoUrl ? `<span id="course-video-views-${safeCourseVideoId}">👁️ ${currentCourseViews.toLocaleString('ar-EG')} مشاهدة / استماع</span>` : ''}</div>
                         <div class="course-video-actions">
                             ${fileBtn}
-                            <button class="btn-primary course-action-btn count-tooltip" data-tooltip="${Number.isFinite(Number(item.shares ?? item.shareCount)) && (item.shares != null || item.shareCount != null) ? `عدد المشاركات المسجل: ${Number(item.shares ?? item.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" title="${Number.isFinite(Number(item.shares ?? item.shareCount)) && (item.shares != null || item.shareCount != null) ? `عدد المشاركات المسجل: ${Number(item.shares ?? item.shareCount).toLocaleString('ar-EG')}` : 'عدد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" aria-label="مشاركة الدورة أو الورشة؛ ${Number.isFinite(Number(item.shares ?? item.shareCount)) && (item.shares != null || item.shareCount != null) ? `عدد المشاركات ${Number(item.shares ?? item.shareCount)}` : 'عداد المشاركات المباشر يبدأ من الآن'}" type="button" onclick='shareCourse(${escapeHtml(JSON.stringify(item.title))}, ${escapeHtml(JSON.stringify(item.id))})'>🔗 مشاركة</button>
+                            <button class="btn-primary course-action-btn count-tooltip" data-tooltip="${Number.isFinite(Number(item.shares ?? item.shareCount)) && (item.shares != null || item.shareCount != null) ? `عدد المشاركات المسجل: ${Number(item.shares ?? item.shareCount).toLocaleString('ar-EG')}` : 'عداد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" title="${Number.isFinite(Number(item.shares ?? item.shareCount)) && (item.shares != null || item.shareCount != null) ? `عدد المشاركات المسجل: ${Number(item.shares ?? item.shareCount).toLocaleString('ar-EG')}` : 'عداد المشاركات محفوظ في إحصائيات منفصلة، والرقم غير متاح هنا حالياً'}" aria-label="مشاركة المادة الإسلامية" type="button" onclick='shareCourse(${escapeHtml(JSON.stringify(item.title))}, ${escapeHtml(JSON.stringify(item.id))})'>🔗 مشاركة</button>
                             ${adminBtns}
                         </div>
                     </div>
                 `;
                 container.insertAdjacentHTML('beforeend', html);
 
-                if (item.videoUrl && !isYouTubeVideo) {
+                if (item.videoUrl && mediaType === 'audio') {
+                    const audio = container.querySelector(`audio[data-course-id="${String(item.id).replace(/(["\\])/g, '\\$1')}"]`);
+                    if (audio) audio.addEventListener('play', () => recordCourseVideoView(item.id), { once: true });
+                } else if (item.videoUrl && !isYouTubeVideo) {
                     const nativeVideo = container.querySelector(`video[data-course-id="${String(item.id).replace(/(["\\])/g, '\\$1')}"]`);
                     if (nativeVideo) nativeVideo.addEventListener('play', () => recordCourseVideoView(item.id), { once: true });
                 }
@@ -4500,7 +4592,7 @@ onAuthStateChanged(auth, async (user) => {
                 return true;
             } catch (err) {
                 countedCourseVideoViews.delete(String(courseId));
-                console.warn('تعذر تسجيل مشاهدة فيديو الدورة/الورشة:', err);
+                console.warn('تعذر تسجيل تشغيل مادة المكتبة الإسلامية:', err);
                 return false;
             }
         }
@@ -4537,7 +4629,7 @@ onAuthStateChanged(auth, async (user) => {
 
         window.shareCourse = async (title, courseId) => {
             if (!courseId || String(courseId).startsWith('def')) {
-                alert('هذه الدورة الافتراضية لا تملك رابط مشاركة دائم حالياً.');
+                alert('هذه المادة الافتراضية لا تملك رابط مشاركة دائم حالياً.');
                 return;
             }
 
@@ -4546,7 +4638,7 @@ onAuthStateChanged(auth, async (user) => {
 
             openShareChooser({
                 title: `📚 ${title}`,
-                text: `📚 دورة / ورشة «${title}» على موقع الكاتب الروائي | سعيد الشوادفي`,
+                text: `🕌 مادة إسلامية «${title}» من المكتبة الإسلامية بموقع الكاتب | سعيد الشوادفي`,
                 url: shareUrl,
                 onShared: () => recordShareAnalytics(courseId, 'course')
             });
@@ -4570,10 +4662,10 @@ onAuthStateChanged(auth, async (user) => {
                 if (selectedVideoFile) {
                     validateUploadFile(selectedVideoFile, {
                         maxBytes: 100 * 1024 * 1024,
-                        mimePrefixes: ['video/']
+                        mimePrefixes: ['video/', 'audio/']
                     });
                     submitBtn.disabled = true;
-                    submitBtn.innerText = 'جاري رفع فيديو الدورة إلى Cloudinary... ⏳';
+                    submitBtn.innerText = 'جاري رفع التسجيل إلى Cloudinary... ⏳';
                     courseVideoUrl = await uploadToCloudinary(selectedVideoFile);
                 } else if (editId && !courseVideoUrl && existingCourse?.videoUrl) {
                     // عند التعديل بدون اختيار فيديو جديد، حافظ على الفيديو القديم.
@@ -4590,24 +4682,26 @@ onAuthStateChanged(auth, async (user) => {
 
                 const data = {
                     title: document.getElementById('courseTitle').value,
+                    category: document.getElementById('courseCategory').value,
                     desc: document.getElementById('courseDesc').value,
-                    price: document.getElementById('coursePrice').value,
+                    price: document.getElementById('coursePrice').value.trim(),
+                    mediaType: selectedVideoFile ? (selectedVideoFile.type.startsWith('audio/') ? 'audio' : 'video') : document.getElementById('courseMediaType').value,
                     videoUrl: courseVideoUrl,
                     fileUrl: courseFileUrl,
                     updatedAt: Date.now()
                 };
                 if (editId && !editId.startsWith('def')) {
                     await update(ref(db, `courses/${editId}`), data);
-                    alert("تم تحديث الدورة بنجاح! 🎉");
+                    alert("تم تحديث المادة الإسلامية بنجاح! 🎉");
                 } else {
                     await push(ref(db, 'courses'), data);
-                    alert("تمت إضافة الدورة بنجاح! 🚀");
+                    alert("تمت إضافة المادة الإسلامية بنجاح! 🚀");
                 }
 
                 document.getElementById('addCourseForm').reset();
                 document.getElementById('editCourseId').value = '';
             } catch (err) {
-                alert(`خطأ أثناء رفع أو حفظ الدورة/الورشة: ${err.message}`);
+                alert(`خطأ أثناء رفع أو حفظ المادة الإسلامية: ${err.message}`);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = originalText;
@@ -4620,8 +4714,10 @@ onAuthStateChanged(auth, async (user) => {
             if (!item) return;
             document.getElementById('editCourseId').value = item.id;
             document.getElementById('courseTitle').value = item.title;
+            document.getElementById('courseCategory').value = item.category || 'lessons';
             document.getElementById('courseDesc').value = item.desc;
-            document.getElementById('coursePrice').value = item.price;
+            document.getElementById('coursePrice').value = item.price ?? '';
+            document.getElementById('courseMediaType').value = item.mediaType || 'video';
             document.getElementById('courseVideoUrl').value = item.videoUrl ?? '';
             document.getElementById('courseFileUrl').value = item.fileUrl ?? '';
             document.getElementById('courseFileInput').value = '';
@@ -4631,9 +4727,9 @@ onAuthStateChanged(auth, async (user) => {
 
         window.deleteCourse = async (id) => {
             if (!isAdmin) { alert("غير مصرح: هذه العملية للأدمن فقط."); return; }
-            if (confirm("هل انت متأكد من حذف هذه الدورة؟")) {
+            if (confirm("هل أنت متأكد من حذف هذه المادة الإسلامية؟")) {
                 if (!id.startsWith('def')) await remove(ref(db, `courses/${id}`));
-                else alert("الدورات الافتراضية محفوظة.");
+                else alert("المواد الافتراضية محفوظة.");
             }
         };
 
@@ -6440,8 +6536,8 @@ onAuthStateChanged(auth, async (user) => {
                             label = 'المشاهدة'; count = statValue(card, /مشاهدة/);
                         } else if (kind === 'video' && (el.matches('video') || el.querySelector?.('video'))) {
                             label = 'المشاهدة'; count = statValue(card, /مشاهدة/);
-                        } else if (kind === 'course' && /شراء|احجز/.test(t)) {
-                            label = 'الشراء/الحجز';
+                        } else if (kind === 'course' && /مشاركة/.test(t)) {
+                            label = 'المشاركة'; count = statValue(card, /مشاركة/);
                         } else if (kind === 'product' && /تحميل مجاني/.test(t)) {
                             label = 'التحميل'; count = statValue(card, /تحميل/);
                         } else if (el.matches('img') && el.closest('.book-cover')) {
@@ -6674,7 +6770,7 @@ onAuthStateChanged(auth, async (user) => {
                             ${digitalDownload}${purchaseMenu}
                         </article>`;
                     }
-                    const kind = ({audio:'إصدار صوتي',video:'مادة مرئية',service:'خدمة أدبية',course:'دورة / ورشة',product:'منتج رقمي'})[item.type];
+                    const kind = ({audio:'إصدار صوتي',video:'مادة مرئية',service:'خدمة أدبية',course:'مادة إسلامية',product:'منتج رقمي'})[item.type];
                     return `<article class="unified-product">
                         ${image}
                         <small style="color:var(--text-muted)">${kind}</small>
