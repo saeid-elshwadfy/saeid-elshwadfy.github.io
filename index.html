@@ -945,6 +945,11 @@
             border: 0;
         }
 
+        .video-container video {
+            object-fit: contain;
+            background: #000;
+        }
+
         /* تحسين بطاقات مواد المكتبة الإسلامية */
         #coursesGrid.single-course {
             grid-template-columns: minmax(320px, 680px);
@@ -2106,8 +2111,13 @@
 
         <h2 id="courses" class="section-title">🕌 المكتبة الإسلامية 🕌</h2>
         <p class="section-intro" style="max-width:1000px;margin:-8px auto 16px;color:var(--text-muted);line-height:1.9;text-align:right;">مساحة إيمانية تضم تلاوات القرآن الكريم، والخطب الإسلامية، والدروس والمحاضرات، والأذكار والأدعية، ومواد من السيرة النبوية. نسأل الله أن يجعلها علمًا نافعًا وأجرًا ممتدًا.</p>
-        <div class="category-tabs" id="islamicCategoryTabs" style="margin:14px auto 20px;">
-            <button type="button" class="tab-btn active" data-islamic-cat="all">الكل</button>
+        <div class="category-tabs" id="islamicMediaTabs" aria-label="نوع مواد المكتبة الإسلامية" style="margin:14px auto 12px;">
+            <button type="button" class="tab-btn active" data-islamic-media="all">📚 كل المواد</button>
+            <button type="button" class="tab-btn" data-islamic-media="audio">🎧 المكتبة الصوتية</button>
+            <button type="button" class="tab-btn" data-islamic-media="video">🎬 مكتبة الفيديو</button>
+        </div>
+        <div class="category-tabs" id="islamicCategoryTabs" style="margin:10px auto 20px;">
+            <button type="button" class="tab-btn active" data-islamic-cat="all">كل التصنيفات</button>
             <button type="button" class="tab-btn" data-islamic-cat="quran">📖 القرآن الكريم</button>
             <button type="button" class="tab-btn" data-islamic-cat="sermons">🕌 الخطب</button>
             <button type="button" class="tab-btn" data-islamic-cat="lessons">🎙️ الدروس والمحاضرات</button>
@@ -4132,6 +4142,19 @@ onAuthStateChanged(auth, async (user) => {
             if (isAdmin) renderAnalyticsDashboard();
         });
 
+        // إنشاء صورة معاينة تلقائية لفيديوهات Cloudinary من أول ثانية.
+        // لا نغيّر رابط تشغيل الفيديو نفسه، ولا نؤثر على YouTube أو مزودي الفيديو الآخرين.
+        function getVideoPosterUrl(value) {
+            const url = safeMediaUrl(value);
+            if (!url || !url.includes('res.cloudinary.com/') || !url.includes('/video/upload/')) return '';
+            const marker = '/video/upload/';
+            const index = url.indexOf(marker);
+            const base = url.slice(0, index + marker.length);
+            let assetPath = url.slice(index + marker.length).split(/[?#]/)[0];
+            assetPath = assetPath.replace(/\.(mp4|webm|mov|m4v|ogv)$/i, '.jpg');
+            return `${base}so_0,f_jpg/${assetPath}`;
+        }
+
         function renderVideos() {
             const container = document.getElementById('videosGrid');
             if (!container) return;
@@ -4157,10 +4180,12 @@ onAuthStateChanged(auth, async (user) => {
                             <iframe src="${embedUrl}?enablejsapi=1" data-view-tracking="1" data-video-id="${escapeHtml(item.id)}" allowfullscreen loading="lazy"></iframe>
                         </div>`;
                 } else if (item.videoUrl) {
+                    const videoSrc = safeMediaUrl(item.videoUrl);
+                    const videoPoster = getVideoPosterUrl(videoSrc);
                     playerHtml = `
                         <div class="video-container">
-                            <video controls preload="none">
-                                <source src="${safeMediaUrl(item.videoUrl)}">
+                            <video controls preload="metadata" playsinline${videoPoster ? ` poster="${videoPoster}"` : ''}>
+                                <source src="${videoSrc}">
                                 متصفحك لا يدعم تشغيل هذا الفيديو.
                             </video>
                         </div>`;
@@ -4483,6 +4508,7 @@ onAuthStateChanged(auth, async (user) => {
         });
 
         let currentIslamicCategory = 'all';
+        let currentIslamicMedia = 'all';
         const islamicCategoryNames = {
             quran: 'القرآن الكريم', sermons: 'الخطب الإسلامية', lessons: 'الدروس والمحاضرات',
             adhkar: 'الأذكار والأدعية', seerah: 'السيرة النبوية'
@@ -4494,6 +4520,22 @@ onAuthStateChanged(auth, async (user) => {
             document.querySelectorAll('#islamicCategoryTabs [data-islamic-cat]').forEach(tab => tab.classList.toggle('active', tab === button));
             renderCourses();
         });
+
+        document.getElementById('islamicMediaTabs')?.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-islamic-media]');
+            if (!button) return;
+            currentIslamicMedia = button.dataset.islamicMedia || 'all';
+            document.querySelectorAll('#islamicMediaTabs [data-islamic-media]').forEach(tab => tab.classList.toggle('active', tab === button));
+            renderCourses();
+        });
+
+        // أضف تحويل Cloudinary التلقائي لترميز الفيديو فقط، مع إبقاء الصوتيات وروابط YouTube كما هي.
+        function getCompatibleCourseVideoUrl(value) {
+            const url = safeMediaUrl(value);
+            if (!url || !url.includes('res.cloudinary.com/') || !url.includes('/video/upload/')) return url;
+            if (/\/vc_auto(?:[,/]|$)/.test(url)) return url;
+            return url.replace('/video/upload/', '/video/upload/vc_auto/');
+        }
 
         function renderCourses() {
             const container = document.getElementById('coursesGrid');
@@ -4511,7 +4553,8 @@ onAuthStateChanged(auth, async (user) => {
             };
             const visibleCourses = (allCourses || []).filter(item =>
                 !isDefaultNarratorsVideo(item) &&
-                (currentIslamicCategory === 'all' || (item.category || 'lessons') === currentIslamicCategory)
+                (currentIslamicCategory === 'all' || (item.category || 'lessons') === currentIslamicCategory) &&
+                (currentIslamicMedia === 'all' || (currentIslamicMedia === 'audio' ? (item.mediaType || 'video') === 'audio' : (item.mediaType || 'video') !== 'audio'))
             );
             container.classList.toggle('single-course', visibleCourses.length === 1);
             if (!visibleCourses.length) {
@@ -4540,7 +4583,7 @@ onAuthStateChanged(auth, async (user) => {
                     <div class="video-container course-video-player" style="margin:12px 0;">
                         ${isYouTubeVideo
                             ? `<iframe src="${getYouTubeEmbedUrl(item.videoUrl)}?enablejsapi=1" data-course-view-tracking="1" data-course-id="${escapeHtml(item.id)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" title="${escapeHtml(item.title || 'مشاهدة المادة المرئية')}"></iframe>`
-                            : `<video controls preload="metadata" playsinline data-course-id="${escapeHtml(item.id)}" aria-label="مشغل الفيديو"><source src="${safeMediaUrl(item.videoUrl)}">متصفحك لا يدعم تشغيل هذا الفيديو.</video>`}
+                            : `<video controls preload="metadata" playsinline data-course-id="${escapeHtml(item.id)}" aria-label="مشغل الفيديو"><source src="${getCompatibleCourseVideoUrl(item.videoUrl)}" type="video/mp4">متصفحك لا يدعم تشغيل هذا الفيديو.</video>`}
                     </div>`
                 ) : '';
                 // زر التحميل يستخدم الملف المرفق أولاً، ثم رابط الصوت/الفيديو إذا لم يوجد ملف منفصل.
